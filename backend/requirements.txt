@@ -1,0 +1,52 @@
+# ============================================================
+# KAVACH SOAR-XDR Backend — Python Dependencies
+# ============================================================
+
+# --- Core Framework ---
+fastapi==0.115.12
+uvicorn[standard]==0.34.3
+pydantic==2.11.4
+pydantic-settings==2.9.1
+
+# --- Database ---
+sqlalchemy[asyncio]==2.0.41
+aiosqlite==0.21.0
+
+# --- Authentication ---
+PyJWT==2.10.1
+bcrypt==4.3.0
+
+# --- Logging ---
+structlog==25.4.0
+
+# --- System Telemetry ---
+psutil==7.0.0
+watchdog==6.0.0
+
+# --- AI / LLM ---
+google-generativeai==0.8.5
+
+# --- HTTP Client ---
+httpx==0.28.1
+
+# --- Scheduling ---
+apscheduler==3.11.0
+
+# --- Data Processing ---
+python-dateutil==2.9.0
+
+# --- CLI ---
+click==8.2.1
+
+# --- Testing ---
+pytest==8.4.1
+pytest-asyncio==1.0.0
+httpx==0.28.1
+
+# --- TUI (optional, for tui.py) ---
+textual==3.2.0
+rich==14.0.0
+
+# --- Windows-specific (install on Windows only) ---
+# pywin32==310
+# wmi==1.5.1

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAVACH — AI-Driven SOAR-XDR Security Platform</title>
+    <meta name="description" content="Production-Grade XDR & SOAR Threat Intelligence & Response Platform with real-time monitoring, MITRE ATT&CK mapping, and automated incident response.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="light-theme">
+
+    <!-- Global Connection Status Banner -->
+    <div id="offline-banner" class="offline-banner hidden">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Backend Disconnected — Attempting to reconnect to KAVACH API (http://localhost:8000)...</span>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="app-layout">
+        <!-- ═══════ Sidebar Navigation ═══════ -->
+        <aside class="sidebar">
+            <div class="brand-header">
+                <div class="logo-box">
+                    <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 2L4 9V20C4 29.94 10.84 39.18 20 41.5C29.16 39.18 36 29.94 36 20V9L20 2Z" fill="url(#shield_grad)" />
+                        <path d="M20 7L8 12.25V20C8 27.5 13.1 34.4 20 36.3C26.9 34.4 32 27.5 32 20V12.25L20 7Z" fill="white" fill-opacity="0.2"/>
+                        <path d="M16 20L19 23L25 17" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="shield_grad" x1="4" y1="2" x2="36" y2="41.5" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#2563EB"/>
+                                <stop offset="1" stop-color="#1D4ED8"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="brand-title">
+                    <h2>KAVACH</h2>
+                    <span class="sub-badge">SOAR-XDR v1.0</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">MAIN</div>
+                <a href="#dashboard" class="nav-item active" data-target="view-dashboard">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#alerts" class="nav-item" data-target="view-alerts">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Alerts & Detections</span>
+                    <span id="nav-alert-count" class="badge badge-danger">0</span>
+                </a>
+                <a href="#soar" class="nav-item" data-target="view-soar">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>SOAR Playbooks</span>
+                </a>
+
+                <div class="nav-section">INTELLIGENCE</div>
+                <a href="#threatintel" class="nav-item" data-target="view-threatintel">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>Threat Intel & Analysis</span>
+                </a>
+                <a href="#mitre" class="nav-item" data-target="view-mitre">
+                    <i class="fa-solid fa-cubes"></i>
+                    <span>MITRE ATT&CK</span>
+                </a>
+
+                <div class="nav-section">ASSISTANTS</div>
+                <a href="#chatbot" class="nav-item" data-target="view-chatbot">
+                    <i class="fa-solid fa-robot"></i>
+                    <span>AI SOC Assistant</span>
+                </a>
+                <a href="#awareness" class="nav-item" data-target="view-awareness">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Cyber Awareness</span>
+                </a>
+
+                <div class="nav-section">ADMINISTRATION</div>
+                <a href="#devices" class="nav-item" data-target="view-devices">
+                    <i class="fa-solid fa-desktop"></i>
+                    <span>Device Inventory</span>
+                </a>
+                <a href="#admin" class="nav-item" data-target="view-admin">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>User Management</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span id="backend-status-dot" class="status-dot online"></span>
+                    <span id="backend-status-text" style="font-weight:600;">Backend Connected</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ═══════ Main Content ═══════ -->
+        <main class="main-wrapper">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="page-title">Dashboard Overview</h1>
+                    <span class="header-subtitle">Real-Time Threat Telemetry & Autonomous Response</span>
+                </div>
+
+                <div class="header-right">
+                    <!-- USB Status Pill -->
+                    <div id="usb-status-pill" class="status-pill green">
+                        <i class="fa-brands fa-usb"></i>
+                        <span>USB Monitoring Active</span>
+                    </div>
+
+                    <!-- Live Clock -->
+                    <div class="time-display">
+                        <i class="fa-regular fa-clock"></i>
+                        <span id="server-time">--:--:--</span>
+                    </div>
+
+                    <!-- User Profile -->
+                    <div class="user-profile">
+                        <div class="avatar" id="user-avatar">A</div>
+                        <div class="user-info">
+                            <span id="user-display-name" class="user-name">SOC Admin</span>
+                            <span id="user-display-role" class="user-role">SOC Analyst</span>
+                        </div>
+                        <button id="btn-login-modal" class="btn btn-sm btn-outline"><i class="fa-solid fa-key"></i> Login</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dynamic Views -->
+            <div class="content-body">
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- VIEW: DASHBOARD -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <section id="view-dashboard" class="view-panel active">
+                    <!-- Metrics Row -->
+                    <div class="metrics-grid">
+                        <div class="metric-card card-blue">
+                            <div class="card-icon"><i class="fa-solid fa-bell"></i></div>
+                            <div class="card-data">
+                                <span class="card-label">Total Alerts</span>
+                                <h3 id="dash-total-alerts">0</h3>
+                                <span class="card-sub text-muted">All active detections</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card card-red">
+                            <div class="card-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="card-data">
+                                <span class="card-label">Critical Threats</span>
+                                <h3 id="dash-critical-alerts">0</h3>
+                                <span class="card-sub text-danger">Immediate Action Required</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card card-amber">
+                            <div class="card-icon"><i class="fa-solid fa-shield-virus"></i></div>
+                            <div class="card-data">
+                                <span class="card-label">High Severity</span>
+                                <h3 id="dash-high-alerts">0</h3>
+                                <span class="card-sub text-warning">Under Investigation</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card card-green">
+                            <div class="card-icon"><i class="fa-solid fa-desktop"></i></div>
+                            <div class="card-data">
+                                <span class="card-label">Monitored Devices</span>
+                                <h3 id="dash-devices-count">1</h3>
+                                <span class="card-sub text-success">Heartbeat Active</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row 1: Network + System Resources -->
+                    <div class="charts-grid">
+                        <div class="chart-card glass-panel">
+                            <div class="card-header-flex">
+                                <div>
+                                    <h4><i class="fa-solid fa-network-wired text-primary"></i> Live Network Activity Monitor</h4>
+                                    <span class="text-subtitle">Continuous Real-Time TCP/UDP Connection Tracking</span>
+                                </div>
+                                <span class="live-pulse"><span class="pulse-dot"></span> REALTIME</span>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-network-live"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card glass-panel">
+                            <div class="card-header-flex">
+                                <div>
+                                    <h4><i class="fa-solid fa-microchip text-primary"></i> System Resources</h4>
+                                    <span class="text-subtitle">CPU & RAM Utilization</span>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-system-resources"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row 2: Alert Trend + Severity Pie -->
+                    <div class="charts-grid" style="grid-template-columns: 2fr 1fr;">
+                        <div class="chart-card glass-panel">
+                            <div class="card-header-flex">
+                                <div>
+                                    <h4><i class="fa-solid fa-chart-bar text-primary"></i> Alert Trend (7 Days)</h4>
+                                    <span class="text-subtitle">Daily detection volume</span>
+                                </div>
+                            </div>
+                            <div class="chart-container" style="height:220px;">
+                                <canvas id="chart-alert-trend"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card glass-panel">
+                            <div class="card-header-flex">
+                                <div>
+                                    <h4><i class="fa-solid fa-chart-pie text-primary"></i> Severity Distribution</h4>
+                                    <span class="text-subtitle">Breakdown by severity level</span>
+                                </div>
+                            </div>
+                            <div class="chart-container" style="height:220px;">
+                                <canvas id="chart-severity-pie"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Detections & MITRE Heatmap -->
+                    <div class="two-col-grid">
+                        <div class="glass-panel">
+                            <div class="card-header-flex">
+                                <h4><i class="fa-solid fa-list-check text-primary"></i> Recent Security Detections</h4>
+                                <a href="#alerts" class="link-btn" onclick="switchView('view-alerts')">View All &rarr;</a>
+                            </div>
+                            <div class="table-responsive" style="max-height:340px;overflow-y:auto;">
+                                <table class="custom-table" id="table-recent-alerts">
+                                    <thead>
+                                        <tr>
+                                            <th>Severity</th>
+                                            <th>Title</th>
+                                            <th>MITRE Technique</th>
+                                            <th>Risk</th>
+                                            <th>Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-recent-alerts">
+                                        <tr><td colspan="5" class="text-center text-muted">Loading telemetry...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel">
+                            <div class="card-header-flex">
+                                <h4><i class="fa-solid fa-cubes text-primary"></i> Top Detected MITRE Techniques</h4>
+                            </div>
+                            <div id="mitre-heatmap-container" class="heatmap-grid">
+                                <div class="text-muted p-3">Loading MITRE heatmap...</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- VIEW: ALERTS -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <section id="view-alerts" class="view-panel">
+                    <div class="glass-panel">
+                        <div class="card-header-flex">
+                            <div>
+                                <h4>Alerts & Telemetry Detections</h4>
+                                <span class="text-subtitle">Ingested from 16 real-time Windows collectors</span>
+                            </div>
+                            <div class="filter-controls">
+                                <select id="filter-severity" class="form-select">
+                                    <option value="">All Severities</option>
+                                    <option value="critical">Critical</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                                <select id="filter-status" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    <option value="new">New</option>
+                                    <option value="investigating">Investigating</option>
+                                    <option value="resolved">Resolved</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="loadAlerts()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive" style="max-height:600px;overflow-y:auto;">
+                            <table class="custom-table" id="table-all-alerts">
+                                <thead>
+                                    <tr>
+                                        <th>Severity</th>
+                                        <th>Title & Details</th>
+                                        <th>Collector</th>
+                                        <th>MITRE ID</th>
+                                        <th>Risk</th>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-all-alerts">
+                                    <tr><td colspan="8" class="text-center text-muted">Loading alerts...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- VIEW: SOAR PLAYBOOKS -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <section id="view-soar" class="view-panel">
+                    <div class="two-col-grid">
+                        <div class="glass-panel">
+                            <h4><i class="fa-solid fa-bolt text-warning"></i> Automated Response Playbooks</h4>
+                            <span class="text-subtitle mb-3 display-block">Audited & Reversible Security Controls</span>
+                            <div id="playbooks-container" class="playbooks-list">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="glass-panel">
+                            <h4><i class="fa-solid fa-clock-rotate-left text-primary"></i> Execution History & Rollback</h4>
+                            <span class="text-subtitle mb-3 display-block">Audit Trail of Triggered Controls</span>
+                            <div class="table-responsive" style="max-height:500px;overflow-y:auto;">
+                                <table class="custom-table" id="table-playbook-history">
+                                    <thead>
+                                        <tr>
+                                            <th>Playbook</th>
+                                            <th>Status</th>
+                                            <th>Executed By</th>
+                                            <th>Time</th>
+                                            <th>Rollback</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-playbook-history">
+                                        <tr><td colspan="5" class="text-center text-muted">Loading history...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- VIEW: THREAT INTEL -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <section id="view-threatintel" class="view-panel">
+                    <div class="threat-intel-grid">
+                        <div class="glass-panel">
+                            <h4><i class="fa-solid fa-link text-primary"></i> Live URL Threat Analyzer</h4>
+                            <p class="text-subtitle mb-3">Entropy, typosquatting, encoded params, VirusTotal</p>
+                            <div class="input-group mb-3">
+                                <input type="url" id="ti-url-input" class="form-input" placeholder="https://suspicious-domain.com/login">
+                                <button class="btn btn-primary" onclick="analyzeURL()"><i class="fa-solid fa-search"></i> Analyze</button>
+                            </div>
+                            <div id="ti-url-result" class="analysis-result-box"></div>
+                        </div>
+
+                        <div class="glass-panel">
+                            <h4><i class="fa-solid fa-network-wired text-primary"></i> Live IP Reputation Lookup</h4>
+                            <p class="text-subtitle mb-3">VirusTotal v3, AbuseIPDB v2, AlienVault OTX</p>
+                            <div class="input-group mb-3">
+                                <input type="text" id="ti-ip-input" class="form-input" placeholder="8.8.8.8 or 185.199.108.153">
+                                <button class="btn btn-primary" onclick="analyzeIP()"><i class="fa-solid fa-search"></i> Check IP</button>
+                            </div>
+                            <div id="ti-ip-result" class="analysis-result-box"></div>
+                        </div>
+
+                        <div class="glass-panel full-width">
+                            <h4><i class="fa-solid fa-hashtag text-primary"></i> File Hash Threat Lookup (SHA256 / MD5)</h4>
+                            <div class="input-group mb-3">
+                                <input type="text" id="ti-hash-input" class="form-input" placeholder="e.g. 44d88612fea8a8f36de82e1278abb02f">
+                                <button class="btn btn-primary" onclick="analyzeHash()"><i class="fa-solid fa-search"></i> Query Hash</button>
+                            </div>
+                            <div id="ti-hash-result" class="analysis-result-box"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- VIEW: MITRE ATT&CK -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <section id="view-mitre" class="view-panel">
+                    <div class="glass-panel">
+                        <div class="card-header-flex">
+                            <div>
+                                <h4>MITRE ATT&CK Enterprise Matrix Browser</h4>
+                                <span class="text-subtitle">Integrated STIX 2.1 Enterprise Techniques</span>
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height:600px;overflow-y:auto;">
+                            <table class="custom-table" id="table-mitre-matrix">
+                                <thead>
+                                    <tr>
+                                        <th>Technique ID</th>
+                                        <th>Name</th>
+                                        <th>Tactic</th>
+                                        <th>Severity</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-mitre-matrix">
+                                    <tr><td colspan="5" class="text-center text-muted">Loading MITRE framework...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- VIEW: CHATBOT -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <section id="view-chatbot" class="view-panel">
+                    <div class="chatbot-container glass-panel">
+                        <div class="chat-header">
+                            <div class="chat-tab-selector">
+                                <button class="chat-tab active" id="tab-chat-soc" onclick="switchChatRole('soc')">
+                                    <i class="fa-solid fa-user-shield"></i> SOC Senior Analyst
+                                </button>
+                                <button class="chat-tab" id="tab-chat-layman" onclick="switchChatRole('layman')">
+                                    <i class="fa-solid fa-heart-pulse"></i> Layman Security Buddy
+                                </button>
+                            </div>
+                            <span class="badge badge-info">Powered by Gemini AI</span>
+                        </div>
+
+                        <div id="chat-messages" class="chat-messages-box">
+                            <div class="message bot-message">
+                                <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+                                <div class="msg-content">
+                                    <strong>KAVACH AI Assistant</strong>
+                                    <p>Hello! I'm your AI Security Assistant powered by Google Gemini. Ask me about MITRE techniques, PowerShell forensics, incident response, or simple cyber safety tips!</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chat-input-row">
+                            <input type="text" id="chat-input-text" class="form-input" placeholder="Type your security question..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+                            <button class="btn btn-primary" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i> Send</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- VIEW: AWARENESS -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <section id="view-awareness" class="view-panel">
+                    <div class="two-col-grid">
+                        <div class="glass-panel">
+                            <h4><i class="fa-solid fa-lightbulb text-warning"></i> Daily Cybersecurity Tip</h4>
+                            <div id="daily-tip-box" class="tip-card mb-4">
+                                <h5 id="tip-category">Loading...</h5>
+                                <p id="tip-text">Loading daily recommendation...</p>
+                            </div>
+                            <h4 class="mb-3">All Recommended Security Practices</h4>
+                            <div id="all-tips-list" class="tips-list"></div>
+                        </div>
+
+                        <div class="glass-panel">
+                            <h4><i class="fa-solid fa-circle-question text-primary"></i> Cyber Awareness Quiz</h4>
+                            <p class="text-subtitle mb-3">Test your security knowledge</p>
+                            <div id="quiz-box" class="quiz-container">
+                                <h5 id="quiz-question">Loading quiz question...</h5>
+                                <div id="quiz-options" class="quiz-options-list"></div>
+                                <div id="quiz-feedback" class="quiz-feedback hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- VIEW: DEVICES -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <section id="view-devices" class="view-panel">
+                    <div class="glass-panel">
+                        <div class="card-header-flex">
+                            <h4><i class="fa-solid fa-desktop text-primary"></i> Monitored Device Inventory</h4>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="custom-table" id="table-devices">
+                                <thead>
+                                    <tr>
+                                        <th>Hostname</th>
+                                        <th>IP Address</th>
+                                        <th>OS Version</th>
+                                        <th>Risk Score</th>
+                                        <th>Status</th>
+                                        <th>Last Seen</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-devices">
+                                    <tr><td colspan="6" class="text-center text-muted">Loading devices...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- VIEW: ADMIN / USERS -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <section id="view-admin" class="view-panel">
+                    <div class="two-col-grid">
+                        <!-- User Registration -->
+                        <div class="glass-panel">
+                            <h4><i class="fa-solid fa-user-plus text-primary"></i> Register New Platform User</h4>
+                            <p class="text-subtitle mb-3">Create SOC Analyst or Layman User accounts</p>
+                            <form id="form-register" onsubmit="handleRegister(event)">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" id="reg-username" class="form-input" required placeholder="analyst_john">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" id="reg-email" class="form-input" required placeholder="john@kavach.soc">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" id="reg-password" class="form-input" required placeholder="Min 6 characters">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Role</label>
+                                    <select id="reg-role" class="form-select">
+                                        <option value="soc_analyst">SOC Analyst (Full Access)</option>
+                                        <option value="layman_user">Layman User (Restricted)</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary full-width"><i class="fa-solid fa-check"></i> Register User</button>
+                            </form>
+                        </div>
+
+                        <!-- Users List -->
+                        <div class="glass-panel">
+                            <div class="card-header-flex">
+                                <h4><i class="fa-solid fa-users text-primary"></i> Registered Platform Users</h4>
+                                <button class="btn btn-sm btn-outline" onclick="loadUsers()"><i class="fa-solid fa-rotate"></i></button>
+                            </div>
+                            <div class="table-responsive" style="max-height:500px;overflow-y:auto;">
+                                <table class="custom-table" id="table-users">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Email</th>
+                                            <th>Role</th>
+                                            <th>Status</th>
+                                            <th>Last Login</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-users">
+                                        <tr><td colspan="5" class="text-center text-muted">Loading users...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Login Modal with MFA & Magic Link -->
+    <div id="modal-login" class="modal-backdrop hidden">
+        <div class="modal-box modal-md">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-shield-halved text-primary"></i> KAVACH Authentication</h3>
+                <button class="close-btn" onclick="closeLoginModal()">&times;</button>
+            </div>
+
+            <!-- Login Type Tabs -->
+            <div class="login-tabs">
+                <button id="btn-tab-pwd" class="login-tab active" onclick="switchLoginTab('pwd')">
+                    <i class="fa-solid fa-key"></i> Password
+                </button>
+                <button id="btn-tab-otp" class="login-tab" onclick="switchLoginTab('otp')">
+                    <i class="fa-solid fa-mobile-screen-button"></i> Email OTP
+                </button>
+                <button id="btn-tab-magic" class="login-tab" onclick="switchLoginTab('magic')">
+                    <i class="fa-solid fa-link"></i> Magic Link
+                </button>
+            </div>
+
+            <!-- Tab 1: Password Login -->
+            <div id="login-panel-pwd" class="login-panel active">
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" id="login-username" class="form-input" required placeholder="admin">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="login-password" class="form-input" required placeholder="Enter password">
+                    </div>
+                    <button type="submit" class="btn btn-primary full-width" style="margin-top:8px;">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In with Password
+                    </button>
+                </form>
+                <p class="text-muted" style="margin-top:12px;text-align:center;font-size:11px;">Default: admin / admin123</p>
+            </div>
+
+            <!-- Tab 2: Email OTP Login (MFA) -->
+            <div id="login-panel-otp" class="login-panel">
+                <form id="form-request-otp" onsubmit="handleRequestOTP(event)">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Username or Email Address</label>
+                        <div class="input-group">
+                            <input type="text" id="otp-user-input" class="form-input" required placeholder="admin or admin@kavach.soc">
+                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Send Code</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="otp-verify-section" class="mt-3 hidden">
+                    <div class="badge badge-success mb-2 display-block p-2" id="otp-status-msg">OTP sent to your email</div>
+                    <form onsubmit="handleVerifyOTP(event)">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Enter 6-Digit OTP Verification Code</label>
+                            <input type="text" id="otp-code-input" class="form-input text-center font-mono" maxlength="6" required placeholder="123456" style="font-size:20px;letter-spacing:6px;font-weight:700;">
+                        </div>
+                        <button type="submit" class="btn btn-success full-width">
+                            <i class="fa-solid fa-shield-check"></i> Verify OTP & Sign In
+                        </button>
+                    </form>
+                    <div id="otp-dev-helper" class="mt-2 text-muted" style="font-size:11px;text-align:center;"></div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Clickable Magic Link (MFA / Passwordless) -->
+            <div id="login-panel-magic" class="login-panel">
+                <form id="form-request-magic" onsubmit="handleRequestMagicLink(event)">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Username or Registered Email</label>
+                        <input type="text" id="magic-user-input" class="form-input mb-2" required placeholder="admin or user@kavach.soc">
+                        <button type="submit" class="btn btn-purple full-width">
+                            <i class="fa-solid fa-envelope-open-text"></i> Send Clickable Magic Login Link
+                        </button>
+                    </div>
+                </form>
+
+                <div id="magic-link-section" class="mt-3 hidden">
+                    <div class="badge badge-purple mb-2 display-block p-2" id="magic-status-msg">Magic link generated!</div>
+                    <p style="font-size:12px;" class="mb-2">Click the button below or check your email inbox to sign in instantly:</p>
+                    <a id="magic-direct-btn" href="#" class="btn btn-primary full-width mb-2" style="text-decoration:none;justify-content:center;">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Click Here to Login Instantly
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- AI Alert Explanation Modal -->
+    <div id="modal-ai-explain" class="modal-backdrop hidden">
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-robot text-primary"></i> AI Alert Analysis & Remediation</h3>
+                <button class="close-btn" onclick="closeAiModal()">&times;</button>
+            </div>
+            <div id="ai-explain-body" class="modal-body markdown-body">
+                Loading AI explanation from Gemini...
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

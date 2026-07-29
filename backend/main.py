@@ -1,0 +1,61 @@
+"""
+KAVACH — AI-Driven SOAR-XDR Threat Intelligence & Response Platform.
+
+Main entry point. Starts the FastAPI backend with Uvicorn.
+
+Usage:
+    python main.py                  # Start backend server
+    python main.py --port 8000      # Custom port
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+import os
+
+# Ensure backend/ is on path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+
+def main() -> None:
+    """Parse arguments and start the KAVACH backend."""
+    parser = argparse.ArgumentParser(
+        description="KAVACH SOAR-XDR Backend Server",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--host", default="0.0.0.0", help="Bind host (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
+    parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
+    parser.add_argument("--workers", type=int, default=1, help="Number of workers")
+    parser.add_argument("--log-level", default="info", help="Log level")
+    args = parser.parse_args()
+
+    import uvicorn
+
+    print(r"""
+    +-----------------------------------------------------------+
+    |                                                           |
+    |   K A V A C H                                             |
+    |   AI-Driven SOAR-XDR Threat Intelligence & Response       |
+    |   Platform v1.0.0                                         |
+    |                                                           |
+    |   Docs:  http://localhost:{port}/docs                      |
+    |   API:   http://localhost:{port}/api/v1                    |
+    |                                                           |
+    +-----------------------------------------------------------+
+    """.format(port=args.port))
+
+    uvicorn.run(
+        "api.app:create_app",
+        factory=True,
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+        workers=args.workers,
+        log_level=args.log_level,
+    )
+
+
+if __name__ == "__main__":
+    main()
