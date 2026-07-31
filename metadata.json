@@ -1,0 +1,6 @@
+{
+  "name": "Kavach - AI-Driven SOAR-XDR Threat Intelligence & Response Platform",
+  "description": "Diploma Final Year Project (2026-2027) sponsored by Swastik Chemical (India) - Shri Bhagubhai Mafatlal Polytechnic",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
