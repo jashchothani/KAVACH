@@ -41,7 +41,6 @@ click==8.2.1
 # --- Testing ---
 pytest==8.4.1
 pytest-asyncio==1.0.0
-httpx==0.28.1
 
 # --- TUI (optional, for tui.py) ---
 textual==3.2.0

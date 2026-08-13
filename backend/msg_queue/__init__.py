@@ -1,1 +1,0 @@
-"""KAVACH Message Queue."""

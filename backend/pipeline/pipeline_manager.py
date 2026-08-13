@@ -300,6 +300,19 @@ class PipelineManager:
             # 4. Risk scoring
             event["risk_score"] = self._scorer.calculate(event)
 
+            # 4.5. ML Anomaly Detection
+            try:
+                from ml.anomaly_detector import get_anomaly_detector
+                detector = get_anomaly_detector()
+                ml_res = detector.predict(event)
+                event["ml_anomaly_score"] = ml_res["score"]
+                event["is_anomaly"] = ml_res["is_anomaly"]
+                if ml_res["is_anomaly"]:
+                    # Boost risk score based on anomaly intensity
+                    event["risk_score"] = min(100.0, event["risk_score"] + (ml_res["score"] * 0.25))
+            except Exception as ml_exc:
+                logger.warning("anomaly_detection_pipeline_failed", error=str(ml_exc))
+
             # 5. Correlation
             correlations = self._correlator.add_event(event)
             if correlations:
@@ -345,41 +358,64 @@ class PipelineManager:
 
         return event
 
+    def _write_log_sync(
+        self,
+        event: dict[str, Any],
+        target_dir: Path,
+        log_file: Path,
+        det_dir: Path | None,
+        det_file: Path | None,
+    ) -> None:
+        """Synchronous file writing logic to run in a thread pool."""
+        try:
+            if det_dir and det_file:
+                det_dir.mkdir(parents=True, exist_ok=True)
+                with open(det_file, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(event, default=str) + "\n")
+        except OSError:
+            pass
+
+        try:
+            target_dir.mkdir(parents=True, exist_ok=True)
+            with open(log_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(event, default=str) + "\n")
+        except OSError as exc:
+            logger.error("log_write_error", path=str(log_file), error=str(exc))
+
     async def _write_log(self, event: dict[str, Any]) -> None:
-        """Write processed event to appropriate JSON log directory."""
+        """Write processed event to appropriate JSON log directory asynchronously."""
         settings = self._settings
         subdirs = settings.paths.log_subdirs
 
         # Determine target directory
         collector = event.get("collector", "")
         dir_map: dict[str, str] = {
-            "process": "process", "network": "network", "file_monitor": "fim",
-            "login": "eventlog", "powershell": "powershell", "sysmon": "sysmon",
-            "dns": "dns", "windows_eventlog": "eventlog", "defender": "defender",
-            "usb": "usb", "canary": "fim",
+            "process": "process",
+            "network": "network",
+            "file_monitor": "fim",
+            "login": "eventlog",
+            "powershell": "powershell",
+            "sysmon": "sysmon",
+            "dns": "dns",
+            "windows_eventlog": "eventlog",
+            "defender": "defender",
+            "usb": "usb",
+            "canary": "fim",
         }
 
         target_dir = subdirs.get(dir_map.get(collector, "processed"), subdirs["processed"])
+        log_file = target_dir / f"{datetime.now().strftime('%Y%m%d')}_{collector}.jsonl"
 
-        # Also write to detections/ if alert-worthy
+        det_dir = None
+        det_file = None
         if event.get("risk_score", 0) >= 30:
             det_dir = subdirs["detections"]
-            det_dir.mkdir(parents=True, exist_ok=True)
             det_file = det_dir / f"{datetime.now().strftime('%Y%m%d')}_{collector}_detections.jsonl"
-            try:
-                with open(det_file, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(event, default=str) + "\n")
-            except OSError:
-                pass
 
-        # Write to collector-specific directory
-        target_dir.mkdir(parents=True, exist_ok=True)
-        log_file = target_dir / f"{datetime.now().strftime('%Y%m%d')}_{collector}.jsonl"
-        try:
-            with open(log_file, "a", encoding="utf-8") as f:
-                f.write(json.dumps(event, default=str) + "\n")
-        except OSError as exc:
-            logger.error("log_write_error", path=str(log_file), error=str(exc))
+        # Offload file I/O to a background thread to prevent blocking the asyncio loop
+        await asyncio.to_thread(
+            self._write_log_sync, event, target_dir, log_file, det_dir, det_file
+        )
 
     async def _create_alert(self, event: dict[str, Any]) -> None:
         """Create an alert record in the database."""

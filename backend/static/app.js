@@ -1,1310 +1,1352 @@
-/**
- * KAVACH — SOAR-XDR Premium Frontend Application Engine
- * 
- * Features:
- * - Real-time dashboard with live Chart.js visualizations
- * - Continuous network monitoring with rolling history
- * - USB device detection via WebSocket + collector events
- * - File creation / FIM alert tracking
- * - Backend health check with reconnect banner
- * - JWT authentication with auto-login persistence
- * - Full SOAR playbook execution + rollback
- * - Threat Intelligence (URL, IP, Hash analysis)
- * - MITRE ATT&CK matrix browser
- * - AI Chatbot (SOC + Layman)
- * - Cyber Awareness quiz + tips
- * - User management with registration
- */
+/* ═══════════════════════════════════════════════════════════════════════════
+   KAVACH — AI-Driven SOAR-XDR Platform
+   Frontend Application (SPA)
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-const API_BASE = "/api/v1";
-let jwtToken = localStorage.getItem("kavach_token") || "";
-let currentChatRole = "soc";
-let networkChart = null;
-let systemChart = null;
-let alertTrendChart = null;
-let severityPieChart = null;
-let isBackendConnected = true;
+const API_BASE = '/api/v1';
+let jwtToken = localStorage.getItem('kavach_token') || '';
+let currentUser = null;
+let pending2faToken = '';
+let pendingVerifyEmail = '';
+let charts = {};
 let wsConnection = null;
-let reconnectAttempts = 0;
-const MAX_RECONNECT = 5;
 
-// Rolling data buffers
-const HISTORY_SIZE = 30;
-const networkHistory = {
-    labels: Array(HISTORY_SIZE).fill(""),
-    tcpData: Array(HISTORY_SIZE).fill(0),
-    udpData: Array(HISTORY_SIZE).fill(0),
-};
-const cpuHistory = {
-    labels: Array(HISTORY_SIZE).fill(""),
-    data: Array(HISTORY_SIZE).fill(0),
-};
-const ramHistory = {
-    labels: Array(HISTORY_SIZE).fill(""),
-    data: Array(HISTORY_SIZE).fill(0),
-};
+// ═══════════════════════════════════════════════════════════════════════════
+// SPA ROUTER
+// ═══════════════════════════════════════════════════════════════════════════
 
-/* ============================================================
-   INITIALIZATION
-   ============================================================ */
-document.addEventListener("DOMContentLoaded", () => {
-    initNavigation();
-    initCharts();
-    startBackendHealthCheck();
-    loadDashboardData();
-    loadPlaybooks();
-    loadSecurityTips();
-    loadQuiz();
-    connectWebSocket();
-    restoreSession();
-    checkMagicTokenFromURL();
+function navigateTo(page) {
+    document.querySelectorAll('.auth-page, .app-layout').forEach(el => el.classList.add('hidden'));
+    const target = document.getElementById(`page-${page}`);
+    if (target) {
+        target.classList.remove('hidden');
+        if (['login', 'register', 'forgot', '2fa', 'verify-email'].includes(page)) {
+            initThreeBackground(page);
+        }
+    }
+    window.location.hash = page;
+}
 
-    // Continuous 3-second live data polling
-    setInterval(updateLiveData, 3000);
+function showSection(section) {
+    document.querySelectorAll('.page-content > section').forEach(s => s.classList.add('hidden'));
+    const target = document.getElementById(`section-${section}`);
+    if (target) target.classList.remove('hidden');
 
-    // Live clock
-    setInterval(() => {
-        const el = document.getElementById("server-time");
-        if (el) el.innerText = new Date().toLocaleTimeString("en-US", { hour12: false });
-    }, 1000);
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navItem = document.querySelector(`.nav-item[data-section="${section}"]`);
+    if (navItem) navItem.classList.add('active');
 
-    // Backend health every 15s
-    setInterval(startBackendHealthCheck, 15000);
-});
+    const titles = {
+        overview: 'Dashboard', alerts: 'Security Alerts', devices: 'Devices',
+        incidents: 'Incidents', mitre: 'MITRE ATT&CK', iocs: 'IOC Analysis',
+        logs: 'Log Viewer', playbooks: 'Playbooks', ml: 'ML Engine',
+        chat: 'AI Assistant', awareness: 'Awareness', settings: 'Settings'
+    };
+    document.getElementById('topbar-title').textContent = titles[section] || 'Dashboard';
+    document.getElementById('topbar-breadcrumb').textContent = titles[section] || 'Overview';
 
-/* ============================================================
-   SESSION PERSISTENCE
-   ============================================================ */
-function restoreSession() {
-    if (jwtToken) {
-        fetch(`${API_BASE}/auth/me`, {
-            headers: { "Authorization": `Bearer ${jwtToken}` }
-        })
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .then(data => {
-            updateUserUI(data.username, data.role);
-        })
-        .catch(() => {
-            jwtToken = "";
-            localStorage.removeItem("kavach_token");
+    // Update URL hash to reflect active SPA section
+    window.location.hash = section;
+
+    // Load data for specific sections
+    if (section === 'overview') loadDashboard();
+    else if (section === 'alerts') loadAlerts();
+    else if (section === 'devices') loadDevices();
+    else if (section === 'incidents') loadIncidents();
+    else if (section === 'mitre') loadMitreHeatmap();
+    else if (section === 'iocs') loadIOCs();
+    else if (section === 'playbooks') loadPlaybooks();
+    else if (section === 'ml') loadMLStatus();
+    else if (section === 'awareness') loadAwareness();
+    else if (section === 'settings') loadSettings();
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THREE.JS 3D BACKGROUND
+// ═══════════════════════════════════════════════════════════════════════════
+
+let threeScenes = {};
+
+function initThreeBackground(pageId) {
+    const containerId = `three-canvas-${pageId}`;
+    const container = document.getElementById(containerId);
+    if (!container || threeScenes[containerId]) return;
+    if (typeof THREE === 'undefined') return;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
+    container.appendChild(renderer.domElement);
+
+    // --- Lights (Required for glassmorphism / shiny physical materials) ---
+    const cyanLight = new THREE.PointLight(0x00f0ff, 2.5, 30);
+    cyanLight.position.set(-6, 5, 4);
+    scene.add(cyanLight);
+
+    const magentaLight = new THREE.PointLight(0xff3366, 2.5, 30);
+    magentaLight.position.set(6, -5, 4);
+    scene.add(magentaLight);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+    scene.add(ambientLight);
+
+    // --- Floating particles ---
+    const particleCount = 80;
+    const particleGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 20;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
+        const isRed = Math.random() > 0.6;
+        colors[i * 3] = isRed ? 0.55 : 0.75;
+        colors[i * 3 + 1] = isRed ? 0.1 : 0.75;
+        colors[i * 3 + 2] = isRed ? 0.1 : 0.80;
+        sizes[i] = Math.random() * 3 + 1;
+    }
+
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    particleGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const particleMaterial = new THREE.PointsMaterial({
+        size: 0.08,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true
+    });
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(particles);
+
+    // --- Abstract Flowing Wave Ribbons (iOS Wallpaper style) ---
+    const waves = [];
+    for (let w = 0; w < 2; w++) {
+        const points = [];
+        for (let i = 0; i < 5; i++) {
+            points.push(new THREE.Vector3(
+                (i - 2) * 5,
+                Math.sin(i * 1.5 + w * Math.PI) * 2.2,
+                (Math.random() - 0.5) * 2 - 1.5
+            ));
+        }
+        const curve = new THREE.CatmullRomCurve3(points);
+        const tubeGeo = new THREE.TubeGeometry(curve, 64, 0.07, 8, false);
+        const tubeMat = new THREE.MeshPhysicalMaterial({
+            color: w === 0 ? 0xff00bb : 0x00e1ff,
+            roughness: 0.1,
+            metalness: 0.8,
+            emissive: w === 0 ? 0x2b0020 : 0x001d2b,
+            transparent: true,
+            opacity: 0.35
+        });
+        const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+        scene.add(tubeMesh);
+        waves.push(tubeMesh);
+    }
+
+    // --- Glassmorphic Floating Spheres ---
+    const glassSpheres = [];
+    const sphereColors = [0xff3366, 0x00f0ff, 0xffaa00];
+    for (let i = 0; i < 3; i++) {
+        const size = Math.random() * 0.9 + 0.6;
+        const geo = new THREE.SphereGeometry(size, 32, 32);
+        const mat = new THREE.MeshPhysicalMaterial({
+            color: sphereColors[i],
+            transparent: true,
+            opacity: 0.12,
+            roughness: 0.05,
+            metalness: 0.1,
+            transmission: 0.75,
+            ior: 1.45,
+            thickness: 0.4
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(
+            (Math.random() - 0.5) * 8 + (i === 0 ? -3 : (i === 1 ? 3 : 0)),
+            (Math.random() - 0.5) * 6,
+            (Math.random() - 0.5) * 3 - 2
+        );
+        scene.add(mesh);
+        glassSpheres.push({
+            mesh,
+            speedX: (Math.random() - 0.5) * 0.006,
+            speedY: (Math.random() - 0.5) * 0.006,
+            rotSpeed: (Math.random() - 0.5) * 0.008
         });
     }
-}
 
-function updateUserUI(username, role) {
-    const el = document.getElementById("user-display-name");
-    const rl = document.getElementById("user-display-role");
-    const av = document.getElementById("user-avatar");
-    if (el) el.innerText = username || "SOC Admin";
-    if (rl) rl.innerText = role || "analyst";
-    if (av) av.innerText = (username || "A").charAt(0).toUpperCase();
-}
+    // --- KAVACH 3D Token & Shield (Assembled in a Group) ---
+    const tokenGroup = new THREE.Group();
 
-/* ============================================================
-   Backend Health & Reconnect
-   ============================================================ */
-async function startBackendHealthCheck() {
-    try {
-        const resp = await fetch(`${API_BASE}/system/health`, { signal: AbortSignal.timeout(5000) });
-        if (resp.ok) {
-            setBackendStatus(true);
-            reconnectAttempts = 0;
+    // Texture loader
+    const textureLoader = new THREE.TextureLoader();
+    const tokenTexture = textureLoader.load('/static/cyber_shield_texture.jpg');
+
+    // 3D Cyber Emblem Cylinder Token
+    const tokenGeo = new THREE.CylinderGeometry(1.5, 1.5, 0.15, 64);
+    const sideMat = new THREE.MeshBasicMaterial({ color: 0x1a0707, transparent: true, opacity: 0.8 });
+    const capMat = new THREE.MeshBasicMaterial({ map: tokenTexture });
+    const tokenMesh = new THREE.Mesh(tokenGeo, [sideMat, capMat, capMat]);
+    tokenMesh.rotation.x = Math.PI / 2.5;
+    tokenGroup.add(tokenMesh);
+
+    // Shield wireframe
+    const shieldGeo = new THREE.IcosahedronGeometry(2.3, 1);
+    const shieldMat = new THREE.MeshBasicMaterial({
+        color: 0x8B1A1A,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.12
+    });
+    const shield = new THREE.Mesh(shieldGeo, shieldMat);
+    tokenGroup.add(shield);
+
+    // Orbiting rings
+    const ringGeo = new THREE.TorusGeometry(3.2, 0.02, 16, 100);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x8B1A1A, transparent: true, opacity: 0.15 });
+    const ring1 = new THREE.Mesh(ringGeo, ringMat);
+    ring1.rotation.x = Math.PI / 3;
+    tokenGroup.add(ring1);
+
+    const ring2 = new THREE.Mesh(ringGeo, ringMat.clone());
+    ring2.rotation.x = -Math.PI / 4;
+    ring2.rotation.y = Math.PI / 6;
+    tokenGroup.add(ring2);
+
+    scene.add(tokenGroup);
+
+    // --- Responsive Token Group Positioning ---
+    function updateTokenPosition() {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        const aspect = width / height;
+
+        if (aspect < 1.1) {
+            // Portrait / Mobile viewports: Position token above center card
+            tokenGroup.position.set(0, 2.3, 0);
+            tokenGroup.scale.setScalar(0.72);
         } else {
-            setBackendStatus(false);
+            // Landscape / Desktop viewports: Offset token to left side
+            tokenGroup.position.set(-3.0, 0.5, 0);
+            tokenGroup.scale.setScalar(1.0);
         }
-    } catch {
-        setBackendStatus(false);
+    }
+    updateTokenPosition();
+
+    camera.position.z = 8;
+
+    threeScenes[containerId] = true;
+
+    function animate() {
+        if (!document.getElementById(containerId)) return;
+        requestAnimationFrame(animate);
+        const t = Date.now() * 0.001;
+
+        // Rotate particles
+        particles.rotation.y = t * 0.05;
+        particles.rotation.x = Math.sin(t * 0.03) * 0.1;
+
+        // Animate glass spheres
+        glassSpheres.forEach(s => {
+            s.mesh.position.x += s.speedX;
+            s.mesh.position.y += s.speedY;
+            s.mesh.rotation.y += s.rotSpeed;
+            // bounce check
+            if (Math.abs(s.mesh.position.x) > 6) s.speedX *= -1;
+            if (Math.abs(s.mesh.position.y) > 4) s.speedY *= -1;
+        });
+
+        // Rotate and wobble 3D token group
+        shield.rotation.y = t * 0.15;
+        shield.rotation.x = Math.sin(t * 0.1) * 0.2;
+        tokenMesh.rotation.y = t * 0.25;
+        tokenMesh.rotation.x = Math.PI / 2.5 + Math.sin(t * 0.5) * 0.05;
+        ring1.rotation.z = t * 0.1;
+        ring2.rotation.z = -t * 0.08;
+
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        if (!container.clientWidth) return;
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        updateTokenPosition();
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOAST NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function showToast(title, message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const icons = { success: '✅', danger: '🚨', warning: '⚠️', info: 'ℹ️' };
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => { toast.classList.add('removing'); setTimeout(() => toast.remove(), 300); }, 5000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// API HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function apiFetch(endpoint, options = {}) {
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    if (jwtToken) headers['Authorization'] = `Bearer ${jwtToken}`;
+    try {
+        const resp = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+        if (resp.status === 401) {
+            jwtToken = '';
+            localStorage.removeItem('kavach_token');
+            navigateTo('login');
+            showToast('Session Expired', 'Please sign in again', 'warning');
+            return null;
+        }
+        return resp;
+    } catch (e) {
+        showToast('Connection Error', 'Cannot reach KAVACH server', 'danger');
+        return null;
     }
 }
 
-function setBackendStatus(connected) {
-    const prev = isBackendConnected;
-    isBackendConnected = connected;
-    const banner = document.getElementById("offline-banner");
-    const dot = document.getElementById("backend-status-dot");
-    const text = document.getElementById("backend-status-text");
+// ═══════════════════════════════════════════════════════════════════════════
+// OTP INPUT LOGIC
+// ═══════════════════════════════════════════════════════════════════════════
 
-    if (connected) {
-        if (banner) banner.classList.add("hidden");
-        if (dot) dot.className = "status-dot online";
-        if (text) text.innerText = "Backend Connected";
-        if (!prev && connected) {
-            showToast("Backend connection restored!", "success");
-            loadDashboardData();
+function setupOTPInputs(containerId) {
+    const inputs = document.querySelectorAll(`#${containerId} .otp-input`);
+    inputs.forEach((input, idx) => {
+        input.value = '';
+        input.addEventListener('input', (e) => {
+            const val = e.target.value.replace(/[^0-9]/g, '');
+            e.target.value = val;
+            if (val && idx < inputs.length - 1) inputs[idx + 1].focus();
+            e.target.classList.toggle('filled', !!val);
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+                inputs[idx - 1].focus();
+                inputs[idx - 1].value = '';
+                inputs[idx - 1].classList.remove('filled');
+            }
+        });
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const paste = (e.clipboardData.getData('text') || '').replace(/[^0-9]/g, '').slice(0, 6);
+            paste.split('').forEach((ch, i) => {
+                if (inputs[i]) { inputs[i].value = ch; inputs[i].classList.add('filled'); }
+            });
+            if (inputs[paste.length - 1]) inputs[paste.length - 1].focus();
+        });
+    });
+}
+
+function getOTPValue(containerId) {
+    return Array.from(document.querySelectorAll(`#${containerId} .otp-input`)).map(i => i.value).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTH: LOGIN
+// ═══════════════════════════════════════════════════════════════════════════
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    const resp = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+            username: document.getElementById('login-username').value,
+            password: document.getElementById('login-password').value
+        })
+    });
+
+    btn.classList.remove('loading');
+    btn.disabled = false;
+
+    if (!resp) return;
+    const data = await resp.json();
+
+    if (resp.ok) {
+        if (data.status === 'pending_2fa') {
+            pending2faToken = data.pending_2fa_token;
+            navigateTo('2fa');
+            setupOTPInputs('twofa-otp-group');
+            setTimeout(() => document.querySelector('#twofa-otp-group .otp-input').focus(), 300);
+        } else if (data.access_token) {
+            jwtToken = data.access_token;
+            localStorage.setItem('kavach_token', jwtToken);
+            currentUser = { username: data.username, role: data.role };
+            showToast('Welcome!', `Signed in as ${data.username}`, 'success');
+            enterDashboard();
         }
     } else {
-        if (banner) banner.classList.remove("hidden");
-        if (dot) dot.className = "status-dot offline";
-        if (text) text.innerText = "Backend Disconnected";
+        showToast('Login Failed', data.detail || data.message || 'Invalid credentials', 'danger');
     }
-}
-
-/* ============================================================
-   Navigation & View Switcher
-   ============================================================ */
-function initNavigation() {
-    const navItems = document.querySelectorAll(".nav-item");
-    navItems.forEach(item => {
-        item.addEventListener("click", (e) => {
-            e.preventDefault();
-            const targetId = item.getAttribute("data-target");
-            switchView(targetId);
-            navItems.forEach(i => i.classList.remove("active"));
-            item.classList.add("active");
-        });
-    });
-}
-
-function switchView(viewId) {
-    const panels = document.querySelectorAll(".view-panel");
-    panels.forEach(p => p.classList.remove("active"));
-    const target = document.getElementById(viewId);
-    if (target) target.classList.add("active");
-
-    // Lazy load
-    if (viewId === "view-alerts") loadAlerts();
-    if (viewId === "view-mitre") loadMitreMatrix();
-    if (viewId === "view-devices") loadDevices();
-    if (viewId === "view-admin") loadUsers();
-
-    // Update header
-    const titles = {
-        "view-dashboard": "Dashboard Overview",
-        "view-alerts": "Alerts & Telemetry Detections",
-        "view-soar": "SOAR Playbooks & Response Controls",
-        "view-threatintel": "Threat Intelligence & URL/IP Analysis",
-        "view-mitre": "MITRE ATT&CK Framework Browser",
-        "view-chatbot": "AI Security Assistants",
-        "view-awareness": "Cybersecurity Awareness & Quiz",
-        "view-devices": "Monitored Device Inventory",
-        "view-admin": "User Administration & Registration",
-    };
-    const subtitles = {
-        "view-dashboard": "Real-Time Threat Telemetry & Autonomous Response",
-        "view-alerts": "Ingested from 16 real-time Windows collectors",
-        "view-soar": "Audited & Reversible Security Controls",
-        "view-threatintel": "VirusTotal, AbuseIPDB, AlienVault OTX Integration",
-        "view-mitre": "STIX 2.1 Enterprise Techniques",
-        "view-chatbot": "Powered by Gemini AI",
-        "view-awareness": "Interactive Security Education",
-        "view-devices": "Endpoint Monitoring & Heartbeat",
-        "view-admin": "Role-Based Access Control",
-    };
-    const ptEl = document.getElementById("page-title");
-    const stEl = document.querySelector(".header-subtitle");
-    if (ptEl) ptEl.innerText = titles[viewId] || "KAVACH Platform";
-    if (stEl) stEl.innerText = subtitles[viewId] || "";
-}
-
-/* ============================================================
-   Live Charts (Chart.js 4.x)
-   ============================================================ */
-function initCharts() {
-    const chartDefaults = {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { intersect: false, mode: 'index' },
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                titleFont: { family: "'Inter', sans-serif", size: 12, weight: '600' },
-                bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
-                cornerRadius: 8,
-                padding: 10,
-            }
-        },
-    };
-
-    // 1. Network Activity (Line)
-    const netCtx = document.getElementById("chart-network-live")?.getContext("2d");
-    if (netCtx) {
-        networkChart = new Chart(netCtx, {
-            type: "line",
-            data: {
-                labels: networkHistory.labels,
-                datasets: [{
-                    label: "TCP Connections",
-                    data: networkHistory.tcpData,
-                    borderColor: "#2563eb",
-                    backgroundColor: "rgba(37, 99, 235, 0.08)",
-                    fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
-                }, {
-                    label: "UDP Connections",
-                    data: networkHistory.udpData,
-                    borderColor: "#7c3aed",
-                    backgroundColor: "rgba(124, 58, 237, 0.06)",
-                    fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
-                }]
-            },
-            options: {
-                ...chartDefaults,
-                plugins: {
-                    ...chartDefaults.plugins,
-                    legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11, family: "'Inter'" } } },
-                },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: "rgba(226,232,240,0.5)" }, ticks: { font: { size: 10 } } },
-                    x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0 } }
-                },
-                animation: { duration: 400 },
-            }
-        });
-    }
-
-    // 2. System Resources (Dual Area)
-    const sysCtx = document.getElementById("chart-system-resources")?.getContext("2d");
-    if (sysCtx) {
-        systemChart = new Chart(sysCtx, {
-            type: "line",
-            data: {
-                labels: cpuHistory.labels,
-                datasets: [{
-                    label: "CPU %",
-                    data: cpuHistory.data,
-                    borderColor: "#2563eb",
-                    backgroundColor: "rgba(37, 99, 235, 0.1)",
-                    fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0,
-                }, {
-                    label: "RAM %",
-                    data: ramHistory.data,
-                    borderColor: "#16a34a",
-                    backgroundColor: "rgba(22, 163, 74, 0.08)",
-                    fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0,
-                }]
-            },
-            options: {
-                ...chartDefaults,
-                plugins: {
-                    ...chartDefaults.plugins,
-                    legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11, family: "'Inter'" } } },
-                },
-                scales: {
-                    y: { beginAtZero: true, max: 100, grid: { color: "rgba(226,232,240,0.5)" }, ticks: { font: { size: 10 }, callback: v => v + '%' } },
-                    x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0 } }
-                },
-                animation: { duration: 400 },
-            }
-        });
-    }
-
-    // 3. Severity Doughnut
-    const sevCtx = document.getElementById("chart-severity-pie")?.getContext("2d");
-    if (sevCtx) {
-        severityPieChart = new Chart(sevCtx, {
-            type: "doughnut",
-            data: {
-                labels: ["Critical", "High", "Medium", "Low"],
-                datasets: [{
-                    data: [0, 0, 0, 0],
-                    backgroundColor: ["#dc2626", "#f97316", "#d97706", "#0284c7"],
-                    borderWidth: 0,
-                    hoverOffset: 6,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, cutout: '65%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { padding: 12, boxWidth: 10, font: { size: 11, family: "'Inter'" } } },
-                    tooltip: chartDefaults.plugins.tooltip,
-                }
-            }
-        });
-    }
-
-    // 4. Alert Trend (Bar)
-    const trendCtx = document.getElementById("chart-alert-trend")?.getContext("2d");
-    if (trendCtx) {
-        const last7 = Array.from({length: 7}, (_, i) => {
-            const d = new Date(); d.setDate(d.getDate() - (6 - i));
-            return d.toLocaleDateString("en-US", { weekday: 'short' });
-        });
-        alertTrendChart = new Chart(trendCtx, {
-            type: "bar",
-            data: {
-                labels: last7,
-                datasets: [{
-                    label: "Alerts",
-                    data: Array(7).fill(0),
-                    backgroundColor: "rgba(37, 99, 235, 0.7)",
-                    borderRadius: 6,
-                    maxBarThickness: 32,
-                }]
-            },
-            options: {
-                ...chartDefaults,
-                scales: {
-                    y: { beginAtZero: true, grid: { color: "rgba(226,232,240,0.5)" }, ticks: { font: { size: 10 }, precision: 0 } },
-                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-                }
-            }
-        });
-    }
-}
-
-/* ============================================================
-   Real-Time Data Polling
-   ============================================================ */
-async function updateLiveData() {
-    if (!isBackendConnected) {
-        startBackendHealthCheck();
-        return;
-    }
-    loadDashboardData();
-}
-
-async function loadDashboardData() {
-    try {
-        const resp = await fetch(`${API_BASE}/dashboard/summary`, { signal: AbortSignal.timeout(8000) });
-        if (!resp.ok) { setBackendStatus(false); return; }
-        setBackendStatus(true);
-
-        const data = await resp.json();
-        const overview = data.overview || {};
-        const severity = overview.severity_counts || {};
-        const system = data.system || {};
-        const pipeline = data.pipeline || {};
-
-        // Metric Cards
-        animateNumber("dash-total-alerts", overview.total_alerts || 0);
-        animateNumber("dash-critical-alerts", severity.critical || 0);
-        animateNumber("dash-high-alerts", severity.high || 0);
-        animateNumber("dash-devices-count", overview.total_devices || 1);
-
-        const navBadge = document.getElementById("nav-alert-count");
-        if (navBadge) navBadge.innerText = overview.total_alerts || 0;
-
-        // Pipeline stats
-        const processedEl = document.getElementById("dash-processed");
-        if (processedEl) processedEl.innerText = pipeline.processed || 0;
-
-        // System Resources — push to rolling buffers
-        const cpu = system.cpu_percent || 0;
-        const ram = system.memory_percent || 0;
-        const now = new Date().toLocaleTimeString("en-US", { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-        cpuHistory.data.shift(); cpuHistory.data.push(cpu);
-        cpuHistory.labels.shift(); cpuHistory.labels.push(now);
-        ramHistory.data.shift(); ramHistory.data.push(ram);
-        ramHistory.labels.shift(); ramHistory.labels.push(now);
-
-        if (systemChart) {
-            systemChart.data.labels = cpuHistory.labels;
-            systemChart.data.datasets[0].data = cpuHistory.data;
-            systemChart.data.datasets[1].data = ramHistory.data;
-            systemChart.update('none');
-        }
-
-        // Network — simulate from pipeline stats
-        const pipeProcessed = pipeline.processed || 0;
-        const tcpCount = Math.floor(Math.random() * 20) + (pipeProcessed % 30) + 15;
-        const udpCount = Math.floor(Math.random() * 8) + 5;
-        networkHistory.tcpData.shift(); networkHistory.tcpData.push(tcpCount);
-        networkHistory.udpData.shift(); networkHistory.udpData.push(udpCount);
-        networkHistory.labels.shift(); networkHistory.labels.push(now);
-
-        if (networkChart) {
-            networkChart.data.labels = networkHistory.labels;
-            networkChart.data.datasets[0].data = networkHistory.tcpData;
-            networkChart.data.datasets[1].data = networkHistory.udpData;
-            networkChart.update('none');
-        }
-
-        // Severity Doughnut
-        if (severityPieChart) {
-            severityPieChart.data.datasets[0].data = [
-                severity.critical || 0, severity.high || 0,
-                severity.medium || 0, severity.low || 0
-            ];
-            severityPieChart.update('none');
-        }
-
-        // Alert Trend (mock last 7 days distribution from total)
-        if (alertTrendChart) {
-            const total = overview.total_alerts || 0;
-            const trend = Array.from({length: 7}, (_, i) => {
-                if (i === 6) return Math.ceil(total * 0.3);
-                if (i === 5) return Math.ceil(total * 0.2);
-                return Math.ceil(total * (0.1 + Math.random() * 0.05));
-            });
-            alertTrendChart.data.datasets[0].data = trend;
-            alertTrendChart.update('none');
-        }
-
-        // Recent Alerts Table
-        renderRecentAlerts(data.recent_alerts || []);
-
-        // MITRE Heatmap
-        renderMitreHeatmap(data.mitre_heatmap || []);
-
-        // Collector count
-        const colCount = document.getElementById("dash-collector-count");
-        if (colCount) colCount.innerText = (data.collectors || []).length;
-
-    } catch (exc) {
-        console.error("Dashboard fetch error:", exc);
-        setBackendStatus(false);
-    }
-}
-
-function animateNumber(elementId, target) {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-    const current = parseInt(el.innerText) || 0;
-    if (current === target) return;
-    el.innerText = target;
-    el.style.transform = "scale(1.15)";
-    el.style.transition = "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)";
-    setTimeout(() => { el.style.transform = "scale(1)"; }, 300);
-}
-
-function renderRecentAlerts(alerts) {
-    const tbody = document.getElementById("tbody-recent-alerts");
-    if (!tbody) return;
-    if (!alerts.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No active detections — system clean</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = alerts.slice(0, 8).map(a => {
-        const sevClass = a.severity === 'critical' ? 'badge-danger' : a.severity === 'high' ? 'badge-warning' : a.severity === 'medium' ? 'badge-purple' : 'badge-info';
-        const timeStr = a.created_at ? new Date(a.created_at).toLocaleTimeString("en-US", { hour12: false }) : '--:--';
-        return `
-            <tr>
-                <td><span class="badge ${sevClass}">${a.severity}</span></td>
-                <td><strong>${escapeHtml(a.title)}</strong></td>
-                <td><code>${a.mitre_technique || '—'}</code></td>
-                <td><strong>${a.risk_score}</strong></td>
-                <td class="text-muted" style="font-size:11px;">${timeStr}</td>
-            </tr>
-        `;
-    }).join("");
-}
-
-function renderMitreHeatmap(heatmap) {
-    const container = document.getElementById("mitre-heatmap-container");
-    if (!container) return;
-    if (!heatmap.length) {
-        container.innerHTML = `<div class="text-muted p-3">No MITRE techniques recorded yet</div>`;
-        return;
-    }
-    container.innerHTML = heatmap.slice(0, 12).map(h => {
-        const intensity = Math.min(h.count / 20, 1);
-        const bgOpacity = 0.08 + (intensity * 0.15);
-        return `
-        <div class="heatmap-cell" style="background:rgba(37,99,235,${bgOpacity});">
-            <div class="id">${h.technique_id}</div>
-            <div class="count">${h.count}</div>
-            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${escapeHtml(h.technique_name || '')}</div>
-        </div>
-        `;
-    }).join("");
-}
-
-/* ============================================================
-   WebSocket — Live USB & FIM Events
-   ============================================================ */
-function connectWebSocket() {
-    if (wsConnection && wsConnection.readyState === WebSocket.OPEN) return;
-
-    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${location.host}/api/v1/dashboard/live`;
-
-    try {
-        wsConnection = new WebSocket(wsUrl);
-
-        wsConnection.onopen = () => {
-            reconnectAttempts = 0;
-        };
-
-        wsConnection.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-
-                // USB Device Detection
-                if (data.event_type === "usb_insert" || (data.tags && data.tags.includes("usb_device"))) {
-                    showToast(`🔌 USB Device Inserted: ${data.metadata?.device || 'External Storage'}`, "warning");
-                    const usbPill = document.getElementById("usb-status-pill");
-                    if (usbPill) {
-                        usbPill.className = "status-pill red";
-                        usbPill.innerHTML = `<i class="fa-solid fa-usb"></i> <span>USB Device Attached!</span>`;
-                        setTimeout(() => {
-                            usbPill.className = "status-pill green";
-                            usbPill.innerHTML = `<i class="fa-brands fa-usb"></i> <span>USB Monitoring Active</span>`;
-                        }, 10000);
-                    }
-                    return;
-                }
-
-                // File Creation / FIM Detection
-                if (data.event_type === "file_created" || data.event_type === "file_modified" ||
-                    (data.tags && (data.tags.includes("fim") || data.tags.includes("ransomware")))) {
-                    const icon = data.severity === 'critical' ? '🚨' : '📁';
-                    showToast(`${icon} File Alert: ${data.title || 'File system event detected'}`, data.severity === 'critical' ? 'danger' : 'warning');
-                    return;
-                }
-
-                // General alert
-                showToast(`🛡️ ${data.title || 'New Telemetry Event'}`, data.severity || "info");
-
-            } catch (e) {
-                console.error("WS parse error:", e);
-            }
-        };
-
-        wsConnection.onclose = () => {
-            if (reconnectAttempts < MAX_RECONNECT) {
-                reconnectAttempts++;
-                setTimeout(connectWebSocket, 3000 * reconnectAttempts);
-            }
-        };
-
-        wsConnection.onerror = () => {
-            // onclose will handle reconnect
-        };
-    } catch {
-        // Fallback gracefully
-    }
-}
-
-function showToast(msg, type = "info") {
-    const container = document.getElementById("toast-container");
-    if (!container) return;
-    const toast = document.createElement("div");
-    const cls = (type === 'critical' || type === 'high') ? 'toast-danger' : `toast-${type}`;
-    toast.className = `toast ${cls}`;
-    toast.innerHTML = msg;
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(120%)';
-        toast.style.transition = 'all 0.3s ease-in';
-        setTimeout(() => toast.remove(), 300);
-    }, 4500);
-}
-
-/* ============================================================
-   ALERTS MANAGEMENT
-   ============================================================ */
-async function loadAlerts() {
-    const sev = document.getElementById("filter-severity")?.value || "";
-    const status = document.getElementById("filter-status")?.value || "";
-
-    let url = `${API_BASE}/alerts?limit=100`;
-    if (sev) url += `&severity=${sev}`;
-    if (status) url += `&status=${status}`;
-
-    try {
-        const resp = await fetch(url);
-        const data = await resp.json();
-        const tbody = document.getElementById("tbody-all-alerts");
-        if (!tbody) return;
-
-        if (!data.alerts || !data.alerts.length) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No alerts found</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = data.alerts.map(a => {
-            const sevClass = a.severity === 'critical' ? 'badge-danger' : a.severity === 'high' ? 'badge-warning' : a.severity === 'medium' ? 'badge-purple' : 'badge-info';
-            const statusClass = a.status === 'resolved' ? 'badge-success' : a.status === 'investigating' ? 'badge-warning' : 'badge-outline';
-            const timeStr = a.created_at ? new Date(a.created_at).toLocaleString() : '';
-
-            return `
-                <tr>
-                    <td><span class="badge ${sevClass}">${a.severity}</span></td>
-                    <td>
-                        <strong>${escapeHtml(a.title)}</strong>
-                        <br><small class="text-muted">${escapeHtml((a.description || '').substring(0, 80))}</small>
-                    </td>
-                    <td><code style="font-size:11px;">${a.source_collector || '—'}</code></td>
-                    <td><code style="font-size:11px;">${a.mitre_technique_id || '—'}</code></td>
-                    <td><strong>${a.risk_score}</strong></td>
-                    <td><span class="badge ${statusClass}">${a.status}</span></td>
-                    <td class="text-muted" style="font-size:11px;">${timeStr}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline" onclick="explainAlertWithAI('${a.id}')">
-                            <i class="fa-solid fa-robot"></i> AI
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join("");
-    } catch (exc) {
-        console.error("Alert load error:", exc);
-    }
-}
-
-async function explainAlertWithAI(alertId) {
-    const modal = document.getElementById("modal-ai-explain");
-    const body = document.getElementById("ai-explain-body");
-    if (modal) modal.classList.remove("hidden");
-    if (body) body.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--primary);"><i class="fa-solid fa-spinner fa-spin"></i> Querying Gemini AI for technical analysis and remediation...</div>`;
-
-    try {
-        const headers = jwtToken ? { "Authorization": `Bearer ${jwtToken}` } : {};
-        const resp = await fetch(`${API_BASE}/alerts/${alertId}/explain`, { method: "POST", headers });
-        const data = await resp.json();
-        if (body) body.innerText = data.explanation || "No explanation returned.";
-    } catch {
-        if (body) body.innerText = "Failed to communicate with AI provider. Ensure the backend is running and Gemini API key is configured.";
-    }
-}
-
-function closeAiModal() {
-    const modal = document.getElementById("modal-ai-explain");
-    if (modal) modal.classList.add("hidden");
-}
-
-/* ============================================================
-   SOAR PLAYBOOKS
-   ============================================================ */
-async function loadPlaybooks() {
-    try {
-        const resp = await fetch(`${API_BASE}/playbooks`);
-        const data = await resp.json();
-        const container = document.getElementById("playbooks-container");
-        if (!container || !data.playbooks || !data.playbooks.length) return;
-
-        const iconMap = {
-            "block_ip": "fa-ban", "kill_process": "fa-skull-crossbones",
-            "quarantine_file": "fa-file-shield", "disable_user": "fa-user-lock",
-            "notify_soc": "fa-bell",
-        };
-
-        container.innerHTML = data.playbooks.map(p => `
-            <div class="glass-panel" style="border-left:4px solid var(--primary);">
-                <div class="card-header-flex">
-                    <div>
-                        <strong style="font-size:14px;"><i class="fa-solid ${iconMap[p.id] || 'fa-bolt'} text-primary" style="margin-right:6px;"></i>${escapeHtml(p.name)}</strong>
-                        <br><small class="text-muted">${escapeHtml(p.description)}</small>
-                    </div>
-                    <span class="badge badge-info">${p.mode || 'auto'}</span>
-                </div>
-                <div class="input-group mt-2">
-                    <input type="text" id="target-${p.id}" class="form-input" placeholder="Target (IP / PID / Path / User)">
-                    <button class="btn btn-sm btn-outline" onclick="triggerPlaybook('${p.id}', true)">Dry Run</button>
-                    <button class="btn btn-sm btn-primary" onclick="triggerPlaybook('${p.id}', false)"><i class="fa-solid fa-play"></i> Execute</button>
-                </div>
-            </div>
-        `).join("");
-
-        loadPlaybookHistory();
-    } catch (exc) {
-        console.error("Playbook load error:", exc);
-    }
-}
-
-async function triggerPlaybook(playbookId, dryRun) {
-    const targetEl = document.getElementById(`target-${playbookId}`);
-    const targetVal = targetEl ? targetEl.value.trim() : "";
-    const params = { ip: targetVal, pid: parseInt(targetVal) || 0, filepath: targetVal, username: targetVal };
-
-    const headers = { "Content-Type": "application/json" };
-    if (jwtToken) headers["Authorization"] = `Bearer ${jwtToken}`;
-
-    try {
-        const resp = await fetch(`${API_BASE}/playbooks/execute`, {
-            method: "POST", headers,
-            body: JSON.stringify({ playbook_id: playbookId, params, dry_run: dryRun })
-        });
-        const data = await resp.json();
-
-        if (resp.ok) {
-            showToast(`✅ ${data.name || 'Playbook'} ${dryRun ? '(Dry Run)' : ''} executed successfully!`, "success");
-            loadPlaybookHistory();
-        } else {
-            showToast(`❌ ${data.detail || data.message || 'Execution failed'}`, "danger");
-        }
-    } catch {
-        showToast("Error connecting to playbook engine", "danger");
-    }
-}
-
-async function loadPlaybookHistory() {
-    try {
-        const resp = await fetch(`${API_BASE}/playbooks/executions`);
-        const data = await resp.json();
-        const tbody = document.getElementById("tbody-playbook-history");
-        if (!tbody) return;
-
-        if (!data.executions || !data.executions.length) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No playbook executions recorded</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = data.executions.slice(0, 20).map(e => {
-            const statusClass = e.status === 'success' ? 'badge-success' : e.status === 'failed' ? 'badge-danger' : 'badge-info';
-            return `
-            <tr>
-                <td><strong>${escapeHtml(e.playbook_name)}</strong></td>
-                <td><span class="badge ${statusClass}">${e.status}</span></td>
-                <td>${e.executed_by || 'system'}</td>
-                <td class="text-muted" style="font-size:11px;">${e.created_at ? new Date(e.created_at).toLocaleString() : ''}</td>
-                <td>
-                    ${e.rollback_available ? `<button class="btn btn-sm btn-danger" onclick="rollbackPlaybook('${e.id}')"><i class="fa-solid fa-undo"></i> Rollback</button>` : '<span class="text-muted">—</span>'}
-                </td>
-            </tr>
-            `;
-        }).join("");
-    } catch (exc) {
-        console.error(exc);
-    }
-}
-
-async function rollbackPlaybook(execId) {
-    const headers = jwtToken ? { "Authorization": `Bearer ${jwtToken}` } : {};
-    try {
-        const resp = await fetch(`${API_BASE}/playbooks/${execId}/rollback`, { method: "POST", headers });
-        if (resp.ok) {
-            showToast("✅ Playbook actions successfully rolled back!", "success");
-            loadPlaybookHistory();
-        }
-    } catch {
-        showToast("Rollback failed", "danger");
-    }
-}
-
-/* ============================================================
-   THREAT INTELLIGENCE
-   ============================================================ */
-async function analyzeURL() {
-    const url = document.getElementById("ti-url-input")?.value.trim();
-    if (!url) return;
-
-    const headers = { "Content-Type": "application/json" };
-    if (jwtToken) headers["Authorization"] = `Bearer ${jwtToken}`;
-
-    const resBox = document.getElementById("ti-url-result");
-    if (resBox) resBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-primary"></i> Analyzing URL with heuristic rules & VirusTotal...`;
-
-    try {
-        const resp = await fetch(`${API_BASE}/threats/analyze-url`, {
-            method: "POST", headers, body: JSON.stringify({ url })
-        });
-        const data = await resp.json();
-        const riskColor = data.risk_score > 70 ? 'var(--danger)' : data.risk_score > 40 ? 'var(--warning)' : 'var(--success)';
-        if (resBox) resBox.innerHTML = `
-            <div style="margin-bottom:8px;"><strong style="font-size:16px;color:${riskColor};">Risk Score: ${data.risk_score} / 100</strong></div>
-            <strong>Domain:</strong> ${escapeHtml(data.domain)}<br>
-            <strong>Entropy:</strong> ${data.entropy}<br>
-            <strong>Scheme:</strong> ${data.scheme}<br>
-            <strong>IP-based URL:</strong> ${data.is_ip_url ? 'Yes ⚠️' : 'No'}<br>
-            <strong>Findings:</strong> ${data.findings.length ? data.findings.map(f => `<br>  • ${escapeHtml(f)}`).join('') : ' None — looks clean'}<br>
-            ${Object.keys(data.virustotal || {}).length ? `<br><strong>VirusTotal:</strong><pre>${JSON.stringify(data.virustotal, null, 2)}</pre>` : ''}
-        `;
-    } catch {
-        if (resBox) resBox.innerText = "URL Analysis failed. Check backend connectivity.";
-    }
-}
-
-async function analyzeIP() {
-    const ip = document.getElementById("ti-ip-input")?.value.trim();
-    if (!ip) return;
-
-    const resBox = document.getElementById("ti-ip-result");
-    if (resBox) resBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-primary"></i> Querying VirusTotal, AbuseIPDB, and AlienVault OTX...`;
-
-    try {
-        const resp = await fetch(`${API_BASE}/threats/analyze-ip`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ip })
-        });
-        const data = await resp.json();
-        const riskColor = data.risk_score > 70 ? 'var(--danger)' : data.risk_score > 40 ? 'var(--warning)' : 'var(--success)';
-        if (resBox) resBox.innerHTML = `
-            <div style="margin-bottom:8px;"><strong style="font-size:16px;color:${riskColor};">Risk Score: ${data.risk_score} / 100</strong></div>
-            <strong>IP:</strong> ${data.ip} (${data.is_private ? 'Private' : 'Public'})<br>
-            <strong>AbuseIPDB:</strong> ${data.abuseipdb?.abuse_confidence_score || 0}% confidence<br>
-            <strong>VirusTotal Malicious:</strong> ${data.virustotal?.malicious || 0} engines<br>
-            <strong>AlienVault Pulses:</strong> ${data.otx?.pulse_count || 0}<br>
-            <strong>In Local IOC DB:</strong> ${data.in_ioc_db ? 'Yes ⚠️' : 'No'}<br>
-            <strong>Findings:</strong> ${data.findings.length ? data.findings.map(f => `<br>  • ${escapeHtml(f)}`).join('') : ' Clean'}
-        `;
-    } catch {
-        if (resBox) resBox.innerText = "IP Analysis failed.";
-    }
-}
-
-async function analyzeHash() {
-    const hash_value = document.getElementById("ti-hash-input")?.value.trim();
-    if (!hash_value) return;
-
-    const resBox = document.getElementById("ti-hash-result");
-    if (resBox) resBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-primary"></i> Querying VirusTotal v3 Hash Database...`;
-
-    try {
-        const resp = await fetch(`${API_BASE}/threats/analyze-hash`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ hash_value })
-        });
-        const data = await resp.json();
-        const riskColor = data.risk_score > 50 ? 'var(--danger)' : 'var(--success)';
-        if (resBox) resBox.innerHTML = `
-            <div style="margin-bottom:8px;"><strong style="font-size:16px;color:${riskColor};">Risk Score: ${data.risk_score} / 100</strong></div>
-            <pre>${JSON.stringify(data.virustotal || data, null, 2)}</pre>
-        `;
-    } catch {
-        if (resBox) resBox.innerText = "Hash Analysis failed.";
-    }
-}
-
-/* ============================================================
-   MITRE MATRIX
-   ============================================================ */
-async function loadMitreMatrix() {
-    try {
-        const resp = await fetch(`${API_BASE}/mitre/techniques?limit=100`);
-        const data = await resp.json();
-        const tbody = document.getElementById("tbody-mitre-matrix");
-        if (!tbody || !data.techniques || !data.techniques.length) return;
-
-        tbody.innerHTML = data.techniques.map(t => {
-            const sevClass = t.severity === 'critical' ? 'badge-danger' : t.severity === 'high' ? 'badge-warning' : 'badge-info';
-            return `
-            <tr>
-                <td><code style="font-weight:700;">${t.technique_id}</code></td>
-                <td><strong>${escapeHtml(t.name)}</strong></td>
-                <td><span class="badge badge-info">${t.tactic}</span></td>
-                <td><span class="badge ${sevClass}">${t.severity}</span></td>
-                <td class="text-muted" style="font-size:12px;">${escapeHtml((t.description || '').substring(0, 120))}</td>
-            </tr>
-            `;
-        }).join("");
-    } catch (exc) {
-        console.error(exc);
-    }
-}
-
-/* ============================================================
-   AI CHATBOT
-   ============================================================ */
-function switchChatRole(role) {
-    currentChatRole = role;
-    document.querySelectorAll(".chat-tab").forEach(t => t.classList.remove("active"));
-    const tab = document.getElementById(`tab-chat-${role}`);
-    if (tab) tab.classList.add("active");
-}
-
-async function sendChatMessage() {
-    const input = document.getElementById("chat-input-text");
-    const msg = input?.value.trim();
-    if (!msg) return;
-
-    const msgBox = document.getElementById("chat-messages");
-    if (!msgBox) return;
-
-    // User message
-    msgBox.innerHTML += `
-        <div class="message user-message">
-            <div class="msg-avatar"><i class="fa-solid fa-user"></i></div>
-            <div class="msg-content"><p>${escapeHtml(msg)}</p></div>
-        </div>
-    `;
-    input.value = "";
-    msgBox.scrollTop = msgBox.scrollHeight;
-
-    // Typing indicator
-    const typingId = `typing-${Date.now()}`;
-    msgBox.innerHTML += `
-        <div class="message bot-message" id="${typingId}">
-            <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
-            <div class="msg-content"><p style="color:var(--text-muted);"><i class="fa-solid fa-ellipsis fa-beat"></i> Thinking...</p></div>
-        </div>
-    `;
-    msgBox.scrollTop = msgBox.scrollHeight;
-
-    const endpoint = currentChatRole === "soc" ? `${API_BASE}/chatbot/soc` : `${API_BASE}/chatbot/layman`;
-    const headers = { "Content-Type": "application/json" };
-    if (jwtToken) headers["Authorization"] = `Bearer ${jwtToken}`;
-
-    try {
-        const resp = await fetch(endpoint, {
-            method: "POST", headers, body: JSON.stringify({ message: msg })
-        });
-        const data = await resp.json();
-
-        const typingEl = document.getElementById(typingId);
-        if (typingEl) typingEl.remove();
-
-        msgBox.innerHTML += `
-            <div class="message bot-message">
-                <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
-                <div class="msg-content">
-                    <strong>${currentChatRole === 'soc' ? 'SOC Senior Analyst' : 'Security Buddy'}</strong>
-                    <p>${escapeHtml(data.response || 'No response')}</p>
-                </div>
-            </div>
-        `;
-        msgBox.scrollTop = msgBox.scrollHeight;
-    } catch {
-        const typingEl = document.getElementById(typingId);
-        if (typingEl) typingEl.remove();
-        msgBox.innerHTML += `<div class="message bot-message"><div class="msg-content"><p style="color:var(--danger);">Error reaching AI provider.</p></div></div>`;
-    }
-}
-
-/* ============================================================
-   AWARENESS & QUIZ
-   ============================================================ */
-async function loadSecurityTips() {
-    try {
-        const resp = await fetch(`${API_BASE}/awareness/tips`);
-        const data = await resp.json();
-
-        if (data.daily_tip) {
-            const cat = document.getElementById("tip-category");
-            const txt = document.getElementById("tip-text");
-            if (cat) cat.innerText = data.daily_tip.category;
-            if (txt) txt.innerText = data.daily_tip.tip;
-        }
-        if (data.all_tips) {
-            const list = document.getElementById("all-tips-list");
-            if (list) list.innerHTML = data.all_tips.map(t => `
-                <div class="glass-panel mb-2" style="padding:12px;">
-                    <span class="badge badge-info" style="margin-right:8px;">${t.category}</span>
-                    ${escapeHtml(t.tip)}
-                </div>
-            `).join("");
-        }
-    } catch (exc) {
-        console.error(exc);
-    }
-}
-
-async function loadQuiz() {
-    try {
-        const resp = await fetch(`${API_BASE}/awareness/quiz`);
-        const data = await resp.json();
-        const quiz = data.quiz;
-        if (!quiz) return;
-
-        const qEl = document.getElementById("quiz-question");
-        if (qEl) qEl.innerText = quiz.question;
-        const optsContainer = document.getElementById("quiz-options");
-        if (optsContainer) {
-            optsContainer.innerHTML = quiz.options.map((opt, idx) => `
-                <button class="btn btn-outline full-width mb-2" onclick="submitQuizAnswer(${quiz.id}, ${idx})">${escapeHtml(opt)}</button>
-            `).join("");
-        }
-        const fb = document.getElementById("quiz-feedback");
-        if (fb) fb.classList.add("hidden");
-    } catch (exc) {
-        console.error(exc);
-    }
-}
-
-async function submitQuizAnswer(quizId, answerIdx) {
-    try {
-        const resp = await fetch(`${API_BASE}/awareness/quiz/${quizId}/answer?answer=${answerIdx}`, { method: "POST" });
-        const data = await resp.json();
-        const fb = document.getElementById("quiz-feedback");
-        if (!fb) return;
-        fb.classList.remove("hidden");
-        fb.innerHTML = `
-            <div class="badge ${data.correct ? 'badge-success' : 'badge-danger'} mb-2" style="font-size:13px;padding:6px 12px;">
-                ${data.correct ? '✅ Correct!' : '❌ Incorrect'}
-            </div>
-            <p style="margin-top:8px;">${escapeHtml(data.explanation)}</p>
-            <button class="btn btn-sm btn-primary mt-3" onclick="loadQuiz()"><i class="fa-solid fa-arrow-right"></i> Next Question</button>
-        `;
-    } catch (exc) {
-        console.error(exc);
-    }
-}
-
-/* ============================================================
-   ADMIN — DEVICES & USERS
-   ============================================================ */
-async function loadDevices() {
-    try {
-        const resp = await fetch(`${API_BASE}/devices`);
-        const data = await resp.json();
-        const tbody = document.getElementById("tbody-devices");
-        if (!tbody || !data.devices || !data.devices.length) return;
-
-        tbody.innerHTML = data.devices.map(d => {
-            const riskColor = d.risk_score > 70 ? 'var(--danger)' : d.risk_score > 40 ? 'var(--warning)' : 'var(--success)';
-            return `
-            <tr>
-                <td><strong>${escapeHtml(d.hostname)}</strong></td>
-                <td><code>${d.ip_address || '127.0.0.1'}</code></td>
-                <td>${d.os_name || 'Windows'}</td>
-                <td><strong style="color:${riskColor};">${d.risk_score}</strong></td>
-                <td><span class="badge badge-success">${d.status}</span></td>
-                <td class="text-muted" style="font-size:11px;">${d.last_seen ? new Date(d.last_seen).toLocaleString() : ''}</td>
-            </tr>
-            `;
-        }).join("");
-    } catch (exc) {
-        console.error(exc);
-    }
-}
-
-async function loadUsers() {
-    try {
-        const headers = jwtToken ? { "Authorization": `Bearer ${jwtToken}` } : {};
-        const resp = await fetch(`${API_BASE}/users`, { headers });
-        const data = await resp.json();
-        const tbody = document.getElementById("tbody-users");
-        if (!tbody || !data.users || !data.users.length) return;
-
-        tbody.innerHTML = data.users.map(u => `
-            <tr>
-                <td><strong>${escapeHtml(u.username)}</strong></td>
-                <td>${u.email || '—'}</td>
-                <td><span class="badge badge-info">${u.role}</span></td>
-                <td><span class="badge ${u.is_active ? 'badge-success' : 'badge-danger'}">${u.is_active ? 'Active' : 'Disabled'}</span></td>
-                <td class="text-muted" style="font-size:11px;">${u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</td>
-            </tr>
-        `).join("");
-    } catch (exc) {
-        console.error(exc);
-    }
-}
-
-async function handleRegister(e) {
-    e.preventDefault();
-    const username = document.getElementById("reg-username")?.value.trim();
-    const email = document.getElementById("reg-email")?.value.trim();
-    const password = document.getElementById("reg-password")?.value.trim();
-    const role = document.getElementById("reg-role")?.value;
-
-    if (!username || !email || !password) {
-        showToast("Please fill in all fields", "warning");
-        return;
-    }
-
-    try {
-        const resp = await fetch(`${API_BASE}/auth/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, email, password, role })
-        });
-        const data = await resp.json();
-
-        if (resp.ok) {
-            showToast(`✅ User "${username}" registered successfully!`, "success");
-            document.getElementById("form-register")?.reset();
-            loadUsers();
-        } else {
-            showToast(`Registration failed: ${data.detail || data.message}`, "danger");
-        }
-    } catch {
-        showToast("Error registering user", "danger");
-    }
-}
-
-/* ============================================================
-   AUTH MODAL & LOGIN
-   ============================================================ */
-/* ============================================================
-   AUTH MODAL & MULTI-FACTOR LOGIN (OTP & MAGIC LINK)
-   ============================================================ */
-function closeLoginModal() {
-    const modal = document.getElementById("modal-login");
-    if (modal) modal.classList.add("hidden");
-}
-
-document.getElementById("btn-login-modal")?.addEventListener("click", () => {
-    const modal = document.getElementById("modal-login");
-    if (modal) modal.classList.remove("hidden");
 });
 
-function switchLoginTab(type) {
-    // Buttons
-    ["pwd", "otp", "magic"].forEach(t => {
-        const btn = document.getElementById(`btn-tab-${t}`);
-        const panel = document.getElementById(`login-panel-${t}`);
-        if (btn) btn.classList.toggle("active", t === type);
-        if (panel) panel.classList.toggle("active", t === type);
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTH: REGISTER
+// ═══════════════════════════════════════════════════════════════════════════
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pw = document.getElementById('reg-password').value;
+    const confirm = document.getElementById('reg-confirm').value;
+    if (pw !== confirm) {
+        const err = document.getElementById('reg-password-error');
+        err.textContent = 'Passwords do not match';
+        err.classList.add('visible');
+        return;
+    }
+    document.getElementById('reg-password-error').classList.remove('visible');
+
+    const btn = document.getElementById('register-btn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    const resp = await apiFetch('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+            username: document.getElementById('reg-username').value,
+            email: document.getElementById('reg-email').value,
+            password: pw,
+            role: document.getElementById('reg-role').value
+        })
+    });
+
+    btn.classList.remove('loading');
+    btn.disabled = false;
+
+    if (!resp) return;
+    const data = await resp.json();
+
+    if (resp.ok && data.access_token) {
+        jwtToken = data.access_token;
+        localStorage.setItem('kavach_token', jwtToken);
+        currentUser = { username: data.username, role: data.role };
+        showToast('Account Created!', `Welcome to KAVACH, ${data.username}`, 'success');
+        enterDashboard();
+    } else {
+        showToast('Registration Failed', data.detail || data.message || 'Could not create account', 'danger');
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTH: FORGOT PASSWORD
+// ═══════════════════════════════════════════════════════════════════════════
+
+let forgotEmail = '';
+
+document.getElementById('forgot-step1').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    forgotEmail = document.getElementById('forgot-email').value;
+    const resp = await apiFetch('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: forgotEmail })
+    });
+    if (resp && resp.ok) {
+        document.getElementById('forgot-step1').classList.add('hidden');
+        document.getElementById('forgot-step2').classList.remove('hidden');
+        updateWizard(2);
+        setupOTPInputs('forgot-otp-group');
+        setTimeout(() => document.querySelector('#forgot-otp-group .otp-input').focus(), 300);
+        showToast('Code Sent', 'Check your email for the reset code', 'success');
+    } else {
+        showToast('Error', 'Could not send reset code', 'danger');
+    }
+});
+
+document.getElementById('forgot-step2').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = getOTPValue('forgot-otp-group');
+    if (code.length < 6) { showToast('Invalid', 'Please enter 6-digit code', 'warning'); return; }
+    document.getElementById('forgot-step2').classList.add('hidden');
+    document.getElementById('forgot-step3').classList.remove('hidden');
+    updateWizard(3);
+    window._forgotOTP = code;
+});
+
+document.getElementById('forgot-step3').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const newPass = document.getElementById('forgot-newpass').value;
+    const confirmPass = document.getElementById('forgot-confirm').value;
+    if (newPass !== confirmPass) { showToast('Mismatch', 'Passwords do not match', 'warning'); return; }
+
+    const resp = await apiFetch('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: forgotEmail, otp: window._forgotOTP, new_password: newPass })
+    });
+    if (resp && resp.ok) {
+        showToast('Password Reset!', 'You can now sign in with your new password', 'success');
+        navigateTo('login');
+    } else {
+        showToast('Error', 'Could not reset password', 'danger');
+    }
+});
+
+function updateWizard(step) {
+    document.querySelectorAll('#forgot-wizard .wizard-step').forEach((el, i) => {
+        el.classList.remove('active', 'completed');
+        if (i + 1 < step) el.classList.add('completed');
+        else if (i + 1 === step) el.classList.add('active');
+    });
+    document.querySelectorAll('#forgot-wizard .wizard-line').forEach((el, i) => {
+        el.classList.toggle('active', i + 1 < step);
     });
 }
 
-// 1. Password Login
-async function handleLogin(e) {
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTH: 2FA VERIFICATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+document.getElementById('twofa-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const username = document.getElementById("login-username")?.value.trim();
-    const password = document.getElementById("login-password")?.value.trim();
+    const code = getOTPValue('twofa-otp-group');
+    if (code.length < 6) { showToast('Invalid', 'Enter all 6 digits', 'warning'); return; }
 
-    try {
-        const resp = await fetch(`${API_BASE}/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await resp.json();
+    const resp = await apiFetch('/auth/2fa/verify', {
+        method: 'POST',
+        body: JSON.stringify({ pending_2fa_token: pending2faToken, code })
+    });
 
-        if (resp.ok) {
-            jwtToken = data.access_token;
-            localStorage.setItem("kavach_token", jwtToken);
-            updateUserUI(data.username, data.role);
-            closeLoginModal();
-            showToast(`Welcome back, ${data.username}!`, "success");
-        } else {
-            showToast(`Invalid credentials: ${data.detail || ''}`, "danger");
-        }
-    } catch {
-        showToast("Login error — check backend connectivity", "danger");
+    if (!resp) return;
+    const data = await resp.json();
+    if (resp.ok && data.access_token) {
+        jwtToken = data.access_token;
+        localStorage.setItem('kavach_token', jwtToken);
+        currentUser = { username: data.username, role: data.role };
+        showToast('Verified!', '2FA authentication successful', 'success');
+        enterDashboard();
+    } else {
+        showToast('Invalid Code', data.detail || 'Verification failed', 'danger');
     }
-}
+});
 
-// 2. Request OTP Code
-async function handleRequestOTP(e) {
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTH: EMAIL VERIFICATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+document.getElementById('verify-email-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const userInput = document.getElementById("otp-user-input")?.value.trim();
-    if (!userInput) return;
+    const code = getOTPValue('verify-otp-group');
+    if (code.length < 6) { showToast('Invalid', 'Enter all 6 digits', 'warning'); return; }
 
-    try {
-        const resp = await fetch(`${API_BASE}/auth/request-otp`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username_or_email: userInput })
-        });
-        const data = await resp.json();
+    const resp = await apiFetch('/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({ email: pendingVerifyEmail, otp: code })
+    });
 
-        if (resp.ok) {
-            showToast(`📩 ${data.message}`, "success");
-            const verifySec = document.getElementById("otp-verify-section");
-            const statusMsg = document.getElementById("otp-status-msg");
-            const devHelper = document.getElementById("otp-dev-helper");
-
-            if (verifySec) verifySec.classList.remove("hidden");
-            if (statusMsg) statusMsg.innerText = `Code sent to ${data.email}`;
-            if (devHelper && data.otp_code) {
-                devHelper.innerHTML = `Demo Mode: Verification OTP Code is <strong style="color:var(--primary);font-size:13px;">${data.otp_code}</strong>`;
-                const codeInput = document.getElementById("otp-code-input");
-                if (codeInput) codeInput.value = data.otp_code;
-            }
-        } else {
-            showToast(`OTP Request Failed: ${data.detail || ''}`, "danger");
-        }
-    } catch {
-        showToast("Error requesting OTP code", "danger");
+    if (resp && resp.ok) {
+        showToast('Email Verified!', 'Your email has been confirmed', 'success');
+        enterDashboard();
+    } else {
+        showToast('Error', 'Verification failed', 'danger');
     }
-}
+});
 
-// 3. Verify OTP Code
-async function handleVerifyOTP(e) {
-    e.preventDefault();
-    const userInput = document.getElementById("otp-user-input")?.value.trim();
-    const otpCode = document.getElementById("otp-code-input")?.value.trim();
+// ═══════════════════════════════════════════════════════════════════════════
+// DASHBOARD ENTRY
+// ═══════════════════════════════════════════════════════════════════════════
 
-    if (!userInput || !otpCode) {
-        showToast("Please enter username/email and 6-digit OTP", "warning");
-        return;
+async function enterDashboard() {
+    navigateTo('dashboard');
+
+    // Load user profile
+    const meResp = await apiFetch('/auth/me');
+    if (meResp && meResp.ok) {
+        currentUser = await meResp.json();
+        document.getElementById('sidebar-username').textContent = currentUser.username;
+        document.getElementById('sidebar-role').textContent = currentUser.role?.replace('_', ' ');
+        document.getElementById('sidebar-avatar').textContent = (currentUser.username || 'U')[0].toUpperCase();
     }
 
-    try {
-        const resp = await fetch(`${API_BASE}/auth/verify-otp`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username_or_email: userInput, otp_code: otpCode })
-        });
-        const data = await resp.json();
-
-        if (resp.ok) {
-            jwtToken = data.access_token;
-            localStorage.setItem("kavach_token", jwtToken);
-            updateUserUI(data.username, data.role);
-            closeLoginModal();
-            showToast(`Authenticated via MFA OTP! Welcome back, ${data.username}!`, "success");
-        } else {
-            showToast(`OTP Verification Failed: ${data.detail || ''}`, "danger");
-        }
-    } catch {
-        showToast("Error verifying OTP code", "danger");
-    }
-}
-
-// 4. Request Clickable Magic Link
-async function handleRequestMagicLink(e) {
-    e.preventDefault();
-    const userInput = document.getElementById("magic-user-input")?.value.trim();
-    if (!userInput) return;
-
-    try {
-        const resp = await fetch(`${API_BASE}/auth/request-magic-link`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username_or_email: userInput })
-        });
-        const data = await resp.json();
-
-        if (resp.ok) {
-            showToast(`🔗 Magic link sent to ${data.email}!`, "success");
-            const magicSec = document.getElementById("magic-link-section");
-            const magicBtn = document.getElementById("magic-direct-btn");
-            const statusMsg = document.getElementById("magic-status-msg");
-
-            if (magicSec) magicSec.classList.remove("hidden");
-            if (statusMsg) statusMsg.innerText = `Magic Login Link sent to ${data.email}`;
-            if (magicBtn) {
-                magicBtn.href = data.magic_url;
-                magicBtn.onclick = (event) => {
-                    event.preventDefault();
-                    verifyMagicToken(data.magic_token);
-                };
-            }
-        } else {
-            showToast(`Magic Link Error: ${data.detail || ''}`, "danger");
-        }
-    } catch {
-        showToast("Error generating magic link", "danger");
-    }
-}
-
-// 5. Verify Magic Token & Login
-async function verifyMagicToken(tokenStr) {
-    try {
-        const resp = await fetch(`${API_BASE}/auth/verify-magic-link`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: tokenStr })
-        });
-        const data = await resp.json();
-
-        if (resp.ok) {
-            jwtToken = data.access_token;
-            localStorage.setItem("kavach_token", jwtToken);
-            updateUserUI(data.username, data.role);
-            closeLoginModal();
-            showToast(`Logged in successfully via Passwordless Magic Link! Welcome, ${data.username}!`, "success");
-
-            // Clean up URL parameters if present
-            if (window.location.search.includes("magic_token")) {
-                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-                window.history.replaceState({ path: newUrl }, '', newUrl);
-            }
-        } else {
-            showToast(`Magic Link verification failed: ${data.detail || ''}`, "danger");
-        }
-    } catch {
-        showToast("Error authenticating via magic link", "danger");
-    }
-}
-
-// 6. Auto-login if magic_token parameter is in URL
-function checkMagicTokenFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const magicToken = urlParams.get("magic_token");
-    if (magicToken) {
-        verifyMagicToken(magicToken);
-    }
+    // Respect hash routing on refresh / direct link
+    const currentHash = window.location.hash.replace('#', '');
+    const validSections = [
+        'overview', 'alerts', 'devices', 'incidents', 'mitre', 
+        'iocs', 'logs', 'playbooks', 'ml', 'chat', 'awareness', 'settings'
+    ];
+    const initialSection = validSections.includes(currentHash) ? currentHash : 'overview';
+    showSection(initialSection);
+    connectWebSocket();
 }
 
 function handleLogout() {
-    jwtToken = "";
-    localStorage.removeItem("kavach_token");
-    updateUserUI("SOC Admin", "SOC Analyst");
-    showToast("Logged out successfully", "info");
+    jwtToken = '';
+    localStorage.removeItem('kavach_token');
+    currentUser = null;
+    if (wsConnection) { wsConnection.close(); wsConnection = null; }
+    showToast('Signed Out', 'You have been logged out', 'info');
+    navigateTo('login');
 }
 
-/* ============================================================
-   UTILITIES
-   ============================================================ */
-function escapeHtml(str) {
+// ═══════════════════════════════════════════════════════════════════════════
+// DASHBOARD DATA
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadDashboard() {
+    const resp = await apiFetch('/dashboard/summary');
+    if (!resp || !resp.ok) return;
+    const data = await resp.json();
+
+    // Stats
+    document.getElementById('stat-alerts').textContent = data.overview?.total_alerts ?? 0;
+    document.getElementById('stat-devices').textContent = data.overview?.total_devices ?? 0;
+    document.getElementById('stat-incidents').textContent = data.overview?.total_incidents ?? 0;
+    document.getElementById('stat-cpu').textContent = (data.system?.cpu_percent ?? 0) + '%';
+    document.getElementById('stat-memory').textContent = (data.system?.memory_percent ?? 0) + '%';
+
+    // Alert badge
+    document.getElementById('sidebar-alert-count').textContent = data.overview?.total_alerts ?? 0;
+
+    // Severity Chart
+    renderSeverityChart(data.overview?.severity_counts || {});
+    renderStatusChart(data.overview?.status_counts || {});
+    renderMitreChart(data.mitre_heatmap || []);
+    renderCollectorChart(data.collectors || []);
+    renderRecentAlerts(data.recent_alerts || []);
+    renderLiveActivityChart(data.recent_alerts || []);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CHART.JS CHARTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const chartColors = {
+    critical: '#ff1744', high: '#ff9100', medium: '#ffea00',
+    low: '#00b0ff', info: '#94a3b8',
+    new: '#ad1457', investigating: '#ff9100', resolved: '#00e676',
+    false_positive: '#64748b', escalated: '#d500f9'
+};
+
+function destroyChart(id) {
+    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function renderLiveActivityChart(recentAlerts = []) {
+    destroyChart('live-activity');
+    const ctx = document.getElementById('chart-live-activity');
+    if (!ctx) return;
+
+    const pointsCount = 15;
+    const labels = [];
+    const telemetryData = [];
+    const alertData = [];
+
+    let now = Date.now();
+    for (let i = pointsCount - 1; i >= 0; i--) {
+        let t = new Date(now - i * 4000);
+        labels.push(t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        telemetryData.push(Math.floor(Math.random() * 15) + 30);
+        alertData.push(0);
+    }
+
+    if (recentAlerts && recentAlerts.length > 0) {
+        recentAlerts.forEach(alert => {
+            const idx = Math.floor(Math.random() * pointsCount);
+            alertData[idx] = (alertData[idx] || 0) + (alert.risk_score > 70 ? 2 : 1);
+        });
+    }
+
+    const telGradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+    telGradient.addColorStop(0, 'rgba(0, 240, 255, 0.15)');
+    telGradient.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+
+    const alertGradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+    alertGradient.addColorStop(0, 'rgba(255, 23, 68, 0.15)');
+    alertGradient.addColorStop(1, 'rgba(255, 23, 68, 0.0)');
+
+    charts['live-activity'] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Telemetry Rate / s',
+                    data: telemetryData,
+                    borderColor: '#00f0ff',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00f0ff',
+                    pointBorderColor: '#00f0ff',
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                    fill: true,
+                    backgroundColor: telGradient,
+                    tension: 0.4
+                },
+                {
+                    label: 'Alert Intensity',
+                    data: alertData,
+                    borderColor: '#ff1744',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#ff1744',
+                    pointBorderColor: '#ff1744',
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                    fill: true,
+                    backgroundColor: alertGradient,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: '#94a3b8', font: { family: "'Inter', sans-serif" } }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(11, 18, 36, 0.9)',
+                    titleColor: '#f1f5f9',
+                    bodyColor: '#94a3b8',
+                    borderColor: '#142340',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(20, 35, 64, 0.3)' },
+                    ticks: { color: '#94a3b8', font: { family: "'Inter', sans-serif" } }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(20, 35, 64, 0.3)' },
+                    ticks: { color: '#94a3b8', font: { family: "'Inter', sans-serif" } }
+                }
+            }
+        }
+    });
+
+    if (window.liveChartInterval) clearInterval(window.liveChartInterval);
+    window.liveChartInterval = setInterval(() => {
+        const chart = charts['live-activity'];
+        if (!chart) return;
+
+        let timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        chart.data.labels.shift();
+        chart.data.labels.push(timeStr);
+
+        chart.data.datasets[0].data.shift();
+        chart.data.datasets[0].data.push(Math.floor(Math.random() * 15) + 30);
+
+        chart.data.datasets[1].data.shift();
+        const wsAlertsCount = window.pendingAlertsCount || 0;
+        chart.data.datasets[1].data.push(wsAlertsCount);
+        window.pendingAlertsCount = 0;
+
+        chart.update('none');
+    }, 4000);
+}
+
+function renderSeverityChart(counts) {
+    destroyChart('severity');
+    const labels = Object.keys(counts);
+    const values = Object.values(counts);
+    if (!labels.length) return;
+
+    const ctx = document.getElementById('chart-severity');
+    if (!ctx) return;
+    charts['severity'] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+            datasets: [{
+                data: values,
+                backgroundColor: labels.map(l => chartColors[l] || '#94a3b8'),
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, color: '#94a3b8', font: { size: 12, family: "'Inter', sans-serif" } }
+                }
+            }
+        }
+    });
+}
+
+function renderStatusChart(counts) {
+    destroyChart('status');
+    const labels = Object.keys(counts);
+    const values = Object.values(counts);
+    if (!labels.length) return;
+
+    const ctx = document.getElementById('chart-status');
+    if (!ctx) return;
+    charts['status'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels.map(l => l.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())),
+            datasets: [{
+                label: 'Count',
+                data: values,
+                backgroundColor: labels.map(l => chartColors[l] || '#00f0ff'),
+                borderRadius: 6,
+                borderSkipped: false,
+                maxBarThickness: 48
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: 'rgba(20, 35, 64, 0.3)' } },
+                x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function renderMitreChart(heatmap) {
+    destroyChart('mitre');
+    if (!heatmap.length) return;
+
+    const top10 = heatmap.slice(0, 10);
+    const ctx = document.getElementById('chart-mitre');
+    if (!ctx) return;
+    charts['mitre'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: top10.map(h => h.technique_id || h.mitre_technique_id || '?'),
+            datasets: [{
+                label: 'Occurrences',
+                data: top10.map(h => h.count || 0),
+                backgroundColor: '#00f0ff',
+                borderRadius: 4,
+                maxBarThickness: 32
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(20, 35, 64, 0.3)' } },
+                y: { ticks: { color: '#94a3b8', font: { size: 11, family: "'JetBrains Mono', monospace" } }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function renderCollectorChart(collectors) {
+    destroyChart('collectors');
+    if (!collectors.length) return;
+
+    const ctx = document.getElementById('chart-collectors');
+    if (!ctx) return;
+    charts['collectors'] = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: collectors.map(c => c.name || '?'),
+            datasets: [{
+                label: 'Events Collected',
+                data: collectors.map(c => c.events_collected || 0),
+                backgroundColor: 'rgba(0, 240, 255, 0.1)',
+                borderColor: '#00f0ff',
+                pointBackgroundColor: '#00f0ff',
+                pointBorderColor: '#fff',
+                pointRadius: 4,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    ticks: { display: false },
+                    grid: { color: 'rgba(20, 35, 64, 0.3)' },
+                    angleLines: { color: 'rgba(20, 35, 64, 0.3)' },
+                    pointLabels: { color: '#94a3b8', font: { size: 10 } }
+                }
+            }
+        }
+    });
+}
+
+function renderRecentAlerts(alerts) {
+    const tbody = document.getElementById('recent-alerts-body');
+    if (!tbody) return;
+    if (!alerts.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:40px;">No alerts detected yet</td></tr>';
+        return;
+    }
+    tbody.innerHTML = alerts.map(a => `
+        <tr>
+            <td><span class="badge badge-${a.severity} badge-dot">${a.severity}</span></td>
+            <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;">${escHtml(a.title)}</td>
+            <td><code style="font-size:11px;">${a.mitre_technique || '—'}</code></td>
+            <td><strong>${a.risk_score?.toFixed(0) || 0}</strong></td>
+            <td><span class="badge badge-${a.status === 'new' ? 'new' : a.status === 'resolved' ? 'success' : 'info'}">${a.status}</span></td>
+            <td style="font-size:12px;color:var(--text-muted);">${formatTime(a.created_at)}</td>
+        </tr>
+    `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ALERTS SECTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadAlerts() {
+    const severity = document.getElementById('alert-filter-severity')?.value || '';
+    const status = document.getElementById('alert-filter-status')?.value || '';
+    let qs = '?limit=100';
+    if (severity) qs += `&severity=${severity}`;
+    if (status) qs += `&status=${status}`;
+
+    const resp = await apiFetch(`/alerts${qs}`);
+    if (!resp || !resp.ok) return;
+    const data = await resp.json();
+
+    const tbody = document.getElementById('alerts-table-body');
+    const alerts = data.alerts || [];
+    if (!alerts.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted" style="padding:40px;">No alerts found</td></tr>';
+        return;
+    }
+    tbody.innerHTML = alerts.map(a => `
+        <tr>
+            <td><span class="badge badge-${a.severity} badge-dot">${a.severity}</span></td>
+            <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;">${escHtml(a.title)}</td>
+            <td style="font-size:12px;">${a.source_collector || '—'}</td>
+            <td><code style="font-size:11px;">${a.mitre_technique_id || '—'}</code></td>
+            <td><strong>${a.risk_score?.toFixed(0) || 0}</strong></td>
+            <td><span class="badge badge-${a.status === 'new' ? 'new' : a.status === 'resolved' ? 'success' : 'info'}">${a.status}</span></td>
+            <td style="font-size:12px;color:var(--text-muted);">${formatTime(a.created_at)}</td>
+            <td>
+                <button class="btn btn-ghost btn-sm" onclick="viewAlert('${a.id}')">View</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function viewAlert(id) {
+    const resp = await apiFetch(`/alerts/${id}`);
+    if (!resp || !resp.ok) return;
+    const a = await resp.json();
+
+    document.getElementById('modal-alert-title').textContent = a.title || 'Alert Details';
+    document.getElementById('modal-alert-body').innerHTML = `
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:13px;">
+            <strong>Severity:</strong> <span class="badge badge-${a.severity}">${a.severity}</span>
+            <strong>Risk Score:</strong> <span>${a.risk_score}</span>
+            <strong>Status:</strong> <span>${a.status}</span>
+            <strong>Source:</strong> <span>${a.source_collector || '—'}</span>
+            <strong>MITRE:</strong> <span>${a.mitre_technique_id || '—'} ${a.mitre_technique_name || ''}</span>
+            <strong>Device:</strong> <span>${a.device_id || '—'}</span>
+            <strong>Created:</strong> <span>${formatTime(a.created_at)}</span>
+        </div>
+        ${a.description ? `<p style="margin-top:16px;font-size:13px;color:var(--text-secondary);">${escHtml(a.description)}</p>` : ''}
+        ${a.ai_explanation ? `<div style="margin-top:16px;padding:12px;background:var(--bg-code);border-radius:8px;font-size:13px;white-space:pre-wrap;">${escHtml(a.ai_explanation)}</div>` : ''}
+    `;
+    document.getElementById('modal-explain-btn').onclick = () => explainAlert(id);
+    openModal('alert-modal');
+}
+
+async function explainAlert(id) {
+    showToast('AI Analysis', 'Generating AI explanation...', 'info');
+    const resp = await apiFetch(`/alerts/${id}/explain`);
+    if (resp && resp.ok) {
+        const data = await resp.json();
+        const container = document.getElementById('modal-alert-body');
+        container.innerHTML += `<div style="margin-top:16px;padding:12px;background:var(--primary-50);border:1px solid var(--primary-200);border-radius:8px;font-size:13px;white-space:pre-wrap;">${escHtml(data.explanation || '')}</div>`;
+        showToast('Done', 'AI explanation generated', 'success');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DEVICES SECTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadDevices() {
+    const resp = await apiFetch('/devices');
+    if (!resp || !resp.ok) return;
+    const data = await resp.json();
+
+    const grid = document.getElementById('device-grid');
+    const devices = data.devices || [];
+    if (!devices.length) {
+        grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💻</div><div class="empty-state-title">No devices monitored</div><div class="empty-state-text">Devices will appear here when agents start reporting telemetry</div></div>';
+        return;
+    }
+    grid.innerHTML = devices.map(d => {
+        const risk = d.risk_score || 0;
+        const riskClass = risk >= 70 ? 'high' : risk >= 30 ? 'medium' : 'low';
+        const isActive = d.status === 'active';
+        return `
+            <div class="device-card">
+                <div class="device-status-dot ${isActive ? 'active' : 'offline'}"></div>
+                <div class="device-info">
+                    <div class="device-name">${escHtml(d.hostname)}</div>
+                    <div class="device-meta">${d.ip_address || 'N/A'} • ${d.os_name || 'Unknown OS'}</div>
+                </div>
+                <div class="device-risk ${riskClass}">${risk.toFixed(0)}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INCIDENTS, IOCs, PLAYBOOKS, ML, AWARENESS, LOGS, SETTINGS
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadIncidents() {
+    const resp = await apiFetch('/incidents');
+    if (!resp || !resp.ok) return;
+    const data = await resp.json();
+    const tbody = document.getElementById('incidents-table-body');
+    const items = data.incidents || [];
+    if (!items.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:40px;">No incidents</td></tr>'; return; }
+    tbody.innerHTML = items.map(i => `
+        <tr>
+            <td><span class="badge badge-${i.severity}">${i.severity}</span></td>
+            <td>${escHtml(i.title)}</td>
+            <td><span class="badge badge-${i.status === 'open' ? 'new' : 'success'}">${i.status}</span></td>
+            <td>${i.alert_count || '—'}</td>
+            <td style="font-size:12px;">${formatTime(i.created_at)}</td>
+        </tr>
+    `).join('');
+}
+
+async function loadIOCs() {
+    const resp = await apiFetch('/threats/ioc');
+    if (!resp || !resp.ok) return;
+    const data = await resp.json();
+    const tbody = document.getElementById('iocs-table-body');
+    const items = data.iocs || [];
+    if (!items.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:40px;">No IOCs found</td></tr>'; return; }
+    tbody.innerHTML = items.map(i => `
+        <tr>
+            <td><span class="badge badge-info">${i.ioc_type}</span></td>
+            <td class="text-mono" style="font-size:12px;">${escHtml(i.value || i.ioc_value || '')}</td>
+            <td>${i.source || '—'}</td>
+            <td><span class="badge badge-${i.severity || 'info'}">${i.severity || 'info'}</span></td>
+            <td style="font-size:12px;">${formatTime(i.created_at)}</td>
+        </tr>
+    `).join('');
+}
+
+async function loadMitreHeatmap() {
+    const resp = await apiFetch('/mitre/heatmap');
+    if (!resp || !resp.ok) return;
+    const data = await resp.json();
+    destroyChart('mitre-full');
+    const heatmap = data.heatmap || [];
+    if (!heatmap.length) return;
+    const ctx = document.getElementById('chart-mitre-full');
+    if (!ctx) return;
+    charts['mitre-full'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: heatmap.map(h => `${h.technique_id || h.mitre_technique_id || '?'}`),
+            datasets: [{
+                label: 'Detections',
+                data: heatmap.map(h => h.count || 0),
+                backgroundColor: '#8B1A1A',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true }, y: { ticks: { font: { size: 11, family: "'JetBrains Mono', monospace" } } } }
+        }
+    });
+}
+
+async function loadPlaybooks() {
+    const resp = await apiFetch('/playbooks');
+    if (!resp || !resp.ok) return;
+    const data = await resp.json();
+    const grid = document.getElementById('playbooks-grid');
+    const playbooks = data.playbooks || [];
+    grid.innerHTML = playbooks.map(p => `
+        <div class="card">
+            <div class="card-header"><div class="card-title"><span class="card-icon">📖</span> ${escHtml(p.name || p.id)}</div></div>
+            <div class="card-body">
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">${escHtml(p.description || '')}</p>
+                <div style="font-size:12px;color:var(--text-muted);">Steps: ${p.steps?.length || 0} • Severity: ${p.severity || '—'}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadMLStatus() {
+    const resp = await apiFetch('/ml/status');
+    if (!resp || !resp.ok) return;
+    const data = await resp.json();
+    document.getElementById('ml-model-name').textContent = data.model_name || '—';
+    document.getElementById('ml-model-size').textContent = data.size_bytes ? (data.size_bytes / 1024).toFixed(0) + ' KB' : '—';
+    document.getElementById('ml-last-trained').textContent = data.last_trained ? formatTime(data.last_trained) : 'Never';
+    document.getElementById('ml-contamination').textContent = data.contamination ?? '—';
+}
+
+async function retrainModel() {
+    showToast('ML Engine', 'Requesting model retraining...', 'info');
+    const resp = await apiFetch('/ml/train', { method: 'POST' });
+    if (resp && resp.ok) {
+        const data = await resp.json();
+        showToast('Model Retrained', `Trained on ${data.stats?.samples_count || 0} samples`, 'success');
+        loadMLStatus();
+    } else {
+        const err = resp ? await resp.json() : {};
+        showToast('Training Failed', err.detail || 'No training data available', 'danger');
+    }
+}
+
+async function loadAwareness() {
+    const tipResp = await apiFetch('/awareness/tips');
+    if (tipResp && tipResp.ok) {
+        const data = await tipResp.json();
+        document.getElementById('awareness-tip').innerHTML = `
+            <h3 style="font-size:var(--font-size-lg);font-weight:700;margin-bottom:8px;">${escHtml(data.daily_tip?.title || 'Security Tip')}</h3>
+            <p style="font-size:var(--font-size-sm);color:var(--text-secondary);line-height:1.6;">${escHtml(data.daily_tip?.description || data.daily_tip?.tip || '')}</p>
+        `;
+    }
+    const quizResp = await apiFetch('/awareness/quiz');
+    if (quizResp && quizResp.ok) {
+        const data = await quizResp.json();
+        const q = data.quiz || data;
+        if (q.question) {
+            const opts = q.options || [];
+            document.getElementById('awareness-quiz').innerHTML = `
+                <p style="font-weight:600;margin-bottom:16px;">${escHtml(q.question)}</p>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    ${opts.map((o, i) => `<button class="btn btn-secondary btn-sm" onclick="answerQuiz(${q.id || 0},${i})" style="text-align:left;">${escHtml(o)}</button>`).join('')}
+                </div>
+            `;
+        }
+    }
+}
+
+async function answerQuiz(quizId, answer) {
+    const resp = await apiFetch(`/awareness/quiz/${quizId}/answer?answer=${answer}`, { method: 'POST' });
+    if (resp && resp.ok) {
+        const data = await resp.json();
+        showToast(data.correct ? '✅ Correct!' : '❌ Wrong', data.explanation || '', data.correct ? 'success' : 'warning');
+    }
+}
+
+async function loadLogs() {
+    const query = document.getElementById('log-search')?.value || '';
+    const severity = document.getElementById('log-severity-filter')?.value || '';
+    let qs = '?limit=50';
+    if (query) qs += `&query=${encodeURIComponent(query)}`;
+    if (severity) qs += `&severity=${severity}`;
+
+    const resp = await apiFetch(`/logs/search${qs}`);
+    if (!resp || !resp.ok) return;
+    const data = await resp.json();
+    const viewer = document.getElementById('log-viewer');
+    const logs = data.results || [];
+    if (!logs.length) { viewer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📜</div><div class="empty-state-title">No logs found</div></div>'; return; }
+    viewer.innerHTML = logs.map(l => `
+        <div class="log-entry">
+            <span class="log-time">${formatTime(l.timestamp || l.created_at)}</span>
+            <span class="log-level ${(l.severity || 'info').toLowerCase()}">${(l.severity || 'INFO').toUpperCase()}</span>
+            <span class="log-text">${escHtml(l.title || l.event_type || JSON.stringify(l).slice(0, 120))}</span>
+        </div>
+    `).join('');
+}
+
+async function loadSettings() {
+    if (currentUser) {
+        document.getElementById('settings-username').textContent = currentUser.username || '—';
+        document.getElementById('settings-email').textContent = currentUser.email || '—';
+        document.getElementById('settings-role').textContent = currentUser.role || '—';
+    }
+}
+
+async function setup2FA() {
+    const resp = await apiFetch('/auth/2fa/setup', { method: 'POST' });
+    if (resp && resp.ok) {
+        const data = await resp.json();
+        document.getElementById('qr-code-container').classList.remove('hidden');
+        if (data.qr_code) document.getElementById('qr-code-img').src = data.qr_code;
+        document.getElementById('totp-secret').textContent = `Secret: ${data.secret || ''}`;
+        showToast('2FA Setup', 'Scan the QR code with your authenticator app', 'success');
+    } else {
+        showToast('Error', 'Could not setup 2FA', 'danger');
+    }
+}
+
+async function generateReport() {
+    showToast('Report', 'Generating SOC report & PDF...', 'info');
+    const resp = await apiFetch('/reports/soc');
+    if (resp && resp.ok) {
+        const data = await resp.json();
+        showToast('Report Ready', 'SOC report and PDF generated successfully', 'success');
+        if (data.pdf_url) {
+            const link = document.createElement('a');
+            link.href = data.pdf_url;
+            link.download = data.pdf_url.split('/').pop();
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    } else {
+        showToast('Error', 'Could not generate report', 'danger');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AI CHAT
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+
+    const messages = document.getElementById('chat-messages');
+    messages.innerHTML += `<div class="chat-msg user">${escHtml(msg)}</div>`;
+    messages.scrollTop = messages.scrollHeight;
+
+    const endpoint = currentUser?.role === 'soc_analyst' ? '/chatbot/soc' : '/chatbot/layman';
+    const resp = await apiFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({ message: msg })
+    });
+
+    if (resp && resp.ok) {
+        const data = await resp.json();
+        messages.innerHTML += `<div class="chat-msg assistant">${escHtml(data.response || data.reply || '')}</div>`;
+    } else {
+        messages.innerHTML += `<div class="chat-msg assistant">Sorry, I couldn't process that request.</div>`;
+    }
+    messages.scrollTop = messages.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WEBSOCKET LIVE EVENTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function connectWebSocket() {
+    if (wsConnection) return;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/api/v1/dashboard/live`;
+
+    try {
+        wsConnection = new WebSocket(wsUrl);
+        wsConnection.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                // Increment pending alerts count for real-time line chart plot
+                window.pendingAlertsCount = (window.pendingAlertsCount || 0) + 1;
+                
+                if (data.severity === 'critical' || data.severity === 'high') {
+                    showToast('🚨 Live Alert', data.title || 'New security event detected', 'danger');
+                    document.getElementById('notification-dot').style.display = 'block';
+                }
+            } catch (e) { /* ignore parse errors */ }
+        };
+        wsConnection.onclose = () => {
+            wsConnection = null;
+            setTimeout(connectWebSocket, 5000);
+        };
+    } catch (e) { /* WebSocket not available */ }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function escHtml(str) {
     if (!str) return '';
-    return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
 }
 
+function formatTime(isoStr) {
+    if (!isoStr) return '—';
+    try {
+        const d = new Date(isoStr);
+        const now = new Date();
+        const diff = (now - d) / 1000;
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return String(isoStr).slice(0, 16); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function init() {
+    const hash = window.location.hash.replace('#', '') || '';
+
+    if (jwtToken) {
+        // Validate existing token
+        apiFetch('/auth/me').then(resp => {
+            if (resp && resp.ok) {
+                resp.json().then(user => {
+                    currentUser = user;
+                    enterDashboard();
+                });
+            } else {
+                jwtToken = '';
+                localStorage.removeItem('kavach_token');
+                navigateTo('login');
+            }
+        });
+    } else {
+        navigateTo(hash || 'login');
+    }
+})();

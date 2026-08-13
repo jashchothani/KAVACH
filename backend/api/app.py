@@ -102,10 +102,15 @@ def create_app() -> FastAPI:
     )
 
     # --- CORS ---
+    cors_origins = settings.api.cors_origin_list
+    allow_creds = True
+    if "*" in cors_origins:
+        allow_creds = False
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.api.cors_origin_list,
-        allow_credentials=True,
+        allow_origins=cors_origins,
+        allow_credentials=allow_creds,
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -139,9 +144,14 @@ def create_app() -> FastAPI:
             "/api/v1/auth/login", "/api/v1/auth/register",
             "/api/v1/auth/request-otp", "/api/v1/auth/verify-otp",
             "/api/v1/auth/request-magic-link", "/api/v1/auth/verify-magic-link",
+            "/api/v1/auth/verify-email", "/api/v1/auth/2fa/verify",
+            "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password",
             "/api/v1/system/health", "/",
         }
-        if request.url.path in public_paths or request.url.path.startswith("/docs"):
+        if (request.url.path in public_paths
+                or request.url.path.startswith("/docs")
+                or request.url.path.startswith("/static")
+                or request.url.path.startswith("/reports")):
             response = await call_next(request)
             return response
 
@@ -193,6 +203,11 @@ def create_app() -> FastAPI:
     static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
     if os.path.isdir(static_dir):
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+        # Mount Reports directory
+        reports_dir = str(settings.paths.reports_dir)
+        os.makedirs(reports_dir, exist_ok=True)
+        app.mount("/reports", StaticFiles(directory=reports_dir), name="reports")
 
         @app.get("/", tags=["Root"])
         async def serve_web_ui() -> FileResponse:

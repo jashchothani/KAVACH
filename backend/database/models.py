@@ -54,6 +54,19 @@ class User(Base):
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     preferences: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
+    # Email Verification & 2FA Setup
+    is_email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    email_verification_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    totp_secret: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    backup_codes: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Password Recovery & Lockout
+    password_reset_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    password_reset_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    lockout_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     # Relationships
     alerts: Mapped[list["Alert"]] = relationship(back_populates="assigned_user", lazy="selectin")
 

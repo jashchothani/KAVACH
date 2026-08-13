@@ -164,6 +164,7 @@ class PathSettings(BaseSettings):
     rule_path: Path = Field(default=_PROJECT_ROOT / "rules" / "definitions", alias="RULE_PATH")
     mitre_db: Path = Field(default=_PROJECT_ROOT / "mitre" / "enterprise-attack.json", alias="MITRE_DB")
     model_path: Path = Field(default=_PROJECT_ROOT / "ml" / "models", alias="MODEL_PATH")
+    reports_dir: Path = Field(default=_PROJECT_ROOT / "reports")
 
     # Log subdirectories
     @property
@@ -198,6 +199,7 @@ class PathSettings(BaseSettings):
             self.rollback_dir,
             self.rule_path,
             self.model_path,
+            self.reports_dir,
         ]
         for subdir in self.log_subdirs.values():
             dirs_to_create.append(subdir)

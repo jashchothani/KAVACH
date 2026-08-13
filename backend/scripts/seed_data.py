@@ -1,7 +1,7 @@
 """
 KAVACH Seed Script.
 
-Creates default admin user (admin / admin123) and sample initial data.
+Creates default admin user (admin / Kavach@2026!Secure) and sample device.
 """
 
 from __future__ import annotations
@@ -28,29 +28,18 @@ async def seed() -> None:
         alert_repo = AlertRepository(session)
         ioc_repo = IOCRepository(session)
 
-        # 1. Create default Admin user
+        # 1. Create default Admin user with strong password
         admin = await user_repo.get_by_username("admin")
         if not admin:
             admin = await user_repo.create(
                 username="admin",
                 email="admin@kavach.soc",
-                password_hash=hash_password("admin123"),
+                password_hash=hash_password("Kavach@2026!Secure"),
                 role=UserRole.SOC_ANALYST.value,
             )
-            print("[+] Created admin user: admin / admin123 (Role: soc_analyst)")
+            print("[+] Created admin user: admin / Kavach@2026!Secure (Role: soc_analyst)")
 
-        # 2. Create default Layman user
-        user = await user_repo.get_by_username("user")
-        if not user:
-            user = await user_repo.create(
-                username="user",
-                email="user@kavach.local",
-                password_hash=hash_password("user123"),
-                role=UserRole.LAYMAN_USER.value,
-            )
-            print("[+] Created layman user: user / user123 (Role: layman_user)")
-
-        # 3. Create default Device
+        # 2. Create default Device
         dev = await device_repo.get_by_hostname("DESKTOP-KAVACH")
         if not dev:
             dev = await device_repo.create(

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<body
+    style="margin: 0; padding: 0; background-color: #f0f2f5; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; color: #1a1a2e;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%"
+        style="background-color: #f0f2f5; padding: 40px 10px;">
+        <tr>
+            <td align="center">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%"
+                    style="max-width: 550px; background-color: #ffffff; border: 1px solid #e2e5ea; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center"
+                            style="background: linear-gradient(135deg, #8B1A1A 0%, #B22222 50%, #D4443C 100%); padding: 30px; text-align: center;">
+                            <img src="kavach-logo.png" alt="KAVACH"
+                                style="height: 48px; width: auto; margin-bottom: 8px;"
+                                onerror="this.style.display='none'">
+                            <h1
+                                style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: 1px; text-transform: uppercase;">
+                                KAVACH</h1>
+                            <p
+                                style="color: rgba(255,255,255,0.85); font-size: 13px; margin: 4px 0 0 0; font-weight: 500;">
+                                Weekly Security Posture Digest</p>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 32px; background-color: #ffffff;">
+                            <h2
+                                style="color: #1a1a2e; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 20px;">
+                                Weekly Threat &amp; Posture Summary</h2>
+                            <p style="font-size: 15px; line-height: 1.7; color: #5a6072; margin-bottom: 24px;">
+                                Hello, <strong style="color: #1a1a2e;">{{ username }}</strong>. Here is the threat
+                                protection status and telemetry report for the past 7 days:
+                            </p>
+
+                            <!-- Posture Grid -->
+                            <table border="0" cellpadding="16" cellspacing="0" width="100%"
+                                style="margin: 20px 0; background-color: #f8f9fa; border: 1px solid #e2e5ea; border-radius: 12px; color: #1a1a2e;">
+                                <tr>
+                                    <td width="50%" align="center"
+                                        style="border-right: 1px solid #eef0f3; border-bottom: 1px solid #eef0f3;">
+                                        <div
+                                            style="font-size: 11px; color: #8b92a5; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                            Threats Blocked</div>
+                                        <div
+                                            style="font-size: 30px; font-weight: 800; color: #059669; margin-top: 6px;">
+                                            {{ threats_blocked }}</div>
+                                    </td>
+                                    <td width="50%" align="center" style="border-bottom: 1px solid #eef0f3;">
+                                        <div
+                                            style="font-size: 11px; color: #8b92a5; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                            Active Alerts</div>
+                                        <div
+                                            style="font-size: 30px; font-weight: 800; color: #dc2626; margin-top: 6px;">
+                                            {{ active_alerts }}</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" align="center" style="border-right: 1px solid #eef0f3;">
+                                        <div
+                                            style="font-size: 11px; color: #8b92a5; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                            Monitored Hosts</div>
+                                        <div
+                                            style="font-size: 30px; font-weight: 800; color: #2563eb; margin-top: 6px;">
+                                            {{ monitored_hosts }}</div>
+                                    </td>
+                                    <td width="50%" align="center">
+                                        <div
+                                            style="font-size: 11px; color: #8b92a5; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                            Avg Anomaly Score</div>
+                                        <div
+                                            style="font-size: 30px; font-weight: 800; color: #d97706; margin-top: 6px;">
+                                            {{ avg_anomaly_score }}%</div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 15px; line-height: 1.7; color: #5a6072; margin-bottom: 24px;">
+                                Overall Posture Verdict: <strong style="color: #1a1a2e;">{{ posture_verdict }}</strong>.
+                                The ML Digital Twin has profiled your activities and did not discover any persistent
+                                indicator deviations this week.
+                            </p>
+
+                            <div style="text-align: center; margin: 35px 0;">
+                                <a href="{{ dashboard_url }}"
+                                    style="background: linear-gradient(135deg, #8B1A1A, #B22222); color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-block; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(139,26,26,0.25);">
+                                    ACCESS MANAGEMENT HUB
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background-color: #f8f9fa; padding: 24px 32px; text-align: center; border-top: 1px solid #eef0f3;">
+                            <p style="font-size: 11px; color: #8b92a5; margin: 0; line-height: 1.6;">
+                                Generated automatically by KAVACH Security Engine.<br>
+                                © 2026 KAVACH. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

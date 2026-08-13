@@ -138,3 +138,57 @@ async def test_mfa_magic_link_flow(async_client: AsyncClient):
     assert m_ver.status_code == 200
     assert "access_token" in m_ver.json()
 
+
+@pytest.mark.asyncio
+async def test_ml_status(async_client: AsyncClient):
+    resp = await async_client.get("/api/v1/ml/status")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "model_name" in data
+    assert "exists" in data
+    assert "features" in data
+
+
+@pytest.mark.asyncio
+async def test_ml_train(async_client: AsyncClient):
+    import time
+    uname = f"ml_analyst_{int(time.time())}"
+    # Register analyst
+    reg = await async_client.post("/api/v1/auth/register", json={
+        "username": uname,
+        "email": f"{uname}@soc.kavach",
+        "password": "Password123!",
+        "role": "soc_analyst",
+    })
+    assert reg.status_code == 200
+    token = reg.json()["access_token"]
+
+    # Seed mock alerts so the detector can train on original/historical data
+    from database.engine import get_session
+    from database.repositories import AlertRepository
+    from core.constants import AlertStatus
+    async with get_session() as session:
+        repo = AlertRepository(session)
+        for i in range(5):
+            await repo.create(
+                title=f"Mock Alert {i}",
+                description=f"Mock Description {i}",
+                severity="medium" if i % 2 == 0 else "high",
+                risk_score=40.0 + (i * 10),
+                confidence=0.8,
+                event_type="process",
+                source_collector="process",
+                status=AlertStatus.NEW.value,
+            )
+
+    # Trigger training
+    resp = await async_client.post(
+        "/api/v1/ml/train",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "stats" in data
+    assert data["stats"]["status"] == "trained"
+
+

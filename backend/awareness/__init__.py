@@ -1,1 +1,0 @@
-"""KAVACH Awareness Module."""

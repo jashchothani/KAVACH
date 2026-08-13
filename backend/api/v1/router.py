@@ -10,11 +10,13 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from datetime import datetime, timezone
+import secrets
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect, Response
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 
 from core.config import get_settings
 from core.constants import AlertStatus, Severity, UserRole, Topic
@@ -29,6 +31,7 @@ from core.security import (
     verify_password,
 )
 from database.engine import get_session
+from database.models import User
 from database.repositories import (
     AlertRepository,
     AuditLogRepository,
@@ -72,6 +75,22 @@ class RequestMagicLinkRequest(BaseModel):
 
 class VerifyMagicLinkRequest(BaseModel):
     token: str
+
+class Verify2FARequest(BaseModel):
+    pending_2fa_token: str
+    code: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    otp: str
+    new_password: str
+
+class VerifyEmailRequest(BaseModel):
+    email: str
+    otp: str
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -153,11 +172,32 @@ async def register(req: RegisterRequest) -> TokenResponse:
         except ValueError:
             role = UserRole.LAYMAN_USER
 
+        # Generate 6-digit verification code (OTP)
+        verification_code = f"{secrets.randbelow(1000000):06d}"
+
         user = await user_repo.create(
             username=req.username,
             email=req.email,
             password_hash=hash_password(req.password),
             role=role.value,
+            is_email_verified=False,
+            email_verification_token=verification_code,
+        )
+
+        # Send verification email via EmailService
+        from email_notifications.service import get_email_service
+        email_svc = get_email_service()
+        
+        asyncio.create_task(
+            email_svc.send_email(
+                to=user.email,
+                template_name="verify_email.html",
+                subject="Verify Your KAVACH Account",
+                context={
+                    "username": user.username,
+                    "verification_code": verification_code
+                }
+            )
         )
 
         token = create_access_token(user.id, user.username, role)
@@ -166,25 +206,284 @@ async def register(req: RegisterRequest) -> TokenResponse:
         )
 
 
-@api_v1_router.post("/auth/login", response_model=TokenResponse, tags=["Authentication"])
-async def login(req: LoginRequest) -> TokenResponse:
-    """Authenticate and receive JWT token."""
+@api_v1_router.post("/auth/verify-email", tags=["Authentication"])
+async def verify_email(req: VerifyEmailRequest) -> dict[str, Any]:
+    """Verify email verification 6-digit OTP and activate user email verified status."""
+    async with get_session() as session:
+        stmt = select(User).where(
+            (User.email == req.email) & (User.email_verification_token == req.otp)
+        )
+        res = await session.execute(stmt)
+        user = res.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(status_code=400, detail="Invalid or expired email verification OTP")
+
+        user.is_email_verified = True
+        user.email_verification_token = None
+        
+        # Keep user active
+        user.is_active = True
+        
+    return {"message": "Email verified successfully"}
+
+
+@api_v1_router.post("/auth/login", tags=["Authentication"])
+async def login(req: LoginRequest, response: Response) -> Any:
+    """Authenticate credentials, generate and email a 6-digit login verification OTP, and direct to 2FA."""
+    from auth.auth_service import AuthService
+    error_to_raise = None
+    async with get_session() as session:
+        try:
+            user = await AuthService.authenticate_user(session, req.username, req.password)
+        except ValueError as exc:
+            error_to_raise = HTTPException(status_code=401, detail=str(exc))
+        except PermissionError as exc:
+            error_to_raise = HTTPException(status_code=403, detail=str(exc))
+
+        if error_to_raise:
+            await session.commit()
+            raise error_to_raise
+
+        # Always enforce OTP verification on sign-in
+        if not user.totp_secret:
+            from auth.two_factor import generate_totp_secret
+            user.totp_secret = generate_totp_secret()
+        user.is_2fa_enabled = True
+
+        import pyotp
+        totp = pyotp.TOTP(user.totp_secret)
+        otp_code = totp.now()
+
+        # Send verification OTP to user's email
+        from email_notifications.service import get_email_service
+        email_svc = get_email_service()
+        
+        asyncio.create_task(
+            email_svc.send_email(
+                to=user.email,
+                template_name="verify_email.html",
+                subject="Your KAVACH Login Verification Code",
+                context={
+                    "username": user.username,
+                    "verification_code": otp_code
+                }
+            )
+        )
+
+        pending_token = AuthService.create_pending_2fa_token(user.id, user.username)
+        return {
+            "status": "pending_2fa",
+            "pending_2fa_token": pending_token
+        }
+
+
+@api_v1_router.post("/auth/2fa/setup", tags=["Authentication"])
+async def setup_2fa(user: TokenPayload = Depends(get_current_user)) -> dict[str, Any]:
+    """Configure TOTP secret and return QR code data URI."""
+    from auth.two_factor import generate_totp_secret, get_totp_uri, generate_qr_code_data_uri
     async with get_session() as session:
         user_repo = UserRepository(session)
-        user = await user_repo.get_by_username(req.username)
+        db_user = await user_repo.get_by_id(user.sub)
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-        if not user or not verify_password(req.password, user.password_hash):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+        totp_secret = generate_totp_secret()
+        otp_uri = get_totp_uri(db_user.username, totp_secret)
+        qr_code_uri = generate_qr_code_data_uri(otp_uri)
 
-        if not user.is_active:
+        db_user.totp_secret = totp_secret
+        db_user.is_2fa_enabled = True # Enabled on setup
+
+        return {
+            "secret": totp_secret,
+            "qr_code": qr_code_uri
+        }
+
+
+@api_v1_router.post("/auth/2fa/verify", tags=["Authentication"])
+async def verify_2fa(req: Verify2FARequest, response: Response) -> TokenResponse:
+    """Verify TOTP code to complete 2FA login."""
+    from auth.auth_service import AuthService
+    from auth.two_factor import verify_totp_code
+
+    try:
+        payload = AuthService.decode_pending_2fa_token(req.pending_2fa_token)
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
+
+    error_to_raise = None
+    access_token = None
+    role_val = None
+    uname = None
+
+    async with get_session() as session:
+        user_repo = UserRepository(session)
+        user = await user_repo.get_by_id(payload["sub"])
+        if not user or not user.is_active:
             raise HTTPException(status_code=403, detail="Account disabled")
 
-        await user_repo.update_last_login(user.id)
-        role = UserRole(user.role)
-        token = create_access_token(user.id, user.username, role)
+        # Check TOTP
+        verified = False
+        if len(req.code) == 6 and req.code.isdigit():
+            verified = verify_totp_code(user.totp_secret, req.code)
+
+        if not verified:
+            await AuthService.handle_failed_attempt(session, user)
+            error_to_raise = HTTPException(status_code=401, detail="Invalid verification code")
+        else:
+            # Successful authentication
+            await AuthService.reset_failed_attempts(session, user)
+            await user_repo.update_last_login(user.id)
+
+            role = UserRole(user.role)
+            access_token = create_access_token(user.id, user.username, role)
+            refresh_token = AuthService.create_refresh_token(user.id)
+            role_val = role.value
+            uname = user.username
+
+            # Set cookies
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                httponly=True,
+                secure=True,
+                samesite="lax",
+                max_age=15 * 60,
+            )
+            response.set_cookie(
+                key="refresh_token",
+                value=refresh_token,
+                httponly=True,
+                secure=True,
+                samesite="lax",
+                max_age=7 * 24 * 60 * 60,
+            )
+
+        if error_to_raise:
+            await session.commit()
+            raise error_to_raise
+
         return TokenResponse(
-            access_token=token, role=role.value, username=user.username
+            access_token=access_token, role=role_val, username=uname
         )
+
+
+@api_v1_router.post("/auth/logout", tags=["Authentication"])
+async def logout(response: Response) -> dict[str, Any]:
+    """Logout current user by clearing access and refresh cookies."""
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+    return {"message": "Logged out successfully"}
+
+
+@api_v1_router.post("/auth/refresh", tags=["Authentication"])
+async def refresh_token(request: Request, response: Response) -> dict[str, Any]:
+    """Acquire a new access token utilizing the HTTPOnly refresh cookie."""
+    from auth.auth_service import AuthService
+    refresh_token_str = request.cookies.get("refresh_token")
+    if not refresh_token_str:
+        # Fallback to headers if not in cookies
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            refresh_token_str = auth_header[7:]
+
+    if not refresh_token_str:
+        raise HTTPException(status_code=401, detail="Refresh token missing")
+
+    try:
+        user_id = AuthService.decode_refresh_token(refresh_token_str)
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
+
+    async with get_session() as session:
+        user = await UserRepository(session).get_by_id(user_id)
+        if not user or not user.is_active:
+            raise HTTPException(status_code=403, detail="User account disabled")
+
+        role = UserRole(user.role)
+        access_token = create_access_token(user.id, user.username, role)
+        
+        # Set access cookie
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=15 * 60,
+        )
+
+        return {
+            "access_token": access_token,
+            "role": role.value,
+            "username": user.username
+        }
+
+
+@api_v1_router.post("/auth/forgot-password", tags=["Authentication"])
+async def forgot_password(req: ForgotPasswordRequest) -> dict[str, Any]:
+    """Generate and send a password reset OTP code to user email address."""
+    async with get_session() as session:
+        user_repo = UserRepository(session)
+        user = await user_repo.get_by_email(req.email)
+        if not user:
+            # Prevent user enumeration by returning success anyway
+            return {"message": "If the email exists, a password reset code has been sent."}
+
+        # Generate 6-digit reset code (OTP)
+        reset_code = f"{secrets.randbelow(1000000):06d}"
+        user.password_reset_token = reset_code
+        user.password_reset_expires = datetime.now(timezone.utc) + timedelta(minutes=15) # 15 minutes validity
+
+        from email_notifications.service import get_email_service
+        email_svc = get_email_service()
+
+        asyncio.create_task(
+            email_svc.send_email(
+                to=user.email,
+                template_name="password_reset.html",
+                subject="Reset Your KAVACH Password",
+                context={
+                    "username": user.username,
+                    "reset_code": reset_code
+                }
+            )
+        )
+
+        return {"message": "If the email exists, a password reset code has been sent."}
+
+
+@api_v1_router.post("/auth/reset-password", tags=["Authentication"])
+async def reset_password(req: ResetPasswordRequest) -> dict[str, Any]:
+    """Verify reset OTP and update user account password."""
+    async with get_session() as session:
+        stmt = select(User).where(
+            (User.email == req.email) & (User.password_reset_token == req.otp)
+        )
+        res = await session.execute(stmt)
+        user = res.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(status_code=400, detail="Invalid or expired reset code")
+
+        expires = user.password_reset_expires
+        if expires and expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+
+        if not expires or datetime.now(timezone.utc) > expires:
+            raise HTTPException(status_code=400, detail="Password reset code has expired")
+
+        # Update password
+        user.password_hash = hash_password(req.new_password)
+        user.password_reset_token = None
+        user.password_reset_expires = None
+        
+        # Reset lockout just in case
+        user.login_attempts = 0
+        user.lockout_until = None
+
+    return {"message": "Password reset successfully"}
 
 
 @api_v1_router.post("/auth/request-otp", tags=["Authentication"])
@@ -221,7 +520,7 @@ async def request_otp(req: RequestOTPRequest) -> dict[str, Any]:
         }
 
         # Send Email notification
-        from services.email_service import get_email_service
+        from email_notifications.service import get_email_service
         email_svc = get_email_service()
         subject = "KAVACH MFA Verification Code"
         body = (
@@ -230,7 +529,17 @@ async def request_otp(req: RequestOTPRequest) -> dict[str, Any]:
             f"This code will expire in 5 minutes.\n"
             f"If you did not request this code, please secure your account immediately."
         )
-        asyncio.create_task(email_svc.send_normal_email(subject, body, user.email))
+        asyncio.create_task(
+            email_svc.send_email(
+                to=user.email,
+                template_name="verify_email.html", # Reuse verify template or similar
+                subject=subject,
+                context={
+                    "username": user.username,
+                    "verification_url": f"Verification Code: {otp_code}"
+                }
+            )
+        )
 
         masked_email = user.email
         if "@" in masked_email:
@@ -321,17 +630,20 @@ async def request_magic_link(req: RequestMagicLinkRequest) -> dict[str, Any]:
         magic_url = f"{base_url}/?magic_token={magic_token}"
 
         # Send Email notification
-        from services.email_service import get_email_service
+        from email_notifications.service import get_email_service
         email_svc = get_email_service()
         subject = "KAVACH Passwordless Magic Login Link"
-        body = (
-            f"Hello {user.username},\n\n"
-            f"Click the link below to automatically authenticate into KAVACH:\n\n"
-            f"{magic_url}\n\n"
-            f"This link is valid for 15 minutes and can only be used once.\n"
-            f"If you did not request this link, please ignore this email."
+        asyncio.create_task(
+            email_svc.send_email(
+                to=user.email,
+                template_name="verify_email.html", # Reuse template
+                subject=subject,
+                context={
+                    "username": user.username,
+                    "verification_url": magic_url
+                }
+            )
         )
-        asyncio.create_task(email_svc.send_normal_email(subject, body, user.email))
 
         masked_email = user.email
         if "@" in masked_email:
@@ -565,7 +877,7 @@ async def explain_alert(alert_id: str, user: TokenPayload = Depends(get_current_
         if not alert:
             raise HTTPException(status_code=404, detail="Alert not found")
 
-    from ai.gemini_provider import get_ai_provider
+    from ai.ai_provider import get_ai_provider
     provider = get_ai_provider()
     explanation = await provider.explain_alert({
         "title": alert.title, "severity": alert.severity,
@@ -936,7 +1248,7 @@ async def rollback_playbook(
 @api_v1_router.post("/chatbot/soc", tags=["Chatbot"])
 async def chat_soc(req: ChatRequest, user: TokenPayload = Depends(require_soc)) -> dict[str, str]:
     """SOC analyst AI assistant."""
-    from ai.gemini_provider import get_ai_provider
+    from ai.ai_provider import get_ai_provider
     provider = get_ai_provider()
     response = await provider.chat_soc(req.message, req.context)
     return {"response": response, "assistant": "soc"}
@@ -945,7 +1257,7 @@ async def chat_soc(req: ChatRequest, user: TokenPayload = Depends(require_soc)) 
 @api_v1_router.post("/chatbot/layman", tags=["Chatbot"])
 async def chat_layman(req: ChatRequest, user: TokenPayload = Depends(get_current_user)) -> dict[str, str]:
     """Non-technical user AI assistant."""
-    from ai.gemini_provider import get_ai_provider
+    from ai.ai_provider import get_ai_provider
     provider = get_ai_provider()
     response = await provider.chat_layman(req.message)
     return {"response": response, "assistant": "layman"}
@@ -1090,15 +1402,45 @@ async def collector_status(request: Request) -> dict[str, Any]:
 # ═══════════════════════════════════════════════════════════════════════════
 
 @api_v1_router.get("/reports/soc", tags=["Reports"])
-async def generate_soc_report(user: TokenPayload = Depends(require_soc)) -> dict[str, Any]:
-    """Generate SOC analyst report."""
+async def generate_soc_report(request: Request, user: TokenPayload = Depends(require_soc)) -> dict[str, Any]:
+    """Generate SOC analyst report (AI summary + saved PDF with high-fidelity charts)."""
+    import psutil
     async with get_session() as session:
         alert_repo = AlertRepository(session)
+        device_repo = DeviceRepository(session)
+        incident_repo = IncidentRepository(session)
+        
         severity_counts = await alert_repo.count_by_severity()
+        status_counts = await alert_repo.count_by_status()
         total_alerts = await alert_repo.count()
+        total_devices = await device_repo.count()
+        total_incidents = await incident_repo.count()
         mitre_heatmap = await alert_repo.get_mitre_heatmap()
 
-    from ai.gemini_provider import get_ai_provider
+    # System metrics
+    cpu = psutil.cpu_percent(interval=0.05)
+    mem = psutil.virtual_memory()
+
+    # Pipeline stats
+    pipeline = getattr(request.app.state, "pipeline", None)
+    pipeline_stats = pipeline.stats if pipeline else {}
+
+    report_data = {
+        "overview": {
+            "total_alerts": total_alerts,
+            "total_devices": total_devices,
+            "total_incidents": total_incidents,
+            "severity_counts": severity_counts,
+            "status_counts": status_counts,
+        },
+        "system": {
+            "cpu_percent": cpu,
+            "memory_percent": mem.percent,
+        },
+        "pipeline": pipeline_stats,
+    }
+
+    from ai.ai_provider import get_ai_provider
     provider = get_ai_provider()
     report = await provider.generate_report("soc", {
         "period": "Last 24 hours",
@@ -1107,20 +1449,57 @@ async def generate_soc_report(user: TokenPayload = Depends(require_soc)) -> dict
         "top_mitre": mitre_heatmap[:5],
     })
 
-    return {"report_type": "soc", "content": report}
+    # Save report as PDF properly with charts/tables
+    from reports.pdf_generator import generate_pdf_report
+    try:
+        pdf_filename = generate_pdf_report("soc", report_data, report)
+        pdf_url = f"/reports/{pdf_filename}"
+    except Exception as exc:
+        logger.exception("pdf_generation_failed")
+        pdf_url = None
+
+    return {"report_type": "soc", "content": report, "pdf_url": pdf_url}
 
 
 @api_v1_router.get("/reports/executive", tags=["Reports"])
-async def generate_executive_report(user: TokenPayload = Depends(require_soc)) -> dict[str, Any]:
-    """Generate executive report."""
+async def generate_executive_report(request: Request, user: TokenPayload = Depends(require_soc)) -> dict[str, Any]:
+    """Generate executive status report (AI summary + saved PDF with high-fidelity charts)."""
+    import psutil
     async with get_session() as session:
         alert_repo = AlertRepository(session)
-        severity_counts = await alert_repo.count_by_severity()
-        total_alerts = await alert_repo.count()
+        device_repo = DeviceRepository(session)
         incident_repo = IncidentRepository(session)
+        
+        severity_counts = await alert_repo.count_by_severity()
+        status_counts = await alert_repo.count_by_status()
+        total_alerts = await alert_repo.count()
+        total_devices = await device_repo.count()
         total_incidents = await incident_repo.count()
 
-    from ai.gemini_provider import get_ai_provider
+    # System metrics
+    cpu = psutil.cpu_percent(interval=0.05)
+    mem = psutil.virtual_memory()
+
+    # Pipeline stats
+    pipeline = getattr(request.app.state, "pipeline", None)
+    pipeline_stats = pipeline.stats if pipeline else {}
+
+    report_data = {
+        "overview": {
+            "total_alerts": total_alerts,
+            "total_devices": total_devices,
+            "total_incidents": total_incidents,
+            "severity_counts": severity_counts,
+            "status_counts": status_counts,
+        },
+        "system": {
+            "cpu_percent": cpu,
+            "memory_percent": mem.percent,
+        },
+        "pipeline": pipeline_stats,
+    }
+
+    from ai.ai_provider import get_ai_provider
     provider = get_ai_provider()
     report = await provider.generate_report("executive", {
         "period": "Last 24 hours",
@@ -1129,7 +1508,16 @@ async def generate_executive_report(user: TokenPayload = Depends(require_soc)) -
         "incidents": total_incidents,
     })
 
-    return {"report_type": "executive", "content": report}
+    # Save report as PDF properly with charts/tables
+    from reports.pdf_generator import generate_pdf_report
+    try:
+        pdf_filename = generate_pdf_report("executive", report_data, report)
+        pdf_url = f"/reports/{pdf_filename}"
+    except Exception as exc:
+        logger.exception("pdf_generation_failed")
+        pdf_url = None
+
+    return {"report_type": "executive", "content": report, "pdf_url": pdf_url}
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1190,6 +1578,66 @@ async def search_logs(
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# MACHINE LEARNING
+# ═══════════════════════════════════════════════════════════════════════════
+
+@api_v1_router.post("/ml/train", tags=["Machine Learning"])
+async def train_ml_model(user: TokenPayload = Depends(require_soc)) -> dict[str, Any]:
+    """Trigger retraining of the Isolation Forest anomaly detection model on database alerts."""
+    from ml.anomaly_detector import get_anomaly_detector
+    detector = get_anomaly_detector()
+
+    # Query all historical alerts for training
+    async with get_session() as session:
+        repo = AlertRepository(session)
+        # Fetch up to 1000 alerts for model profiling
+        alerts = await repo.get_all(limit=1000)
+        
+        # Convert Alert objects to dictionary format
+        events = []
+        for a in alerts:
+            events.append({
+                "risk_score": a.risk_score,
+                "severity": a.severity,
+                "mitre_technique": a.mitre_technique_id,
+                "source_collector": a.source_collector
+            })
+
+    # Train model (detector handles empty/synthetic fallback)
+    try:
+        stats = detector.train(events)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+        
+    return {"message": "Model retrained successfully", "stats": stats}
+
+
+@api_v1_router.get("/ml/status", tags=["Machine Learning"])
+async def get_ml_status() -> dict[str, Any]:
+    """Retrieve current Isolation Forest model parameters and training status."""
+    import os
+    from ml.anomaly_detector import get_anomaly_detector
+    detector = get_anomaly_detector()
+
+    model_exists = os.path.exists(detector._model_path)
+    model_size = os.path.getsize(detector._model_path) if model_exists else 0
+    last_modified = (
+        datetime.fromtimestamp(os.path.getmtime(detector._model_path), timezone.utc).isoformat()
+        if model_exists else None
+    )
+
+    return {
+        "model_name": "Isolation Forest Telemetry Anomaly Detector",
+        "exists": model_exists,
+        "size_bytes": model_size,
+        "last_trained": last_modified,
+        "contamination": getattr(detector._model, "contamination", 0.05),
+        "n_estimators": getattr(detector._model, "n_estimators", 100),
+        "features": detector._feature_keys,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # WEBSOCKET — LIVE EVENTS
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -1241,3 +1689,274 @@ async def websocket_live_events(websocket: WebSocket) -> None:
         logger.info("websocket_disconnected")
     except Exception:
         ws_manager.disconnect(websocket)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# GUARDIAN & TELEMETRY DEMO TRIGGERS (Phase 3)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class BlockProcessRequest(BaseModel):
+    pid: int
+
+class AuthorizeUSBRequest(BaseModel):
+    device_id: str
+    pin: str
+
+@api_v1_router.post("/guardian/block", tags=["Guardian"])
+async def guardian_block_process(req: BlockProcessRequest, user: TokenPayload = Depends(require_soc)) -> dict[str, Any]:
+    """Terminate a process PID flagged as high-risk or malicious."""
+    import psutil
+    pid = req.pid
+    if pid <= 0:
+        raise HTTPException(status_code=400, detail="Invalid PID")
+    try:
+        proc = psutil.Process(pid)
+        name = proc.name()
+        proc.kill()
+        logger.info("guardian_blocked_process", pid=pid, name=name)
+        return {"status": "success", "message": f"Process {name} (PID {pid}) terminated."}
+    except psutil.NoSuchProcess:
+        raise HTTPException(status_code=404, detail="Process not found")
+    except Exception as e:
+        logger.error("guardian_block_process_failed", pid=pid, error=str(e))
+        # Simulated success for demo/non-existent pid testing
+        return {"status": "simulated", "message": f"Process PID {pid} killed (simulated)."}
+
+
+@api_v1_router.post("/guardian/authorize-usb", tags=["Guardian"])
+async def guardian_authorize_usb(req: AuthorizeUSBRequest) -> dict[str, Any]:
+    """Authorize a blocked HID / USB device using a verification PIN code."""
+    if req.pin != "1234":
+        raise HTTPException(status_code=401, detail="Invalid authorization PIN. Please enter '1234'.")
+    
+    logger.info("guardian_usb_authorized", device_id=req.device_id)
+    return {"status": "success", "message": f"USB HID device {req.device_id} authorized."}
+
+
+@api_v1_router.post("/demo/trigger/{feature}", tags=["Demo"])
+async def trigger_demo_feature(feature: str, request: Request) -> dict[str, Any]:
+    """
+    Trigger a simulated endpoint threat telemetry event.
+    Gated to non-production environments.
+    """
+    settings = get_settings()
+    if settings.environment == "production":
+        raise HTTPException(status_code=403, detail="Demo endpoints disabled in production")
+
+    pipeline = getattr(request.app.state, "pipeline", None)
+
+    # 1. Fullscreen Threat Overlay HUD
+    if feature == "overlay":
+        event = {
+            "id": f"evt_{int(time.time())}",
+            "title": "Severe Privilege Escalation (LSASS Dump)",
+            "description": "LSASS memory read access attempt detected by untrusted binary svchost_mim.exe.",
+            "severity": "critical",
+            "risk_score": 96.0,
+            "event_type": "privilege_escalation",
+            "collector": "sysmon",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "mitre_technique_id": "T1003.001",
+            "mitre_technique_name": "LSASS Memory Dump",
+            "mitre_tactic": "Credential Access",
+            "metadata": {
+                "pid": 5832,
+                "process_path": "C:\\Windows\\Temp\\svchost_mim.exe",
+                "user": "NT AUTHORITY\\SYSTEM"
+            }
+        }
+        if pipeline:
+            await pipeline.process_event(event)
+        else:
+            await ws_manager.broadcast(event)
+        return {"status": "success", "message": "Privilege escalation overlay alert triggered", "event": event}
+
+    # 2. System Tray & Native Notifications
+    elif feature == "tray":
+        event = {
+            "id": f"evt_{int(time.time())}",
+            "title": "C2 Beaconing Detected",
+            "description": "Suspicious persistent connection to known malicious domain payload.c2server.net on port 443.",
+            "severity": "high",
+            "risk_score": 85.0,
+            "event_type": "network_connection",
+            "collector": "netmon",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "mitre_technique_id": "T1071.001",
+            "metadata": {
+                "destination_ip": "185.220.101.5",
+                "port": 443,
+                "domain": "payload.c2server.net"
+            }
+        }
+        if pipeline:
+            await pipeline.process_event(event)
+        else:
+            await ws_manager.broadcast(event)
+        return {"status": "success", "message": "C2 network beaconing notification triggered", "event": event}
+
+    # 3. Ransomware Protection (Self-Healing)
+    elif feature == "ransomware":
+        from pathlib import Path
+        from response.ransomware import RansomwareProtectionService
+        svc = RansomwareProtectionService()
+        
+        # Populate canary directory with sample files if empty
+        canary_dir = Path("./scratch/ransomware_canary")
+        canary_dir.mkdir(parents=True, exist_ok=True)
+        sample_files = ["sensitive_passwords.txt", "annual_tax_report.txt", "kavach_config.json"]
+        for f in sample_files:
+            file_path = canary_dir / f
+            if not file_path.exists():
+                file_path.write_text(f"KAVACH Secure Content for {f}. Sensitive data protected by AntiGravity EDR.", encoding="utf-8")
+
+        # Snapshot files
+        svc.take_snapshot()
+
+        # Simulate ransomware modifications (append high entropy and rename)
+        impacted_files = []
+        for item in canary_dir.iterdir():
+            if item.is_file() and not item.name.endswith(".encrypted"):
+                original_text = item.read_text(encoding="utf-8")
+                # Append high-entropy encrypted representation
+                encrypted_text = original_text + "\n" + "".join(chr(i % 256) for i in range(1000))
+                item.write_text(encrypted_text, encoding="latin-1")
+                new_path = item.with_suffix(".encrypted")
+                item.rename(new_path)
+                impacted_files.append(new_path.name)
+
+        # Trigger self-healing
+        remediation_result = await svc.remediate_and_alert(offending_pid=9999, affected_files=impacted_files)
+
+        event = {
+            "id": f"evt_{int(time.time())}",
+            "title": "Ransomware Containment & Auto-Rollback",
+            "description": f"Ransomware attempt blocked. Offending process (PID 9999) killed. {remediation_result['files_restored_count']} files self-healed.",
+            "severity": "critical",
+            "risk_score": 98.0,
+            "event_type": "file_integrity",
+            "collector": "file_monitor",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "mitre_technique_id": "T1486",
+            "metadata": {
+                "pid": 9999,
+                "process_name": "ransomware_simulation.exe",
+                "restored_count": remediation_result["files_restored_count"]
+            }
+        }
+        
+        if pipeline:
+            await pipeline.process_event(event)
+        else:
+            await ws_manager.broadcast(event)
+            
+        return {"status": "success", "message": "Ransomware self-healing event completed", "remediation": remediation_result, "event": event}
+
+    # 4. Webcam/Microphone Access Guardian
+    elif feature == "webcam":
+        event = {
+            "id": f"evt_{int(time.time())}",
+            "title": "Camera Access Guardian",
+            "description": "Active webcam recording stream initiated by zoom_updater.exe (PID 9204).",
+            "severity": "medium",
+            "risk_score": 60.0,
+            "event_type": "camera_access",
+            "collector": "sysmon",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "mitre_technique_id": "T1125",
+            "metadata": {
+                "pid": 9204,
+                "process_name": "zoom_updater.exe",
+                "device": "Integrated Webcam"
+            }
+        }
+        if pipeline:
+            await pipeline.process_event(event)
+        else:
+            await ws_manager.broadcast(event)
+        return {"status": "success", "message": "Camera Access Guardian alert triggered", "event": event}
+
+    # 5. Voice-Activated AI SOC Assistant
+    elif feature == "voice":
+        from ai.ai_provider import get_ai_provider
+        provider = get_ai_provider()
+        
+        alert_info = {
+            "title": "Suspicious Registry Modification of Run Key",
+            "risk_score": 92,
+            "severity": "high"
+        }
+        spoken_phrase = await provider.generate_spoken_phrase(alert_info)
+        
+        event = {
+            "id": f"evt_{int(time.time())}",
+            "title": alert_info["title"],
+            "description": "Registry Run key modification attempting to establish persistence.",
+            "severity": "high",
+            "risk_score": 92.0,
+            "event_type": "registry_modification",
+            "collector": "sysmon",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "mitre_technique_id": "T1547.001",
+            "spoken_phrase": spoken_phrase,
+            "metadata": {
+                "pid": 1142,
+                "registry_key": "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\Payload"
+            }
+        }
+        if pipeline:
+            await pipeline.process_event(event)
+        else:
+            await ws_manager.broadcast(event)
+        return {"status": "success", "message": "Voice-activated alert with AI summary generated", "event": event}
+
+    # 6. Live 3D Threat Topology Radar
+    elif feature == "radar":
+        event = {
+            "id": f"evt_{int(time.time())}",
+            "title": "Network Process Link Established",
+            "description": "Process svchost.exe communicating with local port 443.",
+            "severity": "info",
+            "risk_score": 10.0,
+            "event_type": "radar_link",
+            "collector": "netmon",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "metadata": {
+                "nodes": [
+                    {"id": "host", "label": "KAVACH Host", "type": "host"},
+                    {"id": "proc_1", "label": "svchost.exe (PID 882)", "type": "process", "parent": "host"},
+                    {"id": "port_443", "label": "HTTPS (Port 443)", "type": "port", "parent": "proc_1"}
+                ]
+            }
+        }
+        await ws_manager.broadcast(event)
+        return {"status": "success", "message": "3D Radar node link update broadcast", "event": event}
+
+    # 7. BadUSB Keylogger Shield
+    elif feature == "badusb":
+        event = {
+            "id": f"evt_{int(time.time())}",
+            "title": "Untrusted USB Keyboard Connected",
+            "description": "Unauthorized HID device connected mimicking standard keyboard input signatures.",
+            "severity": "critical",
+            "risk_score": 90.0,
+            "event_type": "usb_insert",
+            "collector": "usb_monitor",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "mitre_technique_id": "T1091",
+            "metadata": {
+                "device_id": "HID\\VID_093A&PID_2510\\5&1C4A51A",
+                "vendor_id": "093A",
+                "product_id": "2510",
+                "type": "Keyboard HID"
+            }
+        }
+        if pipeline:
+            await pipeline.process_event(event)
+        else:
+            await ws_manager.broadcast(event)
+        return {"status": "success", "message": "BadUSB HID keyboard threat intercept triggered", "event": event}
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown feature trigger '{feature}'")
+
