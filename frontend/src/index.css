@@ -1,0 +1,177 @@
+:root {
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-color: #030408;
+  color: #F8FAFC;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom Scrollbar Styles for premium Command Center look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+body.dark ::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: #030408;
+}
+
+body.dark ::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background: #1C1C28;
+  border-radius: 3px;
+}
+
+body.dark ::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: #C1121F;
+}
+
+body.light ::-webkit-scrollbar-track {
+  background: #F8FAFC;
+}
+
+body.light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+body.light ::-webkit-scrollbar-thumb:hover {
+  background: #C1121F;
+}
+
+/* Enterprise Gradient Utilities */
+.crimson-gradient-text {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F59E0B 35%, #E63946 70%, #C1121F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtle-gradient-text {
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.crimson-heading-glow {
+  text-shadow: 0 0 35px rgba(193, 18, 31, 0.45);
+}
+
+/* Linear / Stripe Style Glassmorphism Panels */
+.glass-panel-enterprise {
+  background: rgba(13, 14, 24, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel-enterprise:hover {
+  border-color: rgba(193, 18, 31, 0.35);
+  box-shadow: 0 20px 48px -12px rgba(193, 18, 31, 0.25);
+  transform: translateY(-2px);
+}
+
+/* Shimmer Border Animation */
+.shimmer-border {
+  position: relative;
+  border-radius: 16px;
+  background: linear-gradient(60deg, rgba(255,255,255,0.06), rgba(193,18,31,0.25), rgba(255,255,255,0.06));
+  background-size: 300% 300%;
+  animation: shimmerMove 8s ease infinite;
+}
+
+@keyframes shimmerMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Live Telemetry Terminal Screen */
+.terminal-window {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  background: #04050A;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8), 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* Glowing Capsule Container */
+.neon-capsule {
+  background: rgba(193, 18, 31, 0.12);
+  border: 1px solid rgba(193, 18, 31, 0.35);
+  box-shadow: 0 0 20px rgba(193, 18, 31, 0.2);
+  border-radius: 9999px;
+  padding: 6px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Cybernetic Grid Background */
+.cyber-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.cyber-mesh-glow {
+  background: radial-gradient(circle at 50% 0%, rgba(193, 18, 31, 0.18) 0%, rgba(30, 58, 138, 0.12) 40%, transparent 75%);
+}
+
+/* Pulse Glow & Radar FX */
+@keyframes radarSweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.radar-spinner {
+  animation: radarSweep 6s linear infinite;
+}
+
+/* Live Status Dot */
+.live-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10B981;
+  box-shadow: 0 0 10px #10B981;
+  animation: liveStatusPulse 2s ease-in-out infinite;
+}
+
+@keyframes liveStatusPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.6;
+  }
+}
