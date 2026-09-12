@@ -10,12 +10,15 @@ KAVACH is a production-grade **Security Orchestration, Automation, and Response 
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Copy and configure environment
+# 2. Copy and configure environment (GEMINI_API_KEY is optional for browser chat)
 copy .env.example .env
-# Edit .env with your GEMINI_API_KEY
+# Edit .env with your settings if you use server-side AI analysis
 
 # 3. Start the backend
 python main.py
+
+# Or run the lightweight HTML/API server without starting collectors
+python main.py --no-collectors
 
 # 4. Open API documentation
 # http://localhost:8000/docs
@@ -28,13 +31,21 @@ python tui.py
 
 ```
 Collectors (16) → Event Bus → Pipeline → Database + JSON Logs → FastAPI → Frontend
+                                   or
+FastAPI + Frontend (python main.py --no-collectors)
                                 ↓
                     MITRE ATT&CK Mapping
                     Risk Scoring
                     Correlation Engine
                     SOAR Playbooks
-                    AI Analysis (Gemini)
+                    AI Analysis (Gemini, optional)
 ```
+
+The dashboard loads its chart library only when the dashboard is opened. The AI Assistant
+uses Puter.js with Gemini in the browser when available, so no Gemini API key is needed for
+that chat path. Protected backend chat remains as a fallback for environments where Puter is
+unavailable. Use `COLLECTORS_ENABLED=false` or `python main.py --no-collectors` to keep the
+web/API process separate from telemetry collection.
 
 ## API Endpoints (30+)
 

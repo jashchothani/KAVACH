@@ -8,37 +8,37 @@
 /* ─── CSS Custom Properties (Design Tokens) ──────────────────────────── */
 :root {
     /* Primary Brand */
-    --primary: #c2185b;
-    --primary-light: #ec407a;
-    --primary-dark: #880e4f;
-    --primary-50: #fdf2f8;
-    --primary-100: #fbcfe8;
-    --primary-200: #f472b6;
-    --primary-500: #ec407a;
-    --primary-600: #d81b60;
-    --primary-700: #ad1457;
-    --primary-glow: rgba(0, 240, 255, 0.15);
-    --primary-gradient: linear-gradient(135deg, #090d1a 0%, #1e293b 100%);
+    --primary: #b42318;
+    --primary-light: #d92d20;
+    --primary-dark: #7a271a;
+    --primary-50: #fff5f3;
+    --primary-100: #fee4e2;
+    --primary-200: #fecdca;
+    --primary-500: #d92d20;
+    --primary-600: #b42318;
+    --primary-700: #912018;
+    --primary-glow: rgba(180, 35, 24, 0.15);
+    --primary-gradient: linear-gradient(135deg, #b42318 0%, #d92d20 100%);
 
     /* Cybersecurity Theme Accent (Electric Cyan) */
     --accent: #00f0ff;
     --accent-glow: rgba(0, 240, 255, 0.3);
 
     /* Neutral Palette - Dark SOC Cockpit */
-    --bg-body: #060913;
-    --bg-card: rgba(11, 18, 36, 0.8);
-    --bg-card-hover: rgba(17, 27, 52, 0.9);
-    --bg-sidebar: #080c16;
-    --bg-sidebar-hover: #1e293b;
-    --bg-input: #0e1628;
-    --bg-input-focus: #14203a;
-    --bg-code: #0a0f1d;
-    --bg-modal-overlay: rgba(2, 4, 10, 0.85);
+    --bg-body: #f6f8fb;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8fafc;
+    --bg-sidebar: #ffffff;
+    --bg-sidebar-hover: #fff5f3;
+    --bg-input: #ffffff;
+    --bg-input-focus: #fffafa;
+    --bg-code: #f1f5f9;
+    --bg-modal-overlay: rgba(15, 23, 42, 0.45);
 
     /* Borders */
-    --border: #142340;
-    --border-light: #0f1c35;
-    --border-focus: #00f0ff;
+    --border: #d9e1ea;
+    --border-light: #edf1f5;
+    --border-focus: #b42318;
     --border-radius-sm: 6px;
     --border-radius: 10px;
     --border-radius-lg: 14px;
@@ -46,11 +46,11 @@
     --border-radius-full: 9999px;
 
     /* Text */
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-    --text-inverse: #020617;
-    --text-link: #00f0ff;
+    --text-primary: #17202b;
+    --text-secondary: #475467;
+    --text-muted: #667085;
+    --text-inverse: #ffffff;
+    --text-link: #b42318;
 
     /* Status Colors */
     --success: #00e676;
@@ -80,8 +80,8 @@
     --shadow-lg: 0 8px 28px rgba(0,0,0,0.8);
     --shadow-xl: 0 16px 48px rgba(0,0,0,0.9);
     --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.15);
-    --shadow-card: 0 0 0 1px #142340, 0 4px 12px rgba(0,0,0,0.5);
-    --shadow-card-hover: 0 0 0 1.5px #00f0ff, 0 8px 32px rgba(0, 240, 255, 0.15);
+    --shadow-card: 0 0 0 1px #e4e7ec, 0 4px 12px rgba(16, 24, 40, 0.06);
+    --shadow-card-hover: 0 0 0 1.5px #fecdca, 0 8px 24px rgba(180, 35, 24, 0.12);
 
     /* Typography */
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -140,9 +140,9 @@ body {
     line-height: 1.6;
     color: var(--text-primary);
     background-color: var(--bg-body);
-    background-image: 
-        linear-gradient(rgba(20, 35, 64, 0.15) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(20, 35, 64, 0.15) 1px, transparent 1px);
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
     background-size: 40px 40px;
     background-position: center;
     min-height: 100vh;
@@ -193,7 +193,7 @@ input, textarea, select { font-family: inherit; }
     width: 100%;
     height: 100%;
     z-index: 0;
-    background: radial-gradient(circle at center, #0c1224 0%, #060913 100%);
+    background: radial-gradient(circle at center, #ffffff 0%, #edf2f7 100%);
 }
 
 .auth-canvas-container canvas {
@@ -224,13 +224,13 @@ input, textarea, select { font-family: inherit; }
 .auth-card {
     width: 100%;
     max-width: 440px;
-    background: rgba(11, 18, 36, 0.85);
+    background: rgba(255, 255, 255, 0.94);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(0, 240, 255, 0.15);
+    border: 1px solid #e4e7ec;
     border-radius: var(--border-radius-xl);
     padding: var(--space-10);
-    box-shadow: var(--shadow-xl), 0 0 40px rgba(0, 240, 255, 0.08);
+    box-shadow: var(--shadow-xl), 0 12px 40px rgba(16, 24, 40, 0.1);
     animation: authCardIn 0.6s var(--transition-spring) forwards;
     opacity: 0;
     transform: translateY(24px) scale(0.97);

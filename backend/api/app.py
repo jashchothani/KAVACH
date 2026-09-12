@@ -54,16 +54,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await pipeline.start()
     app.state.pipeline = pipeline
 
-    # Start collectors
-    from collectors.registry import create_default_registry
-    registry = create_default_registry()
-    app.state.collector_registry = registry
+    # Keep the web/API process light when collectors run as a separate service.
+    collector_registry = None
+    if settings.collector.enabled:
+        from collectors.registry import create_default_registry
+        collector_registry = create_default_registry()
+    app.state.collector_registry = collector_registry
 
     # Start event bus consumer loops
     await bus.start()
 
-    # Start collectors
-    await registry.start_all()
+    if collector_registry:
+        await collector_registry.start_all()
 
     logger.info("kavach_started", port=settings.api.port)
 
@@ -71,7 +73,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Shutdown
     logger.info("kavach_shutting_down")
-    await registry.stop_all()
+    if collector_registry:
+        await collector_registry.stop_all()
     await bus.stop()
     from database.engine import close_database
     await close_database()

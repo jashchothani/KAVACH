@@ -10,6 +10,20 @@ let pending2faToken = '';
 let pendingVerifyEmail = '';
 let charts = {};
 let wsConnection = null;
+let chartLoadPromise = null;
+
+function loadChartJs() {
+    if (window.Chart) return Promise.resolve();
+    if (chartLoadPromise) return chartLoadPromise;
+    chartLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Chart library unavailable'));
+        document.head.appendChild(script);
+    });
+    return chartLoadPromise;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPA ROUTER
@@ -628,6 +642,9 @@ async function loadDashboard() {
     // Alert badge
     document.getElementById('sidebar-alert-count').textContent = data.overview?.total_alerts ?? 0;
 
+    // Charts are non-essential and loaded only when the dashboard is opened.
+    try { await loadChartJs(); } catch (error) { console.warn(error); return; }
+
     // Severity Chart
     renderSeverityChart(data.overview?.severity_counts || {});
     renderStatusChart(data.overview?.status_counts || {});
@@ -1244,18 +1261,23 @@ async function sendChat() {
     messages.innerHTML += `<div class="chat-msg user">${escHtml(msg)}</div>`;
     messages.scrollTop = messages.scrollHeight;
 
-    const endpoint = currentUser?.role === 'soc_analyst' ? '/chatbot/soc' : '/chatbot/layman';
-    const resp = await apiFetch(endpoint, {
-        method: 'POST',
-        body: JSON.stringify({ message: msg })
-    });
-
-    if (resp && resp.ok) {
-        const data = await resp.json();
-        messages.innerHTML += `<div class="chat-msg assistant">${escHtml(data.response || data.reply || '')}</div>`;
-    } else {
-        messages.innerHTML += `<div class="chat-msg assistant">Sorry, I couldn't process that request.</div>`;
+    let answer = '';
+    if (window.puter?.ai?.chat) {
+        try {
+            const response = await puter.ai.chat(msg, { model: 'gemini-3.7-flash' });
+            answer = typeof response === 'string' ? response : response?.message?.content || response?.text || '';
+        } catch (error) { console.warn('Puter AI unavailable, using backend chat', error); }
     }
+
+    if (!answer) {
+        const endpoint = currentUser?.role === 'soc_analyst' ? '/chatbot/soc' : '/chatbot/layman';
+        const resp = await apiFetch(endpoint, { method: 'POST', body: JSON.stringify({ message: msg }) });
+        if (resp && resp.ok) {
+            const data = await resp.json();
+            answer = data.response || data.reply || '';
+        }
+    }
+    messages.innerHTML += `<div class="chat-msg assistant">${escHtml(answer || 'Sorry, I could not process that request.')}</div>`;
     messages.scrollTop = messages.scrollHeight;
 }
 

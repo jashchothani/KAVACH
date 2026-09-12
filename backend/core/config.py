@@ -115,6 +115,7 @@ class CollectorSettings(BaseSettings):
         alias="SIMULATION_MODE",
         description="Enable simulation mode on non-Windows platforms",
     )
+    enabled: bool = Field(default=True, alias="COLLECTORS_ENABLED", description="Start telemetry collectors with the API")
     collection_interval: int = Field(default=30, description="Collection interval in seconds")
     fim_directories: str = Field(
         default="",

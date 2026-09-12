@@ -29,7 +29,15 @@ def main() -> None:
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
     parser.add_argument("--workers", type=int, default=1, help="Number of workers")
     parser.add_argument("--log-level", default="info", help="Log level")
+    parser.add_argument(
+        "--no-collectors",
+        action="store_true",
+        help="Run only the API and HTML server; keep telemetry collectors in a separate process",
+    )
     args = parser.parse_args()
+
+    if args.no_collectors:
+        os.environ["COLLECTORS_ENABLED"] = "false"
 
     import uvicorn
 
