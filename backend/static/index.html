@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="KAVACH — AI-Driven SOAR-XDR Threat Intelligence & Response Platform. Real-time endpoint security monitoring, MITRE ATT&CK mapping, and automated incident response.">
+    <meta name="theme-color" content="#8B1A1A">
+    <title>KAVACH — SOAR-XDR Security Platform</title>
+    <link rel="icon" href="/static/kavach-logo.png" type="image/png">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Optional browser AI. Chat falls back to the protected backend when unavailable. -->
+    <script src="https://js.puter.com/v2/"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     TOAST CONTAINER
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     AUTH PAGES
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<!-- LOGIN PAGE -->
+<div id="page-login" class="auth-page hidden">
+    <div class="auth-canvas-container" id="three-canvas-login"></div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <img src="/static/kavach-logo.png" alt="KAVACH Logo" id="login-logo">
+            </div>
+            <h1 class="auth-title">Welcome Back</h1>
+            <p class="auth-subtitle">Sign in to your KAVACH security console</p>
+
+            <form id="login-form" autocomplete="on">
+                <div class="form-group">
+                    <label class="form-label" for="login-username">Username</label>
+                    <div class="form-input-icon">
+                        <input type="text" class="form-input" id="login-username" placeholder="Enter your username" required autocomplete="username">
+                        <span class="icon">👤</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Password</label>
+                    <div class="form-input-icon">
+                        <input type="password" class="form-input" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+                        <span class="icon">🔒</span>
+                    </div>
+                </div>
+
+                <div class="auth-links">
+                    <label class="form-checkbox">
+                        <input type="checkbox" id="login-remember"> Remember me
+                    </label>
+                    <a class="auth-link" onclick="navigateTo('forgot')">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-btn">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                Don't have an account? <a class="auth-link" onclick="navigateTo('register')">Create Account</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- REGISTER PAGE -->
+<div id="page-register" class="auth-page hidden">
+    <div class="auth-canvas-container" id="three-canvas-register"></div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <img src="/static/kavach-logo.png" alt="KAVACH Logo">
+            </div>
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Register for KAVACH endpoint protection</p>
+
+            <form id="register-form" autocomplete="off">
+                <div class="form-group">
+                    <label class="form-label" for="reg-username">Username</label>
+                    <input type="text" class="form-input" id="reg-username" placeholder="Choose a username" required minlength="3">
+                    <div class="form-error" id="reg-username-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="reg-email">Email Address</label>
+                    <input type="email" class="form-input" id="reg-email" placeholder="your@email.com" required>
+                    <div class="form-error" id="reg-email-error"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="reg-password">Password</label>
+                        <input type="password" class="form-input" id="reg-password" placeholder="Min 8 characters" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="reg-confirm">Confirm</label>
+                        <input type="password" class="form-input" id="reg-confirm" placeholder="Repeat password" required>
+                    </div>
+                </div>
+                <div class="form-error" id="reg-password-error"></div>
+
+                <div class="form-group">
+                    <label class="form-label" for="reg-role">Account Role</label>
+                    <select class="form-select" id="reg-role">
+                        <option value="layman_user">Standard User</option>
+                        <option value="soc_analyst">SOC Analyst</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="register-btn">
+                    Create Account
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                Already have an account? <a class="auth-link" onclick="navigateTo('login')">Sign In</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FORGOT PASSWORD PAGE -->
+<div id="page-forgot" class="auth-page hidden">
+    <div class="auth-canvas-container" id="three-canvas-forgot"></div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <img src="/static/kavach-logo.png" alt="KAVACH Logo">
+            </div>
+            <h1 class="auth-title">Reset Password</h1>
+            <p class="auth-subtitle">We'll send a verification code to your email</p>
+
+            <div class="wizard-steps" id="forgot-wizard">
+                <div class="wizard-step active" data-step="1">1</div>
+                <div class="wizard-line"></div>
+                <div class="wizard-step" data-step="2">2</div>
+                <div class="wizard-line"></div>
+                <div class="wizard-step" data-step="3">3</div>
+            </div>
+
+            <!-- Step 1: Email -->
+            <form id="forgot-step1">
+                <div class="form-group">
+                    <label class="form-label" for="forgot-email">Email Address</label>
+                    <input type="email" class="form-input" id="forgot-email" placeholder="Enter your registered email" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Send Reset Code</button>
+            </form>
+
+            <!-- Step 2: OTP -->
+            <form id="forgot-step2" class="hidden">
+                <p class="auth-subtitle mb-4">Enter the 6-digit code sent to your email</p>
+                <div class="otp-input-group" id="forgot-otp-group">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="0" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="1" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="2" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="3" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="4" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="5" inputmode="numeric">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Verify Code</button>
+            </form>
+
+            <!-- Step 3: New Password -->
+            <form id="forgot-step3" class="hidden">
+                <div class="form-group">
+                    <label class="form-label" for="forgot-newpass">New Password</label>
+                    <input type="password" class="form-input" id="forgot-newpass" placeholder="Enter new password" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="forgot-confirm">Confirm Password</label>
+                    <input type="password" class="form-input" id="forgot-confirm" placeholder="Confirm new password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Reset Password</button>
+            </form>
+
+            <div class="auth-footer mt-6">
+                <a class="auth-link" onclick="navigateTo('login')">← Back to Sign In</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2FA VERIFICATION PAGE -->
+<div id="page-2fa" class="auth-page hidden">
+    <div class="auth-canvas-container" id="three-canvas-2fa"></div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <img src="/static/kavach-logo.png" alt="KAVACH Logo">
+            </div>
+            <h1 class="auth-title">Two-Factor Auth</h1>
+            <p class="auth-subtitle">Enter the 6-digit code from your authenticator app</p>
+
+            <form id="twofa-form">
+                <div class="otp-input-group" id="twofa-otp-group">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="0" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="1" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="2" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="3" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="4" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="5" inputmode="numeric">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="twofa-btn">Verify & Sign In</button>
+            </form>
+
+            <div class="auth-footer mt-6">
+                <a class="auth-link" onclick="navigateTo('login')">← Back to Sign In</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EMAIL VERIFICATION PAGE -->
+<div id="page-verify-email" class="auth-page hidden">
+    <div class="auth-canvas-container" id="three-canvas-verify"></div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <img src="/static/kavach-logo.png" alt="KAVACH Logo">
+            </div>
+            <h1 class="auth-title">Verify Email</h1>
+            <p class="auth-subtitle" id="verify-email-subtitle">Enter the 6-digit code sent to your email</p>
+
+            <form id="verify-email-form">
+                <div class="otp-input-group" id="verify-otp-group">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="0" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="1" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="2" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="3" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="4" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" data-idx="5" inputmode="numeric">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">Verify Email</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MAIN DASHBOARD
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="page-dashboard" class="app-layout hidden">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="/static/kavach-logo.png" alt="KAVACH">
+            <div class="sidebar-brand">
+                KAVACH
+                <small>SOAR-XDR Platform</small>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">Main</div>
+            <a class="nav-item active" data-section="overview" onclick="showSection('overview')">
+                <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a class="nav-item" data-section="alerts" onclick="showSection('alerts')">
+                <span class="nav-icon">🚨</span> Alerts
+                <span class="nav-badge" id="sidebar-alert-count">0</span>
+            </a>
+            <a class="nav-item" data-section="devices" onclick="showSection('devices')">
+                <span class="nav-icon">💻</span> Devices
+            </a>
+            <a class="nav-item" data-section="incidents" onclick="showSection('incidents')">
+                <span class="nav-icon">📋</span> Incidents
+            </a>
+
+            <div class="nav-section-title">Intelligence</div>
+            <a class="nav-item" data-section="mitre" onclick="showSection('mitre')">
+                <span class="nav-icon">🎯</span> MITRE ATT&CK
+            </a>
+            <a class="nav-item" data-section="iocs" onclick="showSection('iocs')">
+                <span class="nav-icon">🔍</span> IOC Analysis
+            </a>
+            <a class="nav-item" data-section="logs" onclick="showSection('logs')">
+                <span class="nav-icon">📜</span> Log Viewer
+            </a>
+
+            <div class="nav-section-title">Response</div>
+            <a class="nav-item" data-section="playbooks" onclick="showSection('playbooks')">
+                <span class="nav-icon">📖</span> Playbooks
+            </a>
+            <a class="nav-item" data-section="ml" onclick="showSection('ml')">
+                <span class="nav-icon">🧠</span> ML Engine
+            </a>
+
+            <div class="nav-section-title">Tools</div>
+            <a class="nav-item" data-section="chat" onclick="showSection('chat')">
+                <span class="nav-icon">💬</span> AI Assistant
+            </a>
+            <a class="nav-item" data-section="awareness" onclick="showSection('awareness')">
+                <span class="nav-icon">🎓</span> Awareness
+            </a>
+            <a class="nav-item" data-section="settings" onclick="showSection('settings')">
+                <span class="nav-icon">⚙️</span> Settings
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-user" id="sidebar-user">
+                <div class="sidebar-avatar" id="sidebar-avatar">A</div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="sidebar-username">Admin</div>
+                    <div class="sidebar-user-role" id="sidebar-role">soc_analyst</div>
+                </div>
+            </div>
+            <button class="btn btn-ghost btn-sm btn-block mt-4" onclick="handleLogout()" style="color:rgba(255,255,255,0.6);">
+                🚪 Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="topbar-btn" id="sidebar-toggle" onclick="toggleSidebar()" style="display:none;">☰</button>
+                <div>
+                    <div class="topbar-title" id="topbar-title">Dashboard</div>
+                    <div class="topbar-breadcrumb">
+                        <span>KAVACH</span> › <span id="topbar-breadcrumb">Overview</span>
+                        <span class="status-live-pulse" style="margin-left: 10px;">● LIVE</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" onclick="loadDashboard()" title="Refresh">🔄</button>
+                <button class="topbar-btn" id="notification-btn" title="Notifications">
+                    🔔
+                    <span class="badge-dot" id="notification-dot" style="display:none;"></span>
+                </button>
+                <button class="topbar-btn" onclick="showSection('settings')" title="Settings">⚙️</button>
+            </div>
+        </header>
+
+        <!-- Content Sections -->
+        <div class="page-content">
+
+            <!-- ─── OVERVIEW SECTION ─────────────────────────────────── -->
+            <section id="section-overview">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">Security Overview</h1>
+                        <p class="page-header-subtitle">Real-time threat posture and system health</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-secondary btn-sm" onclick="generateReport()">📄 Generate Report</button>
+                        <button class="btn btn-primary btn-sm" onclick="retrainModel()">🧠 Retrain ML</button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card danger">
+                        <div class="stat-icon danger">🚨</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Total Alerts</div>
+                            <div class="stat-value" id="stat-alerts">—</div>
+                        </div>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-icon info">💻</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Devices Monitored</div>
+                            <div class="stat-value" id="stat-devices">—</div>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-icon warning">📋</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Open Incidents</div>
+                            <div class="stat-value" id="stat-incidents">—</div>
+                        </div>
+                    </div>
+                    <div class="stat-card primary">
+                        <div class="stat-icon primary">🖥️</div>
+                        <div class="stat-info">
+                            <div class="stat-label">CPU Usage</div>
+                            <div class="stat-value" id="stat-cpu">—%</div>
+                        </div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-icon success">💾</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Memory Usage</div>
+                            <div class="stat-value" id="stat-memory">—%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Premium Live Activity Chart (Full Width) -->
+                <div class="card mt-6">
+                    <div class="card-header flex justify-between align-center">
+                        <div class="card-title">
+                            <span class="card-icon">⚡</span> 
+                            <span>Real-Time Security Activity</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container large">
+                            <canvas id="chart-live-activity"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row 1 -->
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><span class="card-icon">📊</span> Alert Severity Distribution</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="chart-severity"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><span class="card-icon">📈</span> Alert Status Breakdown</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="chart-status"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row 2 -->
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><span class="card-icon">🎯</span> MITRE ATT&CK Techniques</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container tall">
+                                <canvas id="chart-mitre"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><span class="card-icon">📡</span> Collector Health</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container tall">
+                                <canvas id="chart-collectors"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts Table -->
+                <div class="card mt-6">
+                    <div class="card-header">
+                        <div class="card-title"><span class="card-icon">🚨</span> Recent Alerts</div>
+                        <div class="card-actions">
+                            <button class="btn btn-ghost btn-sm" onclick="showSection('alerts')">View All →</button>
+                        </div>
+                    </div>
+                    <div class="card-body no-pad">
+                        <div style="overflow-x:auto;">
+                            <table class="data-table" id="recent-alerts-table">
+                                <thead>
+                                    <tr>
+                                        <th>Severity</th>
+                                        <th>Title</th>
+                                        <th>MITRE</th>
+                                        <th>Risk</th>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-alerts-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── ALERTS SECTION ───────────────────────────────────── -->
+            <section id="section-alerts" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">Security Alerts</h1>
+                        <p class="page-header-subtitle">All detected threats and anomalies</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="filter-bar">
+                        <select class="form-select" id="alert-filter-severity" onchange="loadAlerts()">
+                            <option value="">All Severities</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                            <option value="info">Info</option>
+                        </select>
+                        <select class="form-select" id="alert-filter-status" onchange="loadAlerts()">
+                            <option value="">All Statuses</option>
+                            <option value="new">New</option>
+                            <option value="investigating">Investigating</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="false_positive">False Positive</option>
+                        </select>
+                        <button class="btn btn-secondary btn-sm" onclick="loadAlerts()">🔄 Refresh</button>
+                    </div>
+                    <div class="card-body no-pad">
+                        <div style="overflow-x:auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Severity</th>
+                                        <th>Title</th>
+                                        <th>Source</th>
+                                        <th>MITRE</th>
+                                        <th>Risk</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alerts-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── DEVICES SECTION ──────────────────────────────────── -->
+            <section id="section-devices" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">Monitored Devices</h1>
+                        <p class="page-header-subtitle">Endpoint health and risk status</p>
+                    </div>
+                </div>
+                <div class="device-grid" id="device-grid"></div>
+            </section>
+
+            <!-- ─── INCIDENTS SECTION ────────────────────────────────── -->
+            <section id="section-incidents" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">Incidents</h1>
+                        <p class="page-header-subtitle">Correlated security incidents</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body no-pad">
+                        <div style="overflow-x:auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>Severity</th><th>Title</th><th>Status</th><th>Alerts</th><th>Created</th></tr>
+                                </thead>
+                                <tbody id="incidents-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── MITRE SECTION ────────────────────────────────────── -->
+            <section id="section-mitre" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">MITRE ATT&CK</h1>
+                        <p class="page-header-subtitle">Technique mapping and coverage analysis</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="chart-container tall">
+                            <canvas id="chart-mitre-full"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── IOC ANALYSIS SECTION ─────────────────────────────── -->
+            <section id="section-iocs" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">IOC Analysis</h1>
+                        <p class="page-header-subtitle">Indicators of Compromise intelligence</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body no-pad">
+                        <div style="overflow-x:auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>Type</th><th>Value</th><th>Source</th><th>Severity</th><th>Created</th></tr>
+                                </thead>
+                                <tbody id="iocs-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── LOG VIEWER SECTION ───────────────────────────────── -->
+            <section id="section-logs" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">Log Viewer</h1>
+                        <p class="page-header-subtitle">Raw and processed telemetry logs</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="filter-bar">
+                        <input type="text" class="form-input" id="log-search" placeholder="Search logs..." style="max-width:300px;">
+                        <select class="form-select" id="log-severity-filter">
+                            <option value="">All Levels</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                            <option value="info">Info</option>
+                        </select>
+                        <button class="btn btn-secondary btn-sm" onclick="loadLogs()">🔍 Search</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="log-viewer" id="log-viewer">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📜</div>
+                                <div class="empty-state-title">No logs loaded</div>
+                                <div class="empty-state-text">Click Search to load telemetry logs</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── PLAYBOOKS SECTION ────────────────────────────────── -->
+            <section id="section-playbooks" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">SOAR Playbooks</h1>
+                        <p class="page-header-subtitle">Automated incident response workflows</p>
+                    </div>
+                </div>
+                <div class="dashboard-grid-3" id="playbooks-grid"></div>
+            </section>
+
+            <!-- ─── ML ENGINE SECTION ────────────────────────────────── -->
+            <section id="section-ml" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">ML Anomaly Engine</h1>
+                        <p class="page-header-subtitle">Isolation Forest unsupervised anomaly detection</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="retrainModel()">🧠 Retrain Model</button>
+                </div>
+                <div class="stats-grid" id="ml-stats-grid">
+                    <div class="stat-card primary">
+                        <div class="stat-icon primary">🧠</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Model Name</div>
+                            <div class="stat-value" id="ml-model-name" style="font-size:var(--font-size-base);">—</div>
+                        </div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-icon success">📏</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Model Size</div>
+                            <div class="stat-value" id="ml-model-size">—</div>
+                        </div>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-icon info">⏱️</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Last Trained</div>
+                            <div class="stat-value" id="ml-last-trained" style="font-size:var(--font-size-sm);">—</div>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-icon warning">📊</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Contamination</div>
+                            <div class="stat-value" id="ml-contamination">—</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── AI CHAT SECTION ──────────────────────────────────── -->
+            <section id="section-chat" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">AI Security Assistant</h1>
+                        <p class="page-header-subtitle">Ask questions about threats, alerts, and security</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="chat-panel">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="chat-msg assistant">
+                                👋 Hello! I'm the KAVACH AI assistant. Ask me about security threats, alerts, or MITRE techniques.
+                            </div>
+                        </div>
+                        <div class="chat-input-bar">
+                            <input type="text" class="chat-input" id="chat-input" placeholder="Ask about threats, alerts, or security..." onkeydown="if(event.key==='Enter')sendChat()">
+                            <button class="btn btn-primary btn-sm" onclick="sendChat()">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── AWARENESS SECTION ────────────────────────────────── -->
+            <section id="section-awareness" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">Security Awareness</h1>
+                        <p class="page-header-subtitle">Daily tips and security training</p>
+                    </div>
+                </div>
+                <div class="card mb-6">
+                    <div class="card-header">
+                        <div class="card-title"><span class="card-icon">💡</span> Today's Security Tip</div>
+                    </div>
+                    <div class="card-body" id="awareness-tip">
+                        <p class="text-muted">Loading tip...</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><span class="card-icon">🧩</span> Security Quiz</div>
+                    </div>
+                    <div class="card-body" id="awareness-quiz">
+                        <p class="text-muted">Loading quiz...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── SETTINGS SECTION ─────────────────────────────────── -->
+            <section id="section-settings" class="hidden">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-header-title">Settings</h1>
+                        <p class="page-header-subtitle">Account and security configuration</p>
+                    </div>
+                </div>
+                <div class="card mb-6">
+                    <div class="card-header">
+                        <div class="card-title"><span class="card-icon">🔐</span> Two-Factor Authentication</div>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-4 text-muted" style="font-size:var(--font-size-sm);">Add an extra layer of security to your account using TOTP-based 2FA.</p>
+                        <button class="btn btn-primary btn-sm" id="setup-2fa-btn" onclick="setup2FA()">Setup 2FA</button>
+                        <div id="qr-code-container" class="hidden mt-4" style="text-align:center;">
+                            <img id="qr-code-img" alt="2FA QR Code" style="max-width:200px;margin:0 auto;border-radius:8px;">
+                            <p class="text-mono mt-4" id="totp-secret" style="font-size:var(--font-size-sm);color:var(--primary);"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><span class="card-icon">👤</span> Account Info</div>
+                    </div>
+                    <div class="card-body">
+                        <p style="font-size:var(--font-size-sm);"><strong>Username:</strong> <span id="settings-username">—</span></p>
+                        <p style="font-size:var(--font-size-sm);margin-top:8px;"><strong>Email:</strong> <span id="settings-email">—</span></p>
+                        <p style="font-size:var(--font-size-sm);margin-top:8px;"><strong>Role:</strong> <span id="settings-role">—</span></p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ALERT DETAIL MODAL
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="alert-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modal-alert-title">Alert Details</h2>
+            <button class="topbar-btn" onclick="closeModal('alert-modal')">✕</button>
+        </div>
+        <div class="modal-body" id="modal-alert-body"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary btn-sm" onclick="closeModal('alert-modal')">Close</button>
+            <button class="btn btn-primary btn-sm" id="modal-explain-btn">🧠 AI Explain</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

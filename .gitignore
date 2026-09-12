@@ -2,6 +2,7 @@
 .DS_Store
 Thumbs.db
 desktop.ini
+~$*
 
 # IDE & Editor files
 .idea/
@@ -13,6 +14,12 @@ desktop.ini
 *.ntvs*
 *.njsproj
 *.sln
+*.iml
+
+# Environment & Secrets
+.env
+*.env
+!.env.example
 
 # Python / Backend
 backend/.venv/
@@ -21,14 +28,29 @@ backend/*/__pycache__/
 backend/*/*/__pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
 .venv/
 venv/
 ENV/
 env/
 __pycache__/
 .pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+# Database
+*.db
+*.sqlite3
+
+# Logs & Runtime
+logs/
+*.log
+quarantine/
+rollback/
 
 # Node / Frontend
 node_modules/
@@ -56,14 +78,11 @@ mobile/ios/Pods/
 mobile/ios/.symlinks/
 mobile/ios/Flutter/Flutter.framework
 mobile/ios/Flutter/Flutter.podspec
-*.iml
 
-# Large media files
+# Archives & Large media
+*.zip
+*.tar.gz
+*.rar
 *.mp4
 *.mov
 *.avi
-
-# Environment variables & secrets
-.env
-.env.*
-!.env.example

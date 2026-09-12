@@ -1,0 +1,22 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Databases
+*.db
+*.db-shm
+*.db-wal
+
+# Local configurations & logs
+.env
+logs/
+*.log
+
+# Scratchpad & temp files
+scratch/
+browser/
+temp/
+*.zip

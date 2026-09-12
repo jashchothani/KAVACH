@@ -1,22 +1,68 @@
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-sqlalchemy==2.0.36
-alembic==1.14.0
-asyncpg==0.30.0
-psycopg2-binary==2.9.10
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.19
-redis==5.2.1
-elasticsearch==8.17.0
-pydantic==2.10.4
-pydantic-settings==2.7.1
+# ============================================================
+# KAVACH SOAR-XDR Platform — Python Dependencies
+# ============================================================
+
+# --- Core Framework & API ---
+fastapi==0.115.12
+uvicorn[standard]==0.34.3
+pydantic==2.11.4
+pydantic-settings==2.9.1
 python-dotenv==1.0.1
 websockets==14.1
-celery==5.4.0
-httpx==0.28.1
-jinja2==3.1.5
 aiofiles==24.1.0
-pillow==11.1.0
+jinja2==3.1.5
+python-multipart==0.0.19
+
+# --- Database & Persistence ---
+sqlalchemy[asyncio]==2.0.41
+aiosqlite==0.21.0
+alembic==1.14.0
+
+# --- Authentication & Security ---
+PyJWT==2.10.1
+bcrypt==4.3.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# --- Logging & Telemetry ---
+structlog==25.4.0
+psutil==7.0.0
+watchdog==6.0.0
+
+# --- AI, ML & Threat Intelligence ---
+google-generativeai==0.8.5
+scikit-learn==1.6.1
+joblib==1.4.2
+numpy==2.2.2
+
+# --- HTTP Client & Integrations ---
+httpx==0.28.1
+
+# --- Scheduling & Async Tasks ---
+apscheduler==3.11.0
+python-dateutil==2.9.0
+
+# --- Reports & Documents ---
 reportlab==4.2.5
+pillow==11.1.0
 openpyxl==3.1.5
+
+# --- CLI & TUI ---
+click==8.2.1
+textual==3.2.0
+rich==14.0.0
+
+# --- Testing ---
+pytest==8.4.1
+pytest-asyncio==1.0.0
+
+# --- Optional / Production Distributed Components ---
+# redis==5.2.1
+# celery==5.4.0
+# elasticsearch==8.17.0
+# asyncpg==0.30.0
+# psycopg2-binary==2.9.10
+
+# --- Windows-specific (install on Windows only) ---
+# pywin32==310
+# wmi==1.5.1
