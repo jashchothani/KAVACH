@@ -44,13 +44,19 @@ backend/uploads/*
 
 # Database
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
 *.sqlite3
+data/database/*.db*
 
 # Logs & Runtime
 logs/
 *.log
 quarantine/
 rollback/
+scratch/
 
 # Node / Frontend
 node_modules/

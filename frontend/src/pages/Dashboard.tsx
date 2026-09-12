@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Box, Grid, Typography, useTheme, Button, Paper, Stack, Chip } from '@mui/material';
+
+const API_BASE = 'http://localhost:8000/api/v1';
 import {
   BugReport, Shield, Assignment, Security, PlayCircleFilled,
   Warning, Assessment, Launch, AddModerator, PlayArrow, CheckCircle
@@ -47,6 +50,26 @@ const recentThreats = [
 export const Dashboard: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const [summaryData, setSummaryData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const resp = await axios.get(`${API_BASE}/dashboard/summary`);
+        setSummaryData(resp.data);
+      } catch (e) {
+        // Backend offline, graceful fallback
+      }
+    };
+    fetchSummary();
+  }, []);
+
+  const securityScore = summaryData?.security_score ?? 92;
+  const scoreCategory = summaryData?.score_category ?? 'Excellent Protection';
+  const devicesCount = summaryData?.stats?.monitored_devices ?? 156;
+  const activeThreatsCount = summaryData?.stats?.active_threats ?? 0;
+  const openIncidentsCount = summaryData?.stats?.open_incidents ?? 0;
+  const totalAlertsCount = summaryData?.stats?.total_alerts ?? 4;
 
   return (
     <Box>
@@ -107,52 +130,52 @@ export const Dashboard: React.FC = () => {
         <Grid item xs={12} sm={6} md={4} lg={2}>
           <StatCard
             title="Safety Grade"
-            value="87.5 / 100"
+            value={`${securityScore} / 100`}
             icon={<Shield />}
             color={theme.palette.success.main}
             glow
             trend={{ value: 1.2, isUp: true }}
-            sparklineData={[{ value: 85 }, { value: 84 }, { value: 86 }, { value: 88 }, { value: 87.5 }]}
+            sparklineData={[{ value: 85 }, { value: 84 }, { value: 86 }, { value: 88 }, { value: securityScore }]}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2}>
           <StatCard
             title="Suspicious Events"
-            value="23"
+            value={String(activeThreatsCount)}
             icon={<Warning />}
             color="#C1121F"
             trend={{ value: 12, isUp: false }}
-            sparklineData={[{ value: 15 }, { value: 18 }, { value: 20 }, { value: 22 }, { value: 23 }]}
+            sparklineData={[{ value: 15 }, { value: 18 }, { value: 20 }, { value: 22 }, { value: activeThreatsCount }]}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2}>
           <StatCard
             title="Protected Devices"
-            value="156"
+            value={String(devicesCount)}
             icon={<BugReport />}
             color={theme.palette.info.main}
             trend={{ value: 4.8, isUp: true }}
-            sparklineData={[{ value: 148 }, { value: 150 }, { value: 152 }, { value: 155 }, { value: 156 }]}
+            sparklineData={[{ value: 148 }, { value: 150 }, { value: 152 }, { value: 155 }, { value: devicesCount }]}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2}>
           <StatCard
             title="Open Incidents"
-            value="8"
+            value={String(openIncidentsCount)}
             icon={<Assignment />}
             color={theme.palette.warning.main}
             trend={{ value: 20, isUp: false }}
-            sparklineData={[{ value: 10 }, { value: 9 }, { value: 8 }, { value: 8 }, { value: 8 }]}
+            sparklineData={[{ value: 10 }, { value: 9 }, { value: 8 }, { value: 8 }, { value: openIncidentsCount }]}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2}>
           <StatCard
-            title="AI Flagged Threats"
-            value="42"
+            title="Active Alerts"
+            value={String(totalAlertsCount)}
             icon={<Security />}
             color="#8B5CF6"
             trend={{ value: 15.4, isUp: true }}
-            sparklineData={[{ value: 30 }, { value: 35 }, { value: 38 }, { value: 40 }, { value: 42 }]}
+            sparklineData={[{ value: 30 }, { value: 35 }, { value: 38 }, { value: 40 }, { value: totalAlertsCount }]}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2}>

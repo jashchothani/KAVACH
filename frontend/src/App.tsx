@@ -29,6 +29,13 @@ import { Analytics } from './pages/Analytics';
 import { AuditCenter } from './pages/AuditCenter';
 import { Settings } from './pages/Settings';
 
+// New Intelligence & Monitoring Pages
+import { UrlScanner } from './pages/UrlScanner';
+import { MlDetection } from './pages/MlDetection';
+import { RakshaAi } from './pages/RakshaAi';
+import { MonitoringView } from './pages/MonitoringView';
+import { ReportsView } from './pages/ReportsView';
+
 import '@fontsource/inter';
 import '@fontsource/outfit';
 
@@ -77,17 +84,38 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               }
             >
+              {/* Overview */}
               <Route path="/dashboard" element={<Dashboard />} />
+
+              {/* Security */}
               <Route path="/threats" element={<ThreatDetection />} />
+              <Route path="/alerts" element={<AlertCenter />} />
+              <Route path="/incidents" element={<IncidentManagement />} />
+
+              {/* Monitoring */}
+              <Route path="/devices" element={<MonitoringView initialTab={0} />} />
+              <Route path="/processes" element={<MonitoringView initialTab={1} />} />
+              <Route path="/network" element={<MonitoringView initialTab={2} />} />
+              <Route path="/activity" element={<MonitoringView initialTab={3} />} />
+
+              {/* Intelligence */}
+              <Route path="/url-scanner" element={<UrlScanner />} />
+              <Route path="/threat-intel" element={<ThreatIntelligence />} />
+              <Route path="/ml-detection" element={<MlDetection />} />
+
+              {/* Intelligent Assistant */}
+              <Route path="/raksha-ai" element={<RakshaAi />} />
+
+              {/* Platform Controls */}
+              <Route path="/reports" element={<ReportsView />} />
+              <Route path="/settings" element={<Settings />} />
+
+              {/* Additional SOC Modules */}
               <Route path="/mitre" element={<MitreAttack />} />
               <Route path="/soar" element={<SoarCenter />} />
-              <Route path="/incidents" element={<IncidentManagement />} />
               <Route path="/ai-security" element={<AiSecurity />} />
-              <Route path="/threat-intel" element={<ThreatIntelligence />} />
-              <Route path="/alerts" element={<AlertCenter />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/audit" element={<AuditCenter />} />
-              <Route path="/settings" element={<Settings />} />
             </Route>
 
             {/* Fallback */}

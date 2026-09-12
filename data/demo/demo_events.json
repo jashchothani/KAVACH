@@ -1,0 +1,40 @@
+{
+  "environment": "DEMO ENVIRONMENT",
+  "disclaimer": "This data is purely for presentation and simulation. Never mixed with real telemetry.",
+  "events": [
+    {
+      "event_id": "demo-evt-001",
+      "timestamp": "2026-09-12T10:00:00Z",
+      "collector": "powershell",
+      "event_type": "encoded_command",
+      "severity": "high",
+      "risk_score": 75.0,
+      "device_id": "DEMO-ENDPOINT-01",
+      "process_name": "powershell.exe",
+      "command_line": "powershell.exe -enc SQBFAFgA...",
+      "mitre": {
+        "technique_id": "T1059.001",
+        "technique_name": "PowerShell",
+        "tactic": "Execution"
+      },
+      "status": "processed"
+    },
+    {
+      "event_id": "demo-evt-002",
+      "timestamp": "2026-09-12T10:05:00Z",
+      "collector": "network",
+      "event_type": "suspicious_port",
+      "severity": "critical",
+      "risk_score": 90.0,
+      "device_id": "DEMO-ENDPOINT-01",
+      "destination_ip": "198.51.100.42",
+      "destination_port": 4444,
+      "mitre": {
+        "technique_id": "T1571",
+        "technique_name": "Non-Standard Port",
+        "tactic": "Command and Control"
+      },
+      "status": "processed"
+    }
+  ]
+}

@@ -9,6 +9,14 @@ the production kavach.db.
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
+
+# Ensure backend/ and backend/app/ are on python path
+TEST_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = TEST_DIR.parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 # Override environment variables BEFORE any KAVACH module is imported.
 # This ensures the engine is created with the test database and running in development mode.
@@ -16,7 +24,10 @@ os.environ["DB_URL"] = "sqlite+aiosqlite:///kavach_test.db"
 os.environ["ENVIRONMENT"] = "development"
 
 import pytest
-from core.config import reload_settings
+try:
+    from core.config import reload_settings
+except ImportError:
+    from app.core.config import get_settings as reload_settings
 
 
 @pytest.fixture(autouse=True, scope="session")

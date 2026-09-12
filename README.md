@@ -1,81 +1,97 @@
-# 🛡️ KAVACH — AI-Powered SOAR-XDR Threat Intelligence & Defense Platform
+# 🛡️ KAVACH — AI-Driven SOAR-XDR Threat Intelligence & Response Platform
 
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React / Vite](https://img.shields.io/badge/React-18-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B.svg?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev/)
-[![Three.js](https://img.shields.io/badge/Three.js-r160-000000.svg?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org/)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6.x-646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Scikit--Learn](https://img.shields.io/badge/Scikit--Learn-Isolation--Forest-F7931E.svg?style=for-the-badge&logo=scikitlearn&logoColor=white)](https://scikit-learn.org/)
+[![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM--AI-76B900.svg?style=for-the-badge&logo=nvidia&logoColor=white)](https://build.nvidia.com/)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK%20v14-red.svg?style=for-the-badge)](https://attack.mitre.org/)
-[![License](https://img.shields.io/badge/License-Proprietary-lightgrey.svg?style=for-the-badge)](#license)
 
-> **KAVACH** (कवच — *Armor/Shield*) is a production-grade **Extended Detection and Response (XDR)** and **Security Orchestration, Automation, and Response (SOAR)** platform. Designed for modern enterprise SOCs, incident response teams, and cyber defense operations, KAVACH brings together 16 native Windows telemetry collectors, machine learning behavioral anomaly detection, MITRE ATT&CK correlation, autonomous containment playbooks, an interactive 3D Web SOC Cockpit, and cross-platform mobile security clients.
-
----
-
-## 📑 Table of Contents
-
-- [Key Capabilities](#-key-capabilities)
-- [System Architecture](#-system-architecture)
-- [Repository Structure](#-repository-structure)
-- [Component Deep Dive](#-component-deep-dive)
-  - [1. Telemetry Collectors (16 Windows Engines)](#1-telemetry-collectors-16-windows-engines)
-  - [2. AI Threat Analysis & Copilot](#2-ai-threat-analysis--copilot)
-  - [3. Machine Learning & Behavioral Anomaly Detection](#3-machine-learning--behavioral-anomaly-detection)
-  - [4. SOAR Playbooks & Remediation](#4-soar-playbooks--remediation)
-  - [5. Glassmorphic Web SOC Cockpit & 3D Visualizer](#5-glassmorphic-web-soc-cockpit--3d-visualizer)
-  - [6. Cross-Platform Flutter Mobile Client](#6-cross-platform-flutter-mobile-client)
-- [Quick Start](#-quick-start)
-  - [Backend Setup](#backend-setup)
-  - [Frontend Web App Setup](#frontend-web-app-setup)
-  - [Flutter Mobile Client Setup](#flutter-mobile-client-setup)
-- [API Endpoints](#-api-endpoints)
-- [Role-Based Access Control (RBAC)](#-role-based-access-control-rbac)
-- [License](#-license)
+> **KAVACH** (कवच — *Shield/Armor*) is a unified **Extended Detection and Response (XDR)** and **Security Orchestration, Automation, and Response (SOAR)** platform. KAVACH merges native Windows endpoint telemetry, real-time machine learning anomaly detection (`sklearn.ensemble.IsolationForest`), deterministic MITRE ATT&CK rules, threat intelligence correlation, SSRF-contained URL safety analysis, and the **Raksha AI** cybersecurity assistant powered by **NVIDIA NIM** (with zero-dependency offline fallback).
 
 ---
 
-## 🚀 Key Capabilities
-
-- **Real-Time Endpoint Telemetry**: 16 native Windows collectors capturing process hierarchies, Sysmon telemetry, PowerShell script block logs, network connections, file integrity (FIM), USB devices, and persistence mechanisms.
-- **Autonomous SOAR Remediation**: Pre-packaged and customizable playbooks that isolate compromised hosts, kill malicious LOLBins, quarantine zero-day payloads, revoke rogue accounts, and block malicious IPs with instant rollback support.
-- **Dual-Tier AI Copilot**: Server-side Google Gemini 2.0/3.7 for in-depth threat intelligence reports and incident summarization, complemented by client-side browser Puter.js AI with automatic fallback for zero-overhead interactive SOC guidance.
-- **Behavioral ML Anomaly Detection**: Integrated scikit-learn Isolation Forest engine detecting baseline deviations and suspicious anomalies without relying purely on static signatures.
-- **Interactive 3D SOC Cockpit**: Responsive glassmorphic command center featuring a real-time 3D Three.js cyber shield, dynamic MITRE ATT&CK matrix heatmaps, live telemetry charts, and unified alert triage.
-- **Cross-Platform Mobile Security App**: Full Flutter client (Android, iOS, Windows, macOS, Linux, Web) providing secure MFA OTP authentication, executive security alerts, and system health status.
+## 📌 Absolute Product & Module Hierarchy
+- **Product Name**: `KAVACH`
+- **AI Cybersecurity Assistant**: `Raksha AI` (an embedded intelligence module inside KAVACH)
+- **Architecture**: Two-port decoupled system — Backend runs on `http://localhost:8000` (FastAPI), Frontend SOC runs on `http://localhost:5173` (React + Vite). The backend operates completely independently of the frontend.
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ Architecture
 
+```mermaid
+graph TD
+    subgraph Endpoints ["Data Ingestion & Collectors"]
+        C1["Process Monitor"]
+        C2["Network Monitor"]
+        C3["File Integrity (FIM)"]
+        C4["Windows Event Log / Sysmon"]
+        C5["PowerShell & LOLBins"]
+        C6["USB / Canary / DNS"]
+    end
+
+    subgraph CoreEngine ["KAVACH Backend Core (:8000)"]
+        EB["Async Internal Event Bus (Bounded Queue)"]
+        NORM["Normalization & Deduplication"]
+        RE["Rule Engine (MITRE ATT&CK)"]
+        ML["Isolation Forest (10-dim Vectorizer)"]
+        TI["Threat Intelligence & IOCs"]
+        HRE["Hybrid Risk Engine (Dynamic Weighting)"]
+        CORR["Incident Correlation Engine"]
+        SOAR["SOAR Playbook Execution Registry"]
+        URLSEC["URL Security (SSRF Protection & Homograph)"]
+        RAKSHA["Raksha AI Service (Sanitizer + NVIDIA NIM)"]
+        DB[(SQLite WAL / PostgreSQL)]
+    end
+
+    subgraph Clients ["Client & Presentation Layer"]
+        FE["KAVACH Frontend SOC (:5173)<br/>Normal User Mode & Analyst Mode"]
+        EXT["Chromium MV3 Extension<br/>Real-Time Phishing & URL Shield"]
+    end
+
+    C1 & C2 & C3 & C4 & C5 & C6 --> EB
+    EB --> NORM --> RE & ML & TI --> HRE --> CORR --> DB
+    CORR --> SOAR
+    FE <-->|REST API + WebSocket| CoreEngine
+    EXT <-->|Scoped REST API| URLSEC
+    FE <-->|Queries & Explanations| RAKSHA
 ```
-                                 ┌──────────────────────────────────────────────────────────┐
-                                 │              16 Native Windows Telemetry Collectors      │
-                                 │ (Process, Network, Sysmon, Event Log, FIM, USB, Registry) │
-                                 └────────────────────────────┬─────────────────────────────┘
-                                                              │
-                                                              ▼
-                                                 ┌──────────────────────────┐
-                                                 │ Async Internal Event Bus │
-                                                 └────────────┬─────────────┘
-                                                              │
-                                                              ▼
-                                                 ┌──────────────────────────┐
-                                                 │ Multi-Stage Pipeline     │
-                                                 │ - Deduplication & Normalization
-                                                 │ - MITRE ATT&CK Mapping   │
-                                                 │ - ML Anomaly Detection   │
-                                                 │ - Risk Scoring Engine    │
-                                                 └────────────┬─────────────┘
-                                                              │
-                                     ┌────────────────────────┴────────────────────────┐
-                                     ▼                                                 ▼
-                        ┌────────────────────────┐                        ┌─────────────────────────┐
-                        │ SQLite / Engine DB     │                        │ Autonomous SOAR Engine  │
-                        │ + JSON Audit Logs      │                        │ - Quarantine Payloads   │
-                        └────────────┬───────────┘                        │ - Terminate Processes   │
-                                     │                                    │ - Firewall / IP Blocks  │
-                                     │                                    │ - Rollback / Dry-Run    │
-                                     │                                    └─────────────────────────┘
+
+---
+
+## 🚀 Key Features
+
+### 1. Dual-Mode Experience
+- **Normal User Mode (Default)**: Visualizes protection status with a plain-English **KAVACH Security Score (0–100)** ("You're protected. Everything looks normal.") without overwhelming technical jargon.
+- **Analyst Mode**: Full SOC-level visibility exposing PIDs, parent processes, command lines, MITRE technique mappings, IOC hashes, raw feature vectors, and incident clusters.
+
+### 2. Machine Learning Anomaly Detection (No Fake Predictions)
+- Genuine `sklearn.ensemble.IsolationForest` anomaly detector.
+- Features extracted from numerical system behavior: process rarity, destination port diversity, burst ratios, parent-child deviations, and command line entropy.
+- **Strict Insufficient Data State**: Returns `status: insufficient_data` when sample counts are below minimum training thresholds; never fabricates fake scores.
+- Dynamic weight normalization excludes uncalibrated ML from risk penalties until models achieve verified training.
+
+### 3. URL Security & SSRF Protection
+- Real-time lexical analysis, Punycode/IDN homograph attack detection, and typosquatting prevention.
+- Strict SSRF protection: loopback (`127.0.0.0/8`), private IPv4 (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local, IPv6 loopback, and cloud metadata endpoints (`169.254.169.254`) are strictly blocked.
+
+### 4. Manifest V3 Browser Extension
+- Located in `extension/`.
+- Lightweight Chrome/Edge extension with minimal permissions (`activeTab`, `storage`).
+- Real-time badge status (`OK`, `WARN`, `RISK`, `CRIT`) and floating in-page security warning banner for dangerous or homograph domains.
+
+### 5. Raksha AI Cybersecurity Assistant
+- Embedded AI copilot integrated with **NVIDIA NIM** (`meta/llama-3.1-70b-instruct`).
+- **Zero-Failure Architecture**: Automatically switches to the `LocalFallbackProvider` heuristic engine if external NIM APIs are unreachable or unconfigured.
+- **Context Sanitization**: Automatically strips API keys, passwords, bearer tokens, and PII before dispatching telemetry to external LLMs.
+- Strictly adheres to the principle: *"AI is not the source of truth"* — detection decisions originate deterministically from rules, ML, and threat intelligence. Raksha AI provides plain-English summaries and defensive remediation recommendations.
+
+### 6. Controlled SOAR Playbooks
+- Structured playbooks for `isolate_device`, `block_domain`, `terminate_process`, and `collect_evidence`.
+- Explicit authorization model with tamper-evident audit logging and dry-run execution.
+�
                                      ▼
                         ┌────────────────────────┐
                         │ FastAPI Async API Core │

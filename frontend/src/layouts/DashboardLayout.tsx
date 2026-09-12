@@ -1,29 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
   Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton,
   ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Menu,
-  MenuItem, Badge, Tooltip, useTheme
+  MenuItem, Badge, Tooltip, useTheme, Chip, Switch, FormControlLabel,
 } from '@mui/material';
 import {
-  Menu as MenuIcon, Dashboard, Security, Explore,
-  PlayCircleFilled, Assignment, Settings, ExitToApp, Brightness4,
-  Brightness7, Notifications, Shield, Gavel, BarChart, BugReport
+  Menu as MenuIcon, Dashboard, BugReport, Notifications, Assignment,
+  Computer, Memory, Router, AccessTime, Language, Shield, AutoGraph,
+  Psychology, Assessment, Settings, ExitToApp, Brightness4, Brightness7,
+  Search, FiberManualRecord,
 } from '@mui/icons-material';
 import { useAuth } from '../context/useAuth';
 import { useAppTheme } from '../context/useAppTheme';
 
 const drawerWidth = 260;
 
+interface NavSection {
+  title?: string;
+  items: {
+    text: string;
+    icon: React.ReactNode;
+    path: string;
+    badge?: number;
+  }[];
+}
+
 export const DashboardLayout: React.FC = () => {
   const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
+  const [analystMode, setAnalystMode] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
   const { user, logout } = useAuth();
   const { mode, toggleTheme } = useAppTheme();
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Test live WebSocket connectivity
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    try {
+      ws = new WebSocket('ws://localhost:8000/api/v1/dashboard/live');
+      ws.onopen = () => setWsConnected(true);
+      ws.onclose = () => setWsConnected(false);
+      ws.onerror = () => setWsConnected(false);
+    } catch (e) {
+      setWsConnected(false);
+    }
+    return () => {
+      if (ws) ws.close();
+    };
+  }, []);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -33,32 +61,56 @@ export const DashboardLayout: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleNotifMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setNotifAnchorEl(event.currentTarget);
-  };
-
-  const handleNotifMenuClose = () => {
-    setNotifAnchorEl(null);
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Nav Items configured for KAVACH SOC
-  const menuItems = [
-    { text: 'SOC Dashboard', icon: <Dashboard />, path: '/dashboard' },
-    { text: 'Threat Detection', icon: <BugReport />, path: '/threats' },
-    { text: 'MITRE ATT&CK', icon: <Explore />, path: '/mitre' },
-    { text: 'SOAR Playbooks', icon: <PlayCircleFilled />, path: '/soar' },
-    { text: 'Incident Response', icon: <Assignment />, path: '/incidents' },
-    { text: 'AI Security', icon: <Security />, path: '/ai-security' },
-    { text: 'Threat Intelligence', icon: <Shield />, path: '/threat-intel' },
-    { text: 'Alert Center', icon: <Notifications />, path: '/alerts', badge: 5 },
-    { text: 'Analytics Center', icon: <BarChart />, path: '/analytics' },
-    { text: 'Audit Center', icon: <Gavel />, path: '/audit' },
-    { text: 'Settings', icon: <Settings />, path: '/settings' },
+  // Structured menu items according to KAVACH master specification
+  const navSections: NavSection[] = [
+    {
+      items: [
+        { text: 'Overview', icon: <Dashboard />, path: '/dashboard' },
+      ],
+    },
+    {
+      title: 'SECURITY',
+      items: [
+        { text: 'Threats', icon: <BugReport />, path: '/threats' },
+        { text: 'Alerts', icon: <Notifications />, path: '/alerts', badge: 3 },
+        { text: 'Incidents', icon: <Assignment />, path: '/incidents' },
+      ],
+    },
+    {
+      title: 'MONITORING',
+      items: [
+        { text: 'Devices', icon: <Computer />, path: '/devices' },
+        { text: 'Processes', icon: <Memory />, path: '/processes' },
+        { text: 'Network', icon: <Router />, path: '/network' },
+        { text: 'Activity', icon: <AccessTime />, path: '/activity' },
+      ],
+    },
+    {
+      title: 'INTELLIGENCE',
+      items: [
+        { text: 'URL Scanner', icon: <Language />, path: '/url-scanner' },
+        { text: 'Threat Intelligence', icon: <Shield />, path: '/threat-intel' },
+        { text: 'ML Detection', icon: <AutoGraph />, path: '/ml-detection' },
+      ],
+    },
+    {
+      title: 'INTELLIGENT ASSISTANT',
+      items: [
+        { text: 'Raksha AI', icon: <Psychology sx={{ color: '#38bdf8' }} />, path: '/raksha-ai' },
+      ],
+    },
+    {
+      title: 'PLATFORM',
+      items: [
+        { text: 'Reports', icon: <Assessment />, path: '/reports' },
+        { text: 'Settings', icon: <Settings />, path: '/settings' },
+      ],
+    },
   ];
 
   return (
@@ -67,7 +119,7 @@ export const DashboardLayout: React.FC = () => {
         position="fixed"
         sx={{
           zIndex: theme.zIndex.drawer + 1,
-          bgcolor: mode === 'dark' ? 'rgba(17, 17, 24, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+          bgcolor: mode === 'dark' ? 'rgba(10, 14, 23, 0.85)' : 'rgba(255, 255, 255, 0.85)',
           backdropFilter: 'blur(10px)',
           boxShadow: 'none',
           borderBottom: `1px solid ${theme.palette.divider}`,
@@ -75,19 +127,13 @@ export const DashboardLayout: React.FC = () => {
         }}
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
+          {/* Left brand area */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              onClick={() => setOpen(!open)}
-              edge="start"
-              sx={{ mr: 1 }}
-            >
+            <IconButton color="inherit" onClick={() => setOpen(!open)} edge="start" sx={{ mr: 0.5 }}>
               <MenuIcon />
             </IconButton>
 
-            {/* Logo area */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }} onClick={() => navigate('/')}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
               <Box
                 component="img"
                 src="/assets/kavach-logo.png"
@@ -100,93 +146,70 @@ export const DashboardLayout: React.FC = () => {
               />
               <Box>
                 <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 800, letterSpacing: '0.05em', lineHeight: 1.1, fontFamily: 'Outfit', color: mode === 'dark' ? '#FFFFFF' : '#0F172A' }}>
-                  KAVACH <span style={{ color: '#C1121F' }}>SOC</span>
+                  KAVACH <span style={{ color: '#38bdf8', fontSize: '0.75rem', fontWeight: 600 }}>SOAR-XDR</span>
                 </Typography>
-                <Typography variant="caption" sx={{ fontSize: '0.65rem', letterSpacing: '0.1em', color: '#C1121F', display: 'block', fontWeight: 700 }}>
-                  SWASTIK CHEMICAL (INDIA)
+                <Typography variant="caption" sx={{ fontSize: '0.65rem', letterSpacing: '0.1em', color: 'text.secondary', display: 'block', fontWeight: 600 }}>
+                  INTELLIGENT DEFENSE PLATFORM
                 </Typography>
               </Box>
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Right actions */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Live WebSocket Status Pill */}
+            <Tooltip title={wsConnected ? 'WebSocket live stream connected to :8000' : 'WebSocket disconnected (offline)'}>
+              <Chip
+                icon={<FiberManualRecord sx={{ fontSize: 10 }} />}
+                label={wsConnected ? 'LIVE' : 'OFFLINE'}
+                size="small"
+                sx={{
+                  bgcolor: wsConnected ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                  color: wsConnected ? '#22c55e' : '#ef4444',
+                  fontWeight: 700,
+                  fontSize: 10,
+                  border: `1px solid ${wsConnected ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                }}
+              />
+            </Tooltip>
+
+            {/* Normal User Mode vs Analyst Mode Toggle */}
+            <Tooltip title="Switch between Simplified Protection Mode and Deep SOC Telemetry View">
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5, bgcolor: 'background.paper', px: 1.5, py: 0.2, borderRadius: 9999, border: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: !analystMode ? '#38bdf8' : 'text.secondary' }}>
+                  User
+                </Typography>
+                <Switch
+                  size="small"
+                  checked={analystMode}
+                  onChange={(e) => setAnalystMode(e.target.checked)}
+                  color="primary"
+                />
+                <Typography variant="caption" sx={{ fontWeight: 600, color: analystMode ? '#a855f7' : 'text.secondary' }}>
+                  Analyst
+                </Typography>
+              </Box>
+            </Tooltip>
+
             {/* Theme Toggle */}
-            <Tooltip title="Toggle Light/Dark Theme">
-              <IconButton onClick={toggleTheme} color="inherit">
-                {mode === 'dark' ? <Brightness7 sx={{ color: '#F59E0B' }} /> : <Brightness4 />}
+            <Tooltip title="Toggle Theme">
+              <IconButton onClick={toggleTheme} color="inherit" size="small">
+                {mode === 'dark' ? <Brightness7 sx={{ color: '#F59E0B', fontSize: 20 }} /> : <Brightness4 sx={{ fontSize: 20 }} />}
               </IconButton>
             </Tooltip>
 
-            {/* Notifications */}
-            <IconButton onClick={handleNotifMenuOpen} color="inherit">
-              <Badge badgeContent={5} color="error">
-                <Notifications />
-              </Badge>
-            </IconButton>
-
-            {/* Notification Menu */}
-            <Menu
-              anchorEl={notifAnchorEl}
-              open={Boolean(notifAnchorEl)}
-              onClose={handleNotifMenuClose}
-              PaperProps={{
-                sx: { width: 320, mt: 1.5, maxHeight: 400 }
-              }}
-            >
-              <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="subtitle1" fontWeight="bold">Active Alerts</Typography>
-                <Typography variant="caption" color="primary" sx={{ cursor: 'pointer' }} onClick={() => navigate('/alerts')}>View All</Typography>
-              </Box>
-              <Divider />
-              <MenuItem onClick={handleNotifMenuClose}>
-                <Box sx={{ width: '100%' }}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="body2" fontWeight="bold" color="error.main">Ransomware Suspected</Typography>
-                    <Typography variant="caption" color="text.secondary">10m ago</Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap display="block">Suspicious activity on host PROD-WEB-01</Typography>
-                </Box>
-              </MenuItem>
-              <MenuItem onClick={handleNotifMenuClose}>
-                <Box sx={{ width: '100%' }}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="body2" fontWeight="bold" color="warning.main">Deepfake Upload Analysis</Typography>
-                    <Typography variant="caption" color="text.secondary">1h ago</Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap display="block">Authentication process complete (94% confidence)</Typography>
-                </Box>
-              </MenuItem>
-              <MenuItem onClick={handleNotifMenuClose}>
-                <Box sx={{ width: '100%' }}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="body2" fontWeight="bold" color="info.main">Playbook Success</Typography>
-                    <Typography variant="caption" color="text.secondary">3h ago</Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap display="block">Isolation playbook executed on DEV-APP-03</Typography>
-                </Box>
-              </MenuItem>
-            </Menu>
-
             {/* User Profile */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1, cursor: 'pointer' }} onClick={handleProfileMenuOpen}>
-              <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, fontSize: '0.95rem', fontWeight: 'bold' }}>
-                {user?.full_name[0] || 'U'}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 0.5, cursor: 'pointer' }} onClick={handleProfileMenuOpen}>
+              <Avatar sx={{ bgcolor: '#2563eb', width: 32, height: 32, fontSize: '0.85rem', fontWeight: 'bold' }}>
+                {user?.full_name?.[0] || 'A'}
               </Avatar>
-              <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1 }}>{user?.full_name}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
-                  {user?.role_name.replace('_', ' ')}
-                </Typography>
-              </Box>
             </Box>
 
             <Menu
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
               onClose={handleProfileMenuClose}
-              PaperProps={{
-                sx: { width: 180, mt: 1.5 }
-              }}
+              PaperProps={{ sx: { width: 180, mt: 1.5 } }}
             >
               <MenuItem onClick={() => { handleProfileMenuClose(); navigate('/settings'); }}>
                 <ListItemIcon><Settings fontSize="small" /></ListItemIcon>
@@ -202,6 +225,7 @@ export const DashboardLayout: React.FC = () => {
         </Toolbar>
       </AppBar>
 
+      {/* Sidebar Drawer */}
       <Drawer
         variant="permanent"
         open={open}
@@ -216,76 +240,97 @@ export const DashboardLayout: React.FC = () => {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
             }),
-            bgcolor: mode === 'dark' ? '#0F0F16' : '#FFFFFF',
+            bgcolor: mode === 'dark' ? '#080c14' : '#FFFFFF',
             borderRight: `1px solid ${theme.palette.divider}`,
             boxSizing: 'border-box',
             pt: 8,
           },
         }}
       >
-        <List sx={{ px: 1.5, py: 2 }}>
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <ListItem key={item.text} disablePadding sx={{ display: 'block', mb: 0.5 }}>
-                <ListItemButton
-                  onClick={() => navigate(item.path)}
-                  selected={isActive}
+        <Box sx={{ overflowY: 'auto', px: 1.5, py: 1.5 }}>
+          {navSections.map((section, sIdx) => (
+            <Box key={sIdx} sx={{ mb: 1.5 }}>
+              {section.title && open && (
+                <Typography
+                  variant="caption"
                   sx={{
-                    minHeight: 48,
-                    justifyContent: open ? 'initial' : 'center',
-                    px: 2.5,
-                    borderRadius: 2,
-                    '&.Mui-selected': {
-                      bgcolor: 'rgba(193, 18, 31, 0.1)',
-                      color: 'primary.main',
-                      '&:hover': {
-                        bgcolor: 'rgba(193, 18, 31, 0.15)',
-                      },
-                      '& .MuiListItemIcon-root': {
-                        color: 'primary.main',
-                      }
-                    },
-                    '&:hover': {
-                      bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-                    }
+                    px: 1.5,
+                    py: 0.5,
+                    display: 'block',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    color: 'text.secondary',
                   }}
                 >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 0,
-                      mr: open ? 2 : 'auto',
-                      justifyContent: 'center',
-                      color: isActive ? 'primary.main' : 'text.secondary',
-                      transition: 'color 0.2s',
-                    }}
-                  >
-                    {item.badge ? (
-                      <Badge badgeContent={item.badge} color="error" variant="dot">
-                        {item.icon}
-                      </Badge>
-                    ) : item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    sx={{
-                      opacity: open ? 1 : 0,
-                      transition: 'opacity 0.2s',
-                      '& .MuiTypography-root': {
-                        fontWeight: isActive ? 700 : 500,
-                        fontSize: '0.85rem',
-                      }
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
-        </List>
+                  {section.title}
+                </Typography>
+              )}
+              <List disablePadding>
+                {section.items.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <ListItem key={item.text} disablePadding sx={{ display: 'block', mb: 0.3 }}>
+                      <ListItemButton
+                        onClick={() => navigate(item.path)}
+                        selected={isActive}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2,
+                          borderRadius: 1.5,
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(56, 189, 248, 0.12)',
+                            color: '#38bdf8',
+                            '&:hover': { bgcolor: 'rgba(56, 189, 248, 0.18)' },
+                            '& .MuiListItemIcon-root': { color: '#38bdf8' },
+                          },
+                          '&:hover': {
+                            bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                          },
+                        }}
+                      >
+                        <ListItemIcon
+                          sx={{
+                            minWidth: 0,
+                            mr: open ? 1.8 : 'auto',
+                            justifyContent: 'center',
+                            color: isActive ? '#38bdf8' : 'text.secondary',
+                            fontSize: 18,
+                          }}
+                        >
+                          {item.badge ? (
+                            <Badge badgeContent={item.badge} color="error" variant="dot">
+                              {item.icon}
+                            </Badge>
+                          ) : (
+                            item.icon
+                          )}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={item.text}
+                          sx={{
+                            opacity: open ? 1 : 0,
+                            transition: 'opacity 0.2s',
+                            '& .MuiTypography-root': {
+                              fontWeight: isActive ? 700 : 500,
+                              fontSize: '0.82rem',
+                            },
+                          }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </Box>
+          ))}
+        </Box>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3, pt: 11, width: '100%', overflowX: 'hidden' }}>
-        <Outlet />
+      {/* Main Outlet */}
+      <Box component="main" sx={{ flexGrow: 1, p: 3, pt: 10, width: '100%', overflowX: 'hidden' }}>
+        <Outlet context={{ analystMode }} />
       </Box>
     </Box>
   );
