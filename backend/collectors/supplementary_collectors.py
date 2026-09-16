@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 import os
 import platform
 import socket
+import subprocess
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -92,9 +95,42 @@ class DNSCollector(BaseCollector):
                             EventType.DNS_QUERY, severity=sev.value, risk_score=risk, tags=tags,
                             metadata={"query": query, "image": image},
                         ))
-            win32evtlog.CloseEventLog(hand)
         except Exception as exc:
-            logger.error("dns_collector_error", error=str(exc))
+            logger.debug("dns_sysmon_read_skipped", error=str(exc))
+
+        # Fallback to Windows DNS Client Cache if Sysmon yields no events
+        if not events:
+            try:
+                cmd = [
+                    "powershell", "-NoProfile", "-NonInteractive", "-Command",
+                    "Get-DnsClientCache -ErrorAction SilentlyContinue | Select-Object -First 30 Entry, Type, Status | ConvertTo-Json -Compress",
+                ]
+                res = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, timeout=5)
+                if res.returncode == 0 and res.stdout.strip():
+                    data = json.loads(res.stdout.strip())
+                    if isinstance(data, dict):
+                        data = [data]
+                    for item in data:
+                        query = str(item.get("Entry") or "").strip()
+                        if query:
+                            sev, risk, tags = Severity.INFO, 5.0, []
+                            for tld in [".xyz", ".top", ".tk", ".pw", ".cc", ".ru", ".cn"]:
+                                if query.endswith(tld):
+                                    sev, risk = Severity.MEDIUM, 45.0
+                                    tags.append("suspicious_tld")
+                            if len(query) > 60:
+                                sev, risk = Severity.HIGH, 65.0
+                                tags.append("possible_dns_tunnel")
+                            events.append(self._create_event(
+                                EventType.DNS_QUERY,
+                                severity=sev.value,
+                                risk_score=risk,
+                                tags=tags,
+                                metadata={"query": query, "record_type": item.get("Type"), "status": item.get("Status")},
+                            ))
+            except Exception as ps_exc:
+                logger.debug("dns_cache_fallback_error", error=str(ps_exc))
+
         return events
 
     async def _collect_simulated(self) -> list[TelemetryEvent]:
@@ -383,9 +419,50 @@ class DefenderCollector(BaseCollector):
                         tags=["defender_detection"],
                         metadata={"event_id": eid, "threat_name": threat_name, "strings": strings[:5]},
                     ))
-            win32evtlog.CloseEventLog(hand)
         except Exception as exc:
-            logger.error("defender_collector_error", error=str(exc))
+            logger.debug("defender_evtlog_skipped", error=str(exc))
+
+        # Fallback: Query Windows Defender Real-Time Protection & Antivirus Status
+        if not events:
+            try:
+                cmd = [
+                    "powershell", "-NoProfile", "-NonInteractive", "-Command",
+                    "Get-MpComputerStatus -ErrorAction SilentlyContinue | Select-Object AntivirusEnabled, RealTimeProtectionEnabled, AMServiceEnabled, AntispywareEnabled, BehaviorMonitorEnabled, IoavProtectionEnabled, AMEngineVersion | ConvertTo-Json -Compress",
+                ]
+                res = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, timeout=5)
+                if res.returncode == 0 and res.stdout.strip():
+                    info = json.loads(res.stdout.strip())
+                    rtp = info.get("RealTimeProtectionEnabled", True)
+                    av = info.get("AntivirusEnabled", True)
+                    if not rtp or not av:
+                        events.append(self._create_event(
+                            EventType.DEFENDER_ALERT,
+                            severity=Severity.CRITICAL.value,
+                            risk_score=85.0,
+                            tags=["defender_protection_disabled"],
+                            metadata={
+                                "threat_name": "Windows Defender Real-Time Protection Disabled",
+                                "antivirus_enabled": av,
+                                "realtime_enabled": rtp,
+                                "details": info,
+                            },
+                        ))
+                    else:
+                        events.append(self._create_event(
+                            EventType.DEFENDER_ALERT,
+                            severity=Severity.INFO.value,
+                            risk_score=0.0,
+                            tags=["defender_active"],
+                            metadata={
+                                "threat_name": "Windows Defender Protection Active",
+                                "antivirus_enabled": av,
+                                "realtime_enabled": rtp,
+                                "engine_version": info.get("AMEngineVersion", "Unknown"),
+                            },
+                        ))
+            except Exception as ps_exc:
+                logger.debug("defender_status_query_error", error=str(ps_exc))
+
         return events
 
     async def _collect_simulated(self) -> list[TelemetryEvent]:

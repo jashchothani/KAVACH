@@ -119,6 +119,7 @@ class CollectorStatus(str, Enum):
     STARTING = "starting"
     RUNNING = "running"
     STOPPED = "stopped"
+    DEGRADED = "degraded"
     ERROR = "error"
     DISABLED = "disabled"
     UNSUPPORTED = "unsupported"
@@ -169,14 +170,109 @@ class ResponseMode(str, Enum):
 
 
 # ---------------------------------------------------------------------------
-# User roles
+# User roles & Permissions (RBAC)
 # ---------------------------------------------------------------------------
 
 class UserRole(str, Enum):
     """User roles for RBAC."""
-    SOC_ANALYST = "soc_analyst"
-    LAYMAN_USER = "layman_user"
+    OWNER = "owner"
     ADMIN = "admin"
+    SECURITY_ANALYST = "security_analyst"
+    SOC_ANALYST = "soc_analyst"  # Alias for security_analyst
+    MEMBER = "member"
+    STUDENT = "student"
+    LAYMAN_USER = "layman_user"  # Alias for standard user
+    VIEWER = "viewer"
+
+
+class Permission(str, Enum):
+    """Granular permissions enforced across backend & frontend."""
+    VIEW_DASHBOARD = "view_dashboard"
+    VIEW_DEVICES = "view_devices"
+    MANAGE_DEVICES = "manage_devices"
+    VIEW_THREATS = "view_threats"
+    MANAGE_THREATS = "manage_threats"
+    VIEW_LOGS = "view_logs"
+    VIEW_AUDIT_LOGS = "view_audit_logs"
+    MANAGE_USERS = "manage_users"
+    MANAGE_ROLES = "manage_roles"
+    MANAGE_INTEGRATIONS = "manage_integrations"
+    CONFIGURE_SECURITY = "configure_security"
+    RUN_SCANS = "run_scans"
+    ACCESS_ADVANCED_SECURITY = "access_advanced_security"
+    MANAGE_ORGANIZATION = "manage_organization"
+    ACCESS_ADMIN_SETTINGS = "access_admin_settings"
+    EXECUTE_PLAYBOOKS = "execute_playbooks"
+
+
+ROLE_PERMISSIONS: dict[str, list[Permission]] = {
+    UserRole.OWNER.value: list(Permission),
+    UserRole.ADMIN.value: [
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_DEVICES,
+        Permission.MANAGE_DEVICES,
+        Permission.VIEW_THREATS,
+        Permission.MANAGE_THREATS,
+        Permission.VIEW_LOGS,
+        Permission.VIEW_AUDIT_LOGS,
+        Permission.MANAGE_USERS,
+        Permission.MANAGE_ROLES,
+        Permission.MANAGE_INTEGRATIONS,
+        Permission.CONFIGURE_SECURITY,
+        Permission.RUN_SCANS,
+        Permission.ACCESS_ADVANCED_SECURITY,
+        Permission.ACCESS_ADMIN_SETTINGS,
+        Permission.EXECUTE_PLAYBOOKS,
+    ],
+    UserRole.SECURITY_ANALYST.value: [
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_DEVICES,
+        Permission.MANAGE_DEVICES,
+        Permission.VIEW_THREATS,
+        Permission.MANAGE_THREATS,
+        Permission.VIEW_LOGS,
+        Permission.VIEW_AUDIT_LOGS,
+        Permission.RUN_SCANS,
+        Permission.ACCESS_ADVANCED_SECURITY,
+        Permission.EXECUTE_PLAYBOOKS,
+    ],
+    UserRole.SOC_ANALYST.value: [
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_DEVICES,
+        Permission.MANAGE_DEVICES,
+        Permission.VIEW_THREATS,
+        Permission.MANAGE_THREATS,
+        Permission.VIEW_LOGS,
+        Permission.VIEW_AUDIT_LOGS,
+        Permission.RUN_SCANS,
+        Permission.ACCESS_ADVANCED_SECURITY,
+        Permission.EXECUTE_PLAYBOOKS,
+    ],
+    UserRole.MEMBER.value: [
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_DEVICES,
+        Permission.VIEW_THREATS,
+        Permission.RUN_SCANS,
+    ],
+    UserRole.STUDENT.value: [
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_DEVICES,
+        Permission.VIEW_THREATS,
+        Permission.RUN_SCANS,
+    ],
+    UserRole.LAYMAN_USER.value: [
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_DEVICES,
+        Permission.VIEW_THREATS,
+        Permission.RUN_SCANS,
+    ],
+    UserRole.VIEWER.value: [
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_DEVICES,
+        Permission.VIEW_THREATS,
+    ],
+}
+
 
 
 # ---------------------------------------------------------------------------
@@ -235,6 +331,74 @@ class MitreTactic(str, Enum):
     COMMAND_AND_CONTROL = "TA0011"
     EXFILTRATION = "TA0010"
     IMPACT = "TA0040"
+
+
+# ---------------------------------------------------------------------------
+# Windows Event IDs (commonly monitored)
+# ---------------------------------------------------------------------------
+
+class WinEventID(IntEnum):
+    """Key Windows Security Event IDs."""
+    LOGON_SUCCESS = 4624
+    LOGON_FAILURE = 4625
+    LOGON_EXPLICIT_CREDS = 4648
+    SPECIAL_LOGON = 4672
+    ACCOUNT_CREATED = 4720
+    ACCOUNT_DELETED = 4726
+    ACCOUNT_ENABLED = 4722
+    ACCOUNT_DISABLED = 4725
+    PASSWORD_CHANGE = 4723
+    GROUP_MEMBER_ADDED = 4728
+    GROUP_MEMBER_REMOVED = 4729
+    PROCESS_CREATED = 4688
+    PROCESS_TERMINATED = 4689
+    OBJECT_ACCESS = 4663
+    OBJECT_HANDLE_CLOSED = 4658
+    AUDIT_POLICY_CHANGE = 4719
+    SYSTEM_AUDIT_CHANGE = 4902
+    FIREWALL_RULE_ADD = 4946
+    FIREWALL_RULE_MODIFY = 4947
+    FIREWALL_RULE_DELETE = 4948
+    SERVICE_INSTALLED = 7045
+    TASK_CREATED = 4698
+    TASK_DELETED = 4699
+    TASK_ENABLED = 4700
+    TASK_DISABLED = 4701
+
+
+# ---------------------------------------------------------------------------
+# Sysmon Event IDs
+# ---------------------------------------------------------------------------
+
+class SysmonEventID(IntEnum):
+    """Sysmon event type IDs."""
+    PROCESS_CREATE = 1
+    FILE_CREATE_TIME = 2
+    NETWORK_CONNECT = 3
+    SYSMON_STATE_CHANGED = 4
+    PROCESS_TERMINATE = 5
+    DRIVER_LOAD = 6
+    IMAGE_LOAD = 7
+    CREATE_REMOTE_THREAD = 8
+    RAW_ACCESS_READ = 9
+    PROCESS_ACCESS = 10
+    FILE_CREATE = 11
+    REGISTRY_EVENT_ADD_DEL = 12
+    REGISTRY_EVENT_SET = 13
+    REGISTRY_EVENT_RENAME = 14
+    FILE_CREATE_STREAM_HASH = 15
+    SYSMON_CONFIG_CHANGE = 16
+    PIPE_CREATED = 17
+    PIPE_CONNECTED = 18
+    WMI_FILTER = 19
+    WMI_CONSUMER = 20
+    WMI_BINDING = 21
+    DNS_QUERY = 22
+    FILE_DELETE = 23
+    CLIPBOARD_CHANGE = 24
+    PROCESS_TAMPERING = 25
+    FILE_DELETE_LOGGED = 26
+
 
 
 # ---------------------------------------------------------------------------

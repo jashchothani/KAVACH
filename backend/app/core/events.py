@@ -160,6 +160,12 @@ class InMemoryMessageBus(MessageBus):
         }
 
 
+    @property
+    def stats(self) -> dict[str, Any]:
+        """Backward-compatible stats property."""
+        return self.get_stats()
+
+
 _bus_instance: MessageBus | None = None
 
 
@@ -169,3 +175,9 @@ def get_event_bus() -> MessageBus:
     if _bus_instance is None:
         _bus_instance = InMemoryMessageBus(max_queue_size=10_000)
     return _bus_instance
+
+
+def set_event_bus(bus: MessageBus) -> None:
+    """Override the global event bus (for testing)."""
+    global _bus_instance
+    _bus_instance = bus

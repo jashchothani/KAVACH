@@ -92,9 +92,13 @@ class BaseCollector(abc.ABC):
     def __init__(self) -> None:
         self._status = CollectorStatus.STOPPED
         self._task: asyncio.Task | None = None
+        self._start_time: datetime | None = None
         self._event_count: int = 0
         self._error_count: int = 0
         self._last_collection: datetime | None = None
+        self._last_successful_collection: datetime | None = None
+        self._last_heartbeat: datetime | None = None
+        self._last_error: str | None = None
         self._settings = get_settings()
         self._is_windows = platform.system().lower().startswith("win")
         self._simulation_mode = self._settings.collector.simulation_mode
@@ -106,6 +110,8 @@ class BaseCollector(abc.ABC):
         if self._status == CollectorStatus.RUNNING:
             return
         self._status = CollectorStatus.RUNNING
+        self._start_time = datetime.now(timezone.utc)
+        self._last_heartbeat = datetime.now(timezone.utc)
         interval = self._settings.collector.collection_interval
         self._task = asyncio.create_task(
             self._collection_loop(interval),
@@ -136,16 +142,29 @@ class BaseCollector(abc.ABC):
 
     @property
     def health(self) -> dict[str, Any]:
-        """Return health/stats for this collector."""
+        """Return health/stats for this collector according to Section 4 requirements."""
+        uptime = 0.0
+        if self._start_time and self._status == CollectorStatus.RUNNING:
+            uptime = round((datetime.now(timezone.utc) - self._start_time).total_seconds(), 1)
+
         return {
             "name": self.name.value,
-            "status": self._status.value,
+            "status": self._status.value.upper(),
             "description": self.description,
             "events_collected": self._event_count,
+            "event_count": self._event_count,
+            "error_count": self._error_count,
             "errors": self._error_count,
+            "uptime": uptime,
+            "uptime_seconds": uptime,
+            "last_heartbeat": self._last_heartbeat.isoformat() if self._last_heartbeat else None,
+            "last_successful_operation": (
+                self._last_successful_collection.isoformat() if self._last_successful_collection else None
+            ),
             "last_collection": (
                 self._last_collection.isoformat() if self._last_collection else None
             ),
+            "last_error": self._last_error,
             "simulation_mode": self._simulation_mode,
         }
 
@@ -157,18 +176,25 @@ class BaseCollector(abc.ABC):
 
         Routes to real or simulated collection based on platform and config.
         """
+        self._last_heartbeat = datetime.now(timezone.utc)
         try:
             if self._is_windows and not self._simulation_mode:
                 events = await self._collect_real()
             else:
                 events = await self._collect_simulated()
 
+            now = datetime.now(timezone.utc)
             self._event_count += len(events)
-            self._last_collection = datetime.now(timezone.utc)
+            self._last_collection = now
+            self._last_successful_collection = now
+            if self._status == CollectorStatus.DEGRADED:
+                self._status = CollectorStatus.RUNNING
             return events
 
         except Exception as exc:
             self._error_count += 1
+            self._last_error = str(exc)
+            self._status = CollectorStatus.DEGRADED if self._error_count < 5 else CollectorStatus.ERROR
             logger.error(
                 "collection_error",
                 collector=self.name.value,

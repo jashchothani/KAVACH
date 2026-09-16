@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ViewModeProvider } from './context/ViewModeContext';
 import { useAuth } from './context/useAuth';
 import { AppThemeProvider } from './context/ThemeContext';
 import { DashboardLayout } from './layouts/DashboardLayout';
@@ -14,6 +15,7 @@ import { DownloadPage } from './pages/public/Download';
 import { Contact } from './pages/public/Contact';
 import { GetStarted } from './pages/public/GetStarted';
 import { Showcase } from './pages/public/Showcase';
+import { NotFound } from './pages/public/NotFound';
 
 // Dashboard Protected Pages
 import { Login } from './pages/Login';
@@ -58,7 +60,8 @@ const App: React.FC = () => {
     <BrowserRouter>
       <AuthProvider>
         <AppThemeProvider>
-          <Routes>
+          <ViewModeProvider>
+            <Routes>
             {/* Fullscreen 3D Crystal Showcase Experience */}
             <Route path="/showcase" element={<Showcase />} />
 
@@ -118,10 +121,11 @@ const App: React.FC = () => {
               <Route path="/audit" element={<AuditCenter />} />
             </Route>
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Fallback 404 */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
-        </AppThemeProvider>
+        </ViewModeProvider>
+      </AppThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   );

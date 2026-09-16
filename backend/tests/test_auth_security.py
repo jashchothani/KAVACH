@@ -92,6 +92,7 @@ async def test_login_lockout_mechanism(async_client: AsyncClient):
         user = res.scalar_one()
         user.is_email_verified = True
         user.is_active = True
+        await session.commit()
 
     # Attempt failed logins (5 attempts allowed)
     for _ in range(5):
@@ -140,6 +141,7 @@ async def test_totp_2fa_setup_and_verify(async_client: AsyncClient):
         user = res.scalar_one()
         user.is_email_verified = True
         user.is_active = True
+        await session.commit()
 
     # Setup 2FA
     setup_resp = await async_client.post(
@@ -206,6 +208,7 @@ async def test_forgot_and_reset_password(async_client: AsyncClient):
         user = res.scalar_one()
         user.is_email_verified = True
         user.is_active = True
+        await session.commit()
 
     # Forgot password request
     forgot_resp = await async_client.post("/api/v1/auth/forgot-password", json={

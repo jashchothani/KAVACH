@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Paper } from '@mui/material';
+import { Box } from '@mui/material';
 import { Outlet } from 'react-router-dom';
 
 export const AuthLayout: React.FC = () => {
@@ -7,85 +7,62 @@ export const AuthLayout: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
+        width: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: (theme) => 
-          theme.palette.mode === 'dark' 
-            ? 'radial-gradient(circle at 50% 50%, #151525 0%, #0A0A0F 100%)' 
-            : 'radial-gradient(circle at 50% 50%, #EDF2F7 0%, #F5F7FA 100%)',
+        background: 'linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 40%, #F1F5F9 75%, #FEF2F2 100%)',
         position: 'relative',
         overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: (theme) => 
-            theme.palette.mode === 'dark'
-              ? 'linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)'
-              : 'linear-gradient(rgba(0, 0, 0, 0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.015) 1px, transparent 1px)',
-          backgroundSize: '30px 30px',
-          pointerEvents: 'none',
-        }
+        py: { xs: 4, md: 6 },
+        px: { xs: 2, sm: 3, md: 4 },
       }}
     >
-      {/* Floating cybersecurity particles / decorations */}
+      {/* Soft Ambient Light Glows */}
       <Box
         sx={{
           position: 'absolute',
-          width: '500px',
-          height: '500px',
+          top: '-12%',
+          right: '10%',
+          width: { xs: 320, md: 550 },
+          height: { xs: 320, md: 550 },
           borderRadius: '50%',
-          filter: 'blur(100px)',
-          background: 'rgba(193, 18, 31, 0.08)',
-          top: '-10%',
-          left: '-10%',
+          background: 'radial-gradient(circle, rgba(220, 38, 38, 0.08) 0%, rgba(220, 38, 38, 0) 70%)',
+          filter: 'blur(90px)',
           pointerEvents: 'none',
         }}
       />
       <Box
         sx={{
           position: 'absolute',
-          width: '500px',
-          height: '500px',
+          bottom: '-12%',
+          left: '8%',
+          width: { xs: 360, md: 600 },
+          height: { xs: 360, md: 600 },
           borderRadius: '50%',
-          filter: 'blur(100px)',
-          background: 'rgba(193, 18, 31, 0.06)',
-          bottom: '-10%',
-          right: '-10%',
+          background: 'radial-gradient(circle, rgba(2, 132, 199, 0.07) 0%, rgba(2, 132, 199, 0) 70%)',
+          filter: 'blur(90px)',
           pointerEvents: 'none',
         }}
       />
 
-      <Paper
-        elevation={0}
+      {/* Subtle Dot Grid */}
+      <Box
         sx={{
-          zIndex: 1,
-          width: '100%',
-          maxWidth: 420,
-          p: 4,
-          mx: 2,
-          borderRadius: 4,
-          backdropFilter: 'blur(16px)',
-          bgcolor: (theme) => 
-            theme.palette.mode === 'dark' 
-              ? 'rgba(17, 17, 24, 0.7)' 
-              : 'rgba(255, 255, 255, 0.8)',
-          border: (theme) => 
-            theme.palette.mode === 'dark'
-              ? '1px solid rgba(255, 255, 255, 0.08)'
-              : '1px solid rgba(0, 0, 0, 0.06)',
-          boxShadow: (theme) => 
-            theme.palette.mode === 'dark'
-              ? '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
-              : '0 8px 32px 0 rgba(148, 163, 184, 0.1)',
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: 'radial-gradient(#CBD5E1 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          opacity: 0.45,
+          pointerEvents: 'none',
         }}
-      >
+      />
+
+      {/* Main Content Area */}
+      <Box sx={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1060 }}>
         <Outlet />
-      </Paper>
+      </Box>
     </Box>
   );
 };
+

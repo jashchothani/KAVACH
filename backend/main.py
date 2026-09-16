@@ -73,7 +73,10 @@ def main() -> None:
     ║                                                             ║
     ╚═════════════════════════════════════════════════════════════╝
     """
-    print(banner)
+    try:
+        print(banner)
+    except Exception:
+        print(f"KAVACH Backend API starting on http://{args.host}:{args.port}")
 
     uvicorn.run(
         "app.main:create_app",

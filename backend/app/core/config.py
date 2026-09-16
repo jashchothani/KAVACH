@@ -49,11 +49,35 @@ class PathSettings(BaseSettings):
     model_dir: Path = _ROOT_DIR / "data" / "models"
     export_dir: Path = _ROOT_DIR / "data" / "exports"
     demo_dir: Path = _ROOT_DIR / "data" / "demo"
+    json_log_dir: Path = _BACKEND_DIR / "logs" / "json_logs"
+
+    @property
+    def log_subdirs(self) -> dict[str, Path]:
+        """Return all collector and processing JSON log directories."""
+        base = self.json_log_dir
+        return {
+            "raw": base / "raw",
+            "processed": base / "processed",
+            "detections": base / "detections",
+            "alerts": base / "alerts",
+            "mitre": base / "mitre",
+            "dns": base / "dns",
+            "network": base / "network",
+            "sysmon": base / "sysmon",
+            "eventlog": base / "eventlog",
+            "fim": base / "fim",
+            "process": base / "process",
+            "powershell": base / "powershell",
+            "defender": base / "defender",
+            "usb": base / "usb",
+        }
 
     def ensure_directories(self) -> None:
         """Create essential data directories if not present."""
-        for d in [self.data_dir, self.db_dir, self.log_dir, self.model_dir, self.export_dir, self.demo_dir]:
+        for d in [self.data_dir, self.db_dir, self.log_dir, self.model_dir, self.export_dir, self.demo_dir, self.json_log_dir]:
             d.mkdir(parents=True, exist_ok=True)
+        for subdir in self.log_subdirs.values():
+            subdir.mkdir(parents=True, exist_ok=True)
 
 
 class DatabaseSettings(BaseSettings):

@@ -7,7 +7,7 @@ import type { ThemeMode } from './themeContextDef';
 export const AppThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mode, setMode] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem('kavach_theme');
-    return (saved as ThemeMode) || 'dark'; // Dark mode first, but supports light mode fully
+    return (saved as ThemeMode) || 'light'; // Modern Light theme first by default
   });
 
   const toggleTheme = () => {

@@ -48,10 +48,9 @@ class PowerShellCollector(BaseCollector):
 
     async def _collect_real(self) -> list[TelemetryEvent]:
         """Read PowerShell script block events from Windows Event Log."""
-        import win32evtlog
-
         events: list[TelemetryEvent] = []
         try:
+            import win32evtlog
             hand = win32evtlog.OpenEventLog(None, "Microsoft-Windows-PowerShell/Operational")
             flags = win32evtlog.EVENTLOG_BACKWARDS_READ | win32evtlog.EVENTLOG_SEQUENTIAL_READ
             read_count = 0
@@ -77,9 +76,39 @@ class PowerShellCollector(BaseCollector):
                     if event:
                         events.append(event)
 
-            win32evtlog.CloseEventLog(hand)
         except Exception as exc:
-            logger.error("powershell_collector_error", error=str(exc))
+            logger.debug("powershell_eventlog_read_skipped", error=str(exc))
+
+        # Fallback: Inspect actively running PowerShell processes
+        if not events:
+            try:
+                import psutil
+                for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                    try:
+                        pname = (proc.info.get('name') or '').lower()
+                        if 'powershell' in pname or 'pwsh' in pname:
+                            cmdline_parts = proc.info.get('cmdline') or []
+                            cmdline_str = " ".join(cmdline_parts)
+                            if cmdline_str:
+                                analyzed = self._analyze_script(cmdline_str, cmdline_parts)
+                                if analyzed:
+                                    events.append(analyzed)
+                                else:
+                                    events.append(self._create_event(
+                                        EventType.POWERSHELL_EXECUTION,
+                                        severity=Severity.INFO.value,
+                                        risk_score=5.0,
+                                        tags=["powershell_process"],
+                                        metadata={
+                                            "pid": proc.info.get('pid'),
+                                            "process_name": proc.info.get('name'),
+                                            "cmdline": cmdline_str[:500],
+                                        },
+                                    ))
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        continue
+            except Exception as ps_exc:
+                logger.debug("powershell_process_inspect_error", error=str(ps_exc))
 
         return events
 

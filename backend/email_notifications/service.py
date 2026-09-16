@@ -72,8 +72,45 @@ class EmailService:
             self._write_to_dead_letter(to, template_name, subject, context, f"Template error: {exc}")
             return False
 
-        # If not fully configured, log sending as mock
-        if not smtp.server or not smtp.username or not smtp.password:
+        # Check for Resend API key first
+        resend_api_key = os.environ.get("RESEND_API_KEY") or getattr(self.settings.notification, "resend_api_key", None)
+        if resend_api_key:
+            try:
+                import httpx
+                from_email = os.environ.get("RESEND_FROM_EMAIL", "KAVACH Security <onboarding@resend.dev>")
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.post(
+                        "https://api.resend.com/emails",
+                        headers={
+                            "Authorization": f"Bearer {resend_api_key}",
+                            "Content-Type": "application/json",
+                        },
+                        json={
+                            "from": from_email,
+                            "to": [to],
+                            "subject": subject,
+                            "html": html_content,
+                        },
+                    )
+                    if resp.status_code in (200, 201):
+                        logger.info("email_sent_via_resend", recipient=to, subject=subject)
+                        return True
+                    else:
+                        logger.warning("resend_api_returned_error", status_code=resp.status_code, body=resp.text)
+            except Exception as exc:
+                logger.warning("resend_send_failed", error=str(exc))
+
+        # If in test/development and not testing SMTP error retries, or if SMTP is unconfigured, log as mock
+        # Check if SMTP is configured with real credentials
+        has_real_smtp = (
+            bool(smtp.server)
+            and bool(smtp.username)
+            and bool(smtp.password)
+            and "your_email" not in smtp.username
+            and "your_app_password" not in smtp.password
+        )
+        is_placeholder = not has_real_smtp
+        if is_placeholder:
             logger.info("mock_email_sent", recipient=to, subject=subject, template=template_name)
             # Create a mock notification file for testing
             mock_dir = Path(self.settings.paths.log_dir) / "mock_emails"
@@ -115,11 +152,13 @@ class EmailService:
             except Exception as exc:
                 logger.warning("email_send_attempt_failed", recipient=to, attempt=attempt, error=str(exc))
                 if attempt < max_retries:
-                    await asyncio.sleep(backoff ** attempt)
+                    is_dev = os.environ.get("ENVIRONMENT") in ("development", "test")
+                    await asyncio.sleep(0.01 if is_dev else (backoff ** attempt))
                 else:
                     logger.error("email_send_exhausted_retries", recipient=to, error=str(exc))
                     self._write_to_dead_letter(to, template_name, subject, context, str(exc))
                     return False
+
         
         return False
 

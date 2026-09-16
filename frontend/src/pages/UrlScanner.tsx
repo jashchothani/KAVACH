@@ -22,25 +22,26 @@ import {
   Language,
   Warning,
   CheckCircle,
-  ErrorOutline,
   Search,
   History,
   Psychology,
   Shield,
   OpenInNew,
 } from '@mui/icons-material';
-import axios from 'axios';
-
-const API_BASE = 'http://localhost:8000/api/v1';
+import { api } from '../api/client';
 
 interface ScanResult {
   url: string;
-  domain: string;
-  scheme: string;
-  risk_score: number;
-  risk_level: string;
-  indicators: string[];
-  raksha_summary: string;
+  domain?: string;
+  scheme?: string;
+  risk_score?: number;
+  threat_score?: number;
+  risk_level?: string;
+  verdict?: string;
+  indicators?: string[];
+  findings?: string[];
+  raksha_summary?: string;
+  categories?: string[];
   structural_breakdown?: {
     is_ip?: boolean;
     has_punycode?: boolean;
@@ -59,9 +60,9 @@ export const UrlScanner: React.FC = () => {
 
   const fetchHistory = async () => {
     try {
-      const resp = await axios.get(`${API_BASE}/url/history?limit=10`);
-      setHistory(resp.data);
-    } catch (e) {
+      const data = await api.urlScanner.getHistory(10);
+      setHistory(data);
+    } catch {
       // Backend may be offline
     }
   };
@@ -77,11 +78,11 @@ export const UrlScanner: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const resp = await axios.post(`${API_BASE}/url/scan`, { url: urlToScan });
-      setScanResult(resp.data);
+      const data = await api.urlScanner.scan(urlToScan);
+      setScanResult(data as any);
       fetchHistory();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to scan URL. Ensure KAVACH backend is active on :8000.');
+      setError(err.response?.data?.message || err.response?.data?.detail || 'Failed to scan URL. Ensure KAVACH backend is running.');
     } finally {
       setLoading(false);
     }

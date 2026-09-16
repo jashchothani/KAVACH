@@ -118,8 +118,10 @@ class CollectorStatus(str, Enum):
     STARTING = "starting"
     RUNNING = "running"
     STOPPED = "stopped"
+    DEGRADED = "degraded"
     ERROR = "error"
     DISABLED = "disabled"
+    UNSUPPORTED = "unsupported"
 
 
 # ---------------------------------------------------------------------------

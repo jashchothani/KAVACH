@@ -12,6 +12,8 @@ from app.core.constants import (
     IncidentStatus,
     Topic,
     UserRole,
+    Permission,
+    ROLE_PERMISSIONS,
     IOCType,
     MitreTactic,
 )
@@ -26,7 +28,15 @@ from app.core.exceptions import (
     MLModelError,
     URLSecurityError,
 )
-from app.core.logging import get_logger, setup_logging, get_correlation_id, set_correlation_id
+from app.core.logging import (
+    get_logger,
+    setup_logging,
+    get_correlation_id,
+    set_correlation_id,
+    get_log_buffer,
+    record_system_log,
+    LogStream,
+)
 from app.core.events import get_event_bus, MessageBus
 from app.core.security import (
     hash_password,

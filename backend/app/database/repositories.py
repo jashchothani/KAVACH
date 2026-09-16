@@ -229,6 +229,14 @@ class AuditLogRepository(BaseRepository[AuditLog]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, AuditLog)
 
+    async def get_recent(self, limit: int = 50, offset: int = 0, action: str | None = None) -> Sequence[AuditLog]:
+        stmt = select(AuditLog)
+        if action:
+            stmt = stmt.where(AuditLog.action.ilike(f"%{action}%"))
+        stmt = stmt.order_by(AuditLog.timestamp.desc()).offset(offset).limit(limit)
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
 
 class StatsRepository(BaseRepository[DashboardStats]):
     def __init__(self, session: AsyncSession) -> None:
@@ -253,3 +261,8 @@ class UserRepository(BaseRepository[User]):
         stmt = select(User).where(User.email == email)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_by_username_or_email(self, identifier: str) -> User | None:
+        stmt = select(User).where((User.username == identifier) | (User.email == identifier))
+        result = await self._session.execute(stmt)
+        return result.scalars().first()

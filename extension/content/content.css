@@ -1,0 +1,308 @@
+/* KAVACH Web Safety & Phishing Protection — Content Stylesheet
+   McAfee SiteAdvisor-style link annotations, threat cards, and security shields */
+
+/* Inline McAfee-style safety badges */
+.kavach-advisor-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  margin-left: 6px !important;
+  margin-right: 4px !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  user-select: none !important;
+  position: relative !important;
+  z-index: 100 !important;
+}
+
+.kavach-advisor-badge:hover {
+  transform: scale(1.25) !important;
+}
+
+/* Safe (Green Tick ✓) */
+.kavach-advisor-safe {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.45) !important;
+  border: 1px solid #34d399 !important;
+}
+
+/* Caution / Suspicious (Amber !) */
+.kavach-advisor-warn {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.45) !important;
+  border: 1px solid #fbbf24 !important;
+}
+
+/* Malicious / High Risk (Red Cross ✗) */
+.kavach-advisor-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6) !important;
+  border: 1px solid #f87171 !important;
+  animation: kavach-pulse-danger 2s infinite !important;
+}
+
+/* Analyzing / Unknown (Gray ?) */
+.kavach-advisor-loading {
+  background: #475569 !important;
+  color: #cbd5e1 !important;
+  border: 1px solid #64748b !important;
+}
+
+@keyframes kavach-pulse-danger {
+  0%, 100% { box-shadow: 0 0 4px rgba(239, 68, 68, 0.5); }
+  50% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.9); }
+}
+
+/* McAfee SiteAdvisor-style Floating Popover Card */
+#kavach-site-card {
+  position: absolute !important;
+  z-index: 2147483645 !important;
+  width: 320px !important;
+  background: rgba(15, 23, 42, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 20px rgba(0, 240, 255, 0.15) !important;
+  color: #f1f5f9 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 13px !important;
+  padding: 16px !important;
+  pointer-events: auto !important;
+  animation: kavach-fade-in 0.2s ease-out !important;
+}
+
+@keyframes kavach-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#kavach-site-card .kavach-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 12px !important;
+}
+
+#kavach-site-card .kavach-card-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+#kavach-site-card .kavach-card-brand span.shield {
+  font-size: 20px !important;
+}
+
+#kavach-site-card .kavach-card-domain {
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  color: #ffffff !important;
+  max-width: 170px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+#kavach-site-card .kavach-card-pill {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  padding: 3px 8px !important;
+  border-radius: 9999px !important;
+}
+
+#kavach-site-card .kavach-card-pill.safe {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border: 1px solid #10b981 !important;
+}
+
+#kavach-site-card .kavach-card-pill.suspicious {
+  background: rgba(245, 158, 11, 0.2) !important;
+  color: #fbbf24 !important;
+  border: 1px solid #f59e0b !important;
+}
+
+#kavach-site-card .kavach-card-pill.danger {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+  border: 1px solid #ef4444 !important;
+}
+
+#kavach-site-card .kavach-card-body {
+  margin-bottom: 14px !important;
+}
+
+#kavach-site-card .kavach-card-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  margin-bottom: 6px !important;
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+}
+
+#kavach-site-card .kavach-card-row strong {
+  color: #e2e8f0 !important;
+}
+
+#kavach-site-card .kavach-card-ai {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border-radius: 8px !important;
+  padding: 10px !important;
+  margin-top: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+#kavach-site-card .kavach-card-ai-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #38bdf8 !important;
+  margin-bottom: 4px !important;
+}
+
+#kavach-site-card .kavach-card-ai-desc {
+  font-size: 11px !important;
+  color: #cbd5e1 !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+}
+
+#kavach-site-card .kavach-card-footer {
+  display: flex !important;
+  gap: 8px !important;
+}
+
+#kavach-site-card .kavach-btn {
+  flex: 1 !important;
+  padding: 7px 10px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  border: none !important;
+  transition: background 0.15s ease !important;
+}
+
+#kavach-site-card .kavach-btn-primary {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+#kavach-site-card .kavach-btn-primary:hover {
+  background: #0369a1 !important;
+}
+
+#kavach-site-card .kavach-btn-secondary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+#kavach-site-card .kavach-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Fullscreen Interstitial Blocking Shield for High-Risk Sites */
+#kavach-blocking-shield {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2147483647 !important;
+  background: radial-gradient(circle at center, #1e1b4b 0%, #090514 100%) !important;
+  color: #ffffff !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  padding: 24px !important;
+  box-sizing: border-box !important;
+}
+
+#kavach-blocking-shield .shield-box {
+  max-width: 580px !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid #ef4444 !important;
+  box-shadow: 0 0 50px rgba(239, 68, 68, 0.35) !important;
+  border-radius: 16px !important;
+  padding: 36px !important;
+  text-align: center !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+#kavach-blocking-shield .shield-icon {
+  font-size: 54px !important;
+  margin-bottom: 16px !important;
+  display: inline-block !important;
+  animation: kavach-pulse-danger 2s infinite !important;
+}
+
+#kavach-blocking-shield h2 {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  color: #f87171 !important;
+  margin: 0 0 12px 0 !important;
+}
+
+#kavach-blocking-shield p.desc {
+  font-size: 14px !important;
+  color: #cbd5e1 !important;
+  line-height: 1.6 !important;
+  margin-bottom: 24px !important;
+}
+
+#kavach-blocking-shield .shield-actions {
+  display: flex !important;
+  gap: 12px !important;
+  justify-content: center !important;
+}
+
+#kavach-blocking-shield button.primary-btn {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease !important;
+}
+#kavach-blocking-shield button.primary-btn:hover {
+  transform: translateY(-2px) !important;
+  background: #059669 !important;
+}
+
+#kavach-blocking-shield button.bypass-btn {
+  background: transparent !important;
+  color: #94a3b8 !important;
+  border: 1px solid #475569 !important;
+  padding: 12px 20px !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+}
+#kavach-blocking-shield button.bypass-btn:hover {
+  color: #f87171 !important;
+  border-color: #ef4444 !important;
+}

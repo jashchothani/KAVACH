@@ -15,14 +15,17 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request, Response
+from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.router import api_v1_router
 from app.core.config import get_settings
 from app.core.events import get_event_bus
 from app.core.exceptions import KavachBaseException
-from app.core.logging import get_logger, setup_logging, set_correlation_id
+from app.core.logging import get_logger, setup_logging, set_correlation_id, get_correlation_id
 from app.database.engine import init_database, close_database
 from app.pipeline.pipeline_manager import CentralPipelineManager
 
@@ -125,8 +128,103 @@ def create_app() -> FastAPI:
     # Exception Handlers
     @app.exception_handler(KavachBaseException)
     async def kavach_exception_handler(request: Request, exc: KavachBaseException):
-        logger.warning("handled_exception", error_code=exc.error_code, message=exc.message)
-        return JSONResponse(status_code=exc.status_code, content=exc.to_dict())
+        req_id = request.headers.get("X-Request-ID") or get_correlation_id()
+        logger.warning("handled_kavach_exception", error_code=exc.error_code, message=exc.message, request_id=req_id)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "success": False,
+                "error": {
+                    "code": exc.error_code,
+                    "message": exc.message,
+                    "request_id": req_id,
+                },
+            },
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_handler(request: Request, exc: RequestValidationError):
+        req_id = request.headers.get("X-Request-ID") or get_correlation_id()
+        logger.warning("request_validation_failed", path=str(request.url), errors=str(exc.errors()), request_id=req_id)
+        return JSONResponse(
+            status_code=422,
+            content={
+                "success": False,
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid request parameters",
+                    "details": exc.errors(),
+                    "request_id": req_id,
+                },
+            },
+        )
+
+    @app.exception_handler(ResponseValidationError)
+    async def response_validation_handler(request: Request, exc: ResponseValidationError):
+        req_id = request.headers.get("X-Request-ID") or get_correlation_id()
+        logger.error("response_validation_failed", path=str(request.url), errors=str(exc.errors()), request_id=req_id)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": {
+                    "code": "RESPONSE_VALIDATION_ERROR",
+                    "message": "Internal response schema validation error",
+                    "request_id": req_id,
+                },
+            },
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        req_id = request.headers.get("X-Request-ID") or get_correlation_id()
+        if exc.status_code >= 500:
+            logger.error("http_server_error", status_code=exc.status_code, detail=str(exc.detail), request_id=req_id)
+        else:
+            logger.info("http_client_error", status_code=exc.status_code, detail=str(exc.detail), request_id=req_id)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "success": False,
+                "error": {
+                    "code": f"HTTP_{exc.status_code}",
+                    "message": str(exc.detail),
+                    "request_id": req_id,
+                },
+            },
+        )
+
+    @app.exception_handler(SQLAlchemyError)
+    async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+        req_id = request.headers.get("X-Request-ID") or get_correlation_id()
+        logger.error("database_error", error=str(exc), request_id=req_id)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": {
+                    "code": "DATABASE_ERROR",
+                    "message": "Database transaction error occurred",
+                    "request_id": req_id,
+                },
+            },
+        )
+
+    @app.exception_handler(Exception)
+    async def generic_exception_handler(request: Request, exc: Exception):
+        req_id = request.headers.get("X-Request-ID") or get_correlation_id()
+        logger.error("unhandled_internal_error", error=str(exc), path=str(request.url), request_id=req_id)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": "An unexpected error occurred",
+                    "request_id": req_id,
+                },
+            },
+        )
 
     # Include Versioned API Routes
     app.include_router(api_v1_router, prefix=settings.api_v1_prefix)

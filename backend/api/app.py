@@ -182,20 +182,96 @@ def create_app() -> FastAPI:
         return response
 
     # --- Exception Handlers ---
-    @app.exception_handler(KavachBaseException)
-    async def kavach_exception_handler(request: Request, exc: KavachBaseException) -> JSONResponse:
-        logger.error("api_error", error_code=exc.error_code, message=exc.message)
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+    from fastapi.exceptions import RequestValidationError, ResponseValidationError
+
+    @app.exception_handler(ResponseValidationError)
+    async def response_validation_exception_handler(request: Request, exc: ResponseValidationError) -> JSONResponse:
+        req_id = request.headers.get("X-Request-ID") or getattr(request.state, "correlation_id", "")
+        logger.error("response_serialization_error", path=str(request.url.path), error=str(exc)[:200])
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": {
+                    "code": "SERIALIZATION_ERROR",
+                    "message": "Failed to serialize API response safely.",
+                    "request_id": req_id,
+                },
+                "detail": "Response serialization error",
+                "error_code": "SERIALIZATION_ERROR",
+            },
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+        req_id = request.headers.get("X-Request-ID") or getattr(request.state, "correlation_id", "")
+        return JSONResponse(
+            status_code=422,
+            content={
+                "success": False,
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid request payload or parameters.",
+                    "request_id": req_id,
+                    "details": exc.errors(),
+                },
+                "detail": exc.errors(),
+                "error_code": "VALIDATION_ERROR",
+            },
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        req_id = request.headers.get("X-Request-ID") or getattr(request.state, "correlation_id", "")
         return JSONResponse(
             status_code=exc.status_code,
-            content=exc.to_dict(),
+            content={
+                "success": False,
+                "error": {
+                    "code": f"HTTP_{exc.status_code}",
+                    "message": str(exc.detail),
+                    "request_id": req_id,
+                },
+                "detail": exc.detail,
+                "error_code": f"HTTP_{exc.status_code}",
+            },
+            headers=getattr(exc, "headers", None),
+        )
+
+    @app.exception_handler(KavachBaseException)
+    async def kavach_exception_handler(request: Request, exc: KavachBaseException) -> JSONResponse:
+        req_id = request.headers.get("X-Request-ID") or getattr(request.state, "correlation_id", "")
+        logger.error("api_error", error_code=exc.error_code, message=exc.message)
+        content = exc.to_dict()
+        content["success"] = False
+        content["error"] = {
+            "code": exc.error_code,
+            "message": exc.message,
+            "request_id": req_id,
+        }
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=content,
         )
 
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-        logger.exception("unhandled_error")
+        req_id = request.headers.get("X-Request-ID") or getattr(request.state, "correlation_id", "")
+        logger.error("unhandled_error", path=str(request.url.path), error=str(exc))
         return JSONResponse(
             status_code=500,
-            content={"error_code": "INTERNAL_ERROR", "message": "An internal error occurred"},
+            content={
+                "success": False,
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "An internal server error occurred.",
+                    "request_id": req_id,
+                },
+                "detail": "An internal error occurred",
+                "error_code": "INTERNAL_ERROR",
+                "message": "An internal error occurred",
+            },
         )
 
     # --- Mount Static Frontend Web UI ---
@@ -212,8 +288,8 @@ def create_app() -> FastAPI:
         os.makedirs(reports_dir, exist_ok=True)
         app.mount("/reports", StaticFiles(directory=reports_dir), name="reports")
 
-        @app.get("/", tags=["Root"])
-        async def serve_web_ui() -> FileResponse:
+        @app.get("/", tags=["Root"], response_class=FileResponse)
+        async def serve_web_ui():
             """Serve the Web UI dashboard."""
             return FileResponse(os.path.join(static_dir, "index.html"))
     else:

@@ -13,6 +13,9 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/useAuth';
 import { useAppTheme } from '../context/useAppTheme';
+import { useViewMode } from '../context/ViewModeContext';
+import { KavachLogo } from '../components/common/KavachLogo';
+import { CinematicIntro } from '../components/common/CinematicIntro';
 
 const drawerWidth = 260;
 
@@ -29,13 +32,22 @@ interface NavSection {
 export const DashboardLayout: React.FC = () => {
   const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [analystMode, setAnalystMode] = useState(false);
+  const { isAdvanced, toggleMode } = useViewMode();
   const [wsConnected, setWsConnected] = useState(false);
   const { user, logout } = useAuth();
   const { mode, toggleTheme } = useAppTheme();
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    return sessionStorage.getItem('kavach_trigger_login_intro') === 'true';
+  });
+
+  const handleIntroComplete = () => {
+    sessionStorage.removeItem('kavach_trigger_login_intro');
+    setShowIntro(false);
+  };
 
   // Test live WebSocket connectivity
   useEffect(() => {
@@ -134,59 +146,42 @@ export const DashboardLayout: React.FC = () => {
             </IconButton>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
-              <Box
-                component="img"
-                src="/assets/kavach-logo.png"
-                alt="KAVACH"
-                sx={{
-                  height: 32,
-                  width: 'auto',
-                  filter: 'drop-shadow(0 0 6px rgba(193, 18, 31, 0.6))',
-                }}
-              />
-              <Box>
-                <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 800, letterSpacing: '0.05em', lineHeight: 1.1, fontFamily: 'Outfit', color: mode === 'dark' ? '#FFFFFF' : '#0F172A' }}>
-                  KAVACH <span style={{ color: '#38bdf8', fontSize: '0.75rem', fontWeight: 600 }}>SOAR-XDR</span>
-                </Typography>
-                <Typography variant="caption" sx={{ fontSize: '0.65rem', letterSpacing: '0.1em', color: 'text.secondary', display: 'block', fontWeight: 600 }}>
-                  INTELLIGENT DEFENSE PLATFORM
-                </Typography>
-              </Box>
+              <KavachLogo size="sm" showSubtitle={false} />
             </Box>
           </Box>
 
           {/* Right actions */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {/* Live WebSocket Status Pill */}
-            <Tooltip title={wsConnected ? 'WebSocket live stream connected to :8000' : 'WebSocket disconnected (offline)'}>
+            <Tooltip title={wsConnected ? 'WebSocket live telemetry stream connected to :8000' : 'WebSocket disconnected (offline)'}>
               <Chip
                 icon={<FiberManualRecord sx={{ fontSize: 10 }} />}
-                label={wsConnected ? 'LIVE' : 'OFFLINE'}
+                label={wsConnected ? 'LIVE FEED' : 'OFFLINE'}
                 size="small"
                 sx={{
-                  bgcolor: wsConnected ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  color: wsConnected ? '#22c55e' : '#ef4444',
+                  bgcolor: wsConnected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                  color: wsConnected ? '#10B981' : '#EF4444',
                   fontWeight: 700,
                   fontSize: 10,
-                  border: `1px solid ${wsConnected ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                  border: `1px solid ${wsConnected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
                 }}
               />
             </Tooltip>
 
-            {/* Normal User Mode vs Analyst Mode Toggle */}
-            <Tooltip title="Switch between Simplified Protection Mode and Deep SOC Telemetry View">
-              <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5, bgcolor: 'background.paper', px: 1.5, py: 0.2, borderRadius: 9999, border: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: !analystMode ? '#38bdf8' : 'text.secondary' }}>
-                  User
+            {/* Layman Mode vs SOC Analyst Mode Toggle */}
+            <Tooltip title={isAdvanced ? "SOC Analyst Mode (Deep telemetry, raw event logs & MITRE mapping active)" : "Layman User Mode (Simple protection status, 1-click scan & friendly advice active)"}>
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.8, bgcolor: 'background.paper', px: 1.5, py: 0.4, borderRadius: 9999, border: '1px solid', borderColor: isAdvanced ? '#7C3AED' : '#10B981' }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: !isAdvanced ? '#10B981' : 'text.secondary' }}>
+                  🛡️ Layman
                 </Typography>
                 <Switch
                   size="small"
-                  checked={analystMode}
-                  onChange={(e) => setAnalystMode(e.target.checked)}
-                  color="primary"
+                  checked={isAdvanced}
+                  onChange={toggleMode}
+                  color="secondary"
                 />
-                <Typography variant="caption" sx={{ fontWeight: 600, color: analystMode ? '#a855f7' : 'text.secondary' }}>
-                  Analyst
+                <Typography variant="caption" sx={{ fontWeight: 700, color: isAdvanced ? '#7C3AED' : 'text.secondary' }}>
+                  ⚡ SOC Analyst
                 </Typography>
               </Box>
             </Tooltip>
@@ -280,10 +275,10 @@ export const DashboardLayout: React.FC = () => {
                           px: 2,
                           borderRadius: 1.5,
                           '&.Mui-selected': {
-                            bgcolor: 'rgba(56, 189, 248, 0.12)',
-                            color: '#38bdf8',
-                            '&:hover': { bgcolor: 'rgba(56, 189, 248, 0.18)' },
-                            '& .MuiListItemIcon-root': { color: '#38bdf8' },
+                            bgcolor: mode === 'dark' ? 'rgba(220, 38, 38, 0.15)' : 'rgba(220, 38, 38, 0.08)',
+                            color: '#DC2626',
+                            '&:hover': { bgcolor: mode === 'dark' ? 'rgba(220, 38, 38, 0.22)' : 'rgba(220, 38, 38, 0.12)' },
+                            '& .MuiListItemIcon-root': { color: '#DC2626' },
                           },
                           '&:hover': {
                             bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
@@ -295,7 +290,7 @@ export const DashboardLayout: React.FC = () => {
                             minWidth: 0,
                             mr: open ? 1.8 : 'auto',
                             justifyContent: 'center',
-                            color: isActive ? '#38bdf8' : 'text.secondary',
+                            color: isActive ? '#DC2626' : 'text.secondary',
                             fontSize: 18,
                           }}
                         >
@@ -313,7 +308,7 @@ export const DashboardLayout: React.FC = () => {
                             opacity: open ? 1 : 0,
                             transition: 'opacity 0.2s',
                             '& .MuiTypography-root': {
-                              fontWeight: isActive ? 700 : 500,
+                              fontWeight: isActive ? 800 : 500,
                               fontSize: '0.82rem',
                             },
                           }}
@@ -325,13 +320,28 @@ export const DashboardLayout: React.FC = () => {
               </List>
             </Box>
           ))}
+
+          {/* Drawer Footer Attribution */}
+          {open && (
+            <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', mt: 'auto', textAlign: 'center' }}>
+              <Typography variant="caption" sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', display: 'block' }}>
+                KAVACH Platform v2.4
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: '0.64rem', fontWeight: 800, color: '#DC2626' }}>
+                By Swastik Chemical (India)
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Drawer>
 
       {/* Main Outlet */}
       <Box component="main" sx={{ flexGrow: 1, p: 3, pt: 10, width: '100%', overflowX: 'hidden' }}>
-        <Outlet context={{ analystMode }} />
+        <Outlet context={{ analystMode: isAdvanced }} />
       </Box>
+
+      {/* Cinematic Intro Overlay on First Login */}
+      {showIntro && <CinematicIntro onComplete={handleIntroComplete} />}
     </Box>
   );
 };

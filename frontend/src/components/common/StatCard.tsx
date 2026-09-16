@@ -15,6 +15,8 @@ interface StatCardProps {
   sparklineData?: { value: number }[];
   color?: string;
   glow?: boolean;
+  change?: string;
+  isPositive?: boolean;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -25,6 +27,8 @@ export const StatCard: React.FC<StatCardProps> = ({
   sparklineData,
   color = '#C1121F',
   glow = false,
+  change,
+  isPositive = true,
 }) => {
   return (
     <GlassCard glow={glow} glowColor={`${color}1A`} sx={{ p: 2.5, position: 'relative', height: '100%' }}>
@@ -53,6 +57,13 @@ export const StatCard: React.FC<StatCardProps> = ({
       </Box>
 
       <Box display="flex" alignItems="center" justifyContent="space-between" mt={1}>
+        {change && !trend && (
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <Typography variant="caption" sx={{ color: isPositive ? 'success.main' : 'warning.main', fontWeight: 700 }}>
+              ● {change}
+            </Typography>
+          </Box>
+        )}
         {trend && (
           <Box display="flex" alignItems="center" gap={0.5}>
             <Box 

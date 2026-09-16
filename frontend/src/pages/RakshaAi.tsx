@@ -16,15 +16,14 @@ import {
   Psychology,
   Shield,
   AutoAwesome,
-  HelpOutline,
+  HelpOutlined,
   CheckCircle,
   Warning,
   Bolt,
   ContentCopy,
 } from '@mui/icons-material';
-import axios from 'axios';
+import { apiClient } from '../api/client';
 
-const API_BASE = 'http://localhost:8000/api/v1';
 
 interface Message {
   sender: 'user' | 'raksha';
@@ -61,9 +60,9 @@ export const RakshaAi: React.FC = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const resp = await axios.get(`${API_BASE}/raksha/status`);
+        const resp = await apiClient.get('/raksha/status');
         setProviderInfo(resp.data);
-      } catch (e) {
+      } catch {
         setProviderInfo({ name: 'Offline Mode', is_offline_fallback: true });
       }
     };
@@ -89,21 +88,22 @@ export const RakshaAi: React.FC = () => {
     setLoading(true);
 
     try {
-      const resp = await axios.post(`${API_BASE}/raksha/chat`, {
+      const resp = await apiClient.post('/raksha/chat', {
         message: textToSend,
       });
 
+      const replyText = resp.data.response || resp.data.reply || resp.data.message || 'No response from assistant.';
       const rakshaMsg: Message = {
         sender: 'raksha',
-        text: resp.data.response,
-        isAiGenerated: resp.data.is_ai_generated,
+        text: replyText,
+        isAiGenerated: resp.data.is_ai_generated ?? true,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, rakshaMsg]);
-    } catch (err) {
+    } catch {
       const errorMsg: Message = {
         sender: 'raksha',
-        text: '### ⚠️ Communication Error\nUnable to contact KAVACH AI engine. Verify that the backend is running on `http://localhost:8000`.',
+        text: '### ⚠️ Communication Error\nUnable to contact KAVACH AI engine. Please verify that the backend server is running.',
         isAiGenerated: false,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };

@@ -183,9 +183,13 @@ class CentralPipelineManager:
                     if rule_matches:
                         alert_title = rule_matches[0]["name"]
 
+                    friendly_what = f"⚠️ KAVACH detected: {alert_title}."
+                    friendly_why = risk_res["why_explanation"]["summary"]
+                    friendly_action = "KAVACH contained the anomaly. No action required."
+
                     alert_record = await alert_repo.create(
                         title=alert_title,
-                        description=risk_res["why_explanation"]["summary"],
+                        description=friendly_what + " " + friendly_why,
                         severity=event["risk_level"].lower(),
                         risk_score=event["risk_score"],
                         confidence=event["confidence"],
@@ -196,7 +200,25 @@ class CentralPipelineManager:
                         mitre_tactic=event.get("mitre", {}).get("tactic"),
                         status="new",
                         analyst_notes=f"Breakdown: {risk_res['breakdown']}",
-                        ai_explanation=risk_res["why_explanation"]["summary"],
+                        ai_explanation=f"{friendly_what}\nWhy: {friendly_why}\nAction: {friendly_action}",
+                    )
+
+                    from app.core.logging import record_system_log, LogStream
+                    record_system_log(
+                        stream=LogStream.DETECTION,
+                        level="WARNING" if event["risk_score"] < 70 else "CRITICAL",
+                        component=event.get("collector", "detection_engine"),
+                        message=f"🛡️ Threat Alert: {alert_title} (Risk {round(event['risk_score'], 1)}/100)",
+                        details={"risk_score": event["risk_score"], "collector": event.get("collector")},
+                    )
+                else:
+                    from app.core.logging import record_system_log, LogStream
+                    record_system_log(
+                        stream=LogStream.SECURITY,
+                        level="INFO",
+                        component=event.get("collector", "telemetry"),
+                        message=f"Telemetry verified normal: {event.get('event_type')} from {hostname}",
+                        details={"risk_score": event["risk_score"]},
                     )
 
                 # 8. Incident Correlation
@@ -213,6 +235,13 @@ class CentralPipelineManager:
                             recommended_playbook="isolate_device",
                             raksha_summary=risk_res["why_explanation"]["summary"],
                         )
+                        record_system_log(
+                            stream=LogStream.DETECTION,
+                            level="CRITICAL",
+                            component="incident_correlator",
+                            message=f"🚨 High Risk Incident correlated: {correlation['title']}",
+                            details={"techniques": correlation["techniques"]},
+                        )
 
             # 9. WebSocket Live Broadcast
             bus = get_event_bus()
@@ -222,5 +251,81 @@ class CentralPipelineManager:
             else:
                 await bus.publish(Topic.NORMALIZED_EVENTS, event)
 
+            # 10. Active structured JSON logging to backend/logs/json_logs/
+            asyncio.create_task(asyncio.to_thread(self._write_json_logs_sync, raw_event, event))
+
         except Exception as exc:
             logger.error("pipeline_event_processing_error", error=str(exc))
+
+    def _write_json_logs_sync(self, raw_event: dict[str, Any], event: dict[str, Any]) -> None:
+        """Write events to appropriate collector and classification JSON logs."""
+        try:
+            subdirs = self._settings.paths.log_subdirs
+            today = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+            # 1. Raw event log
+            raw_dir = subdirs.get("raw")
+            if raw_dir:
+                raw_dir.mkdir(parents=True, exist_ok=True)
+                with open(raw_dir / f"{today}_raw.jsonl", "a", encoding="utf-8") as f:
+                    f.write(json.dumps(raw_event, default=str) + "\n")
+
+            # 2. Processed normalized event log
+            proc_dir = subdirs.get("processed")
+            if proc_dir:
+                proc_dir.mkdir(parents=True, exist_ok=True)
+                with open(proc_dir / f"{today}_processed.jsonl", "a", encoding="utf-8") as f:
+                    f.write(json.dumps(event, default=str) + "\n")
+
+            # 3. Collector-specific archive
+            collector = str(event.get("collector") or "").lower()
+            event_type = str(event.get("event_type") or "").lower()
+            target_key = "processed"
+            if "dns" in collector or "dns" in event_type:
+                target_key = "dns"
+            elif "defender" in collector or "defender" in event_type:
+                target_key = "defender"
+            elif "powershell" in collector or "powershell" in event_type:
+                target_key = "powershell"
+            elif "process" in collector or "process" in event_type:
+                target_key = "process"
+            elif "network" in collector or "network" in event_type:
+                target_key = "network"
+            elif any(k in collector for k in ("fim", "file_monitor", "canary")) or "file" in event_type:
+                target_key = "fim"
+            elif "sysmon" in collector:
+                target_key = "sysmon"
+            elif any(k in collector for k in ("eventlog", "login", "windows_eventlog")) or "login" in event_type:
+                target_key = "eventlog"
+            elif "usb" in collector or "usb" in event_type:
+                target_key = "usb"
+
+            target_dir = subdirs.get(target_key)
+            if target_dir:
+                target_dir.mkdir(parents=True, exist_ok=True)
+                with open(target_dir / f"{today}_{target_key}.jsonl", "a", encoding="utf-8") as f:
+                    f.write(json.dumps(event, default=str) + "\n")
+
+            # 4. MITRE mapped telemetry
+            if event.get("mitre"):
+                mitre_dir = subdirs.get("mitre")
+                if mitre_dir:
+                    mitre_dir.mkdir(parents=True, exist_ok=True)
+                    with open(mitre_dir / f"{today}_mitre.jsonl", "a", encoding="utf-8") as f:
+                        f.write(json.dumps(event, default=str) + "\n")
+
+            # 5. Alert & Detection logs
+            if event.get("risk_score", 0.0) >= 30.0 or event.get("status") == "alert":
+                alert_dir = subdirs.get("alerts")
+                if alert_dir:
+                    alert_dir.mkdir(parents=True, exist_ok=True)
+                    with open(alert_dir / f"{today}_alerts.jsonl", "a", encoding="utf-8") as f:
+                        f.write(json.dumps(event, default=str) + "\n")
+
+                det_dir = subdirs.get("detections")
+                if det_dir:
+                    det_dir.mkdir(parents=True, exist_ok=True)
+                    with open(det_dir / f"{today}_detections.jsonl", "a", encoding="utf-8") as f:
+                        f.write(json.dumps(event, default=str) + "\n")
+        except Exception as exc:
+            logger.error("json_log_write_error", error=str(exc))

@@ -54,6 +54,31 @@ class CollectorRegistry:
         await asyncio.gather(*tasks, return_exceptions=True)
         logger.info("all_collectors_stopped")
 
+    async def start_one(self, name: str) -> bool:
+        """Start an individual collector by name."""
+        collector = self.get(name)
+        if not collector:
+            return False
+        await collector.start()
+        return True
+
+    async def stop_one(self, name: str) -> bool:
+        """Stop an individual collector by name."""
+        collector = self.get(name)
+        if not collector:
+            return False
+        await collector.stop()
+        return True
+
+    async def restart_one(self, name: str) -> bool:
+        """Restart an individual collector by name."""
+        collector = self.get(name)
+        if not collector:
+            return False
+        await collector.stop()
+        await collector.start()
+        return True
+
     def health_report(self) -> list[dict[str, Any]]:
         """Return health status of all collectors."""
         return [c.health for c in self._collectors.values()]

@@ -104,3 +104,26 @@ def decode_access_token(token: str) -> TokenPayload:
         raise TokenExpiredError("Access token has expired")
     except (jwt.InvalidTokenError, KeyError, ValueError) as exc:
         raise InvalidTokenError(f"Invalid access token: {exc}")
+
+
+def has_permission(role: str | UserRole, permission: str | Permission) -> bool:
+    """Check if a given role possesses a specific permission."""
+    from app.core.constants import ROLE_PERMISSIONS, Permission
+
+    role_str = role.value if isinstance(role, UserRole) else str(role).lower()
+    perm_val = permission.value if isinstance(permission, Permission) else str(permission).lower()
+
+    if role_str == UserRole.OWNER.value:
+        return True
+
+    allowed_perms = ROLE_PERMISSIONS.get(role_str, [])
+    allowed_str_values = [p.value if isinstance(p, Permission) else str(p) for p in allowed_perms]
+    return perm_val in allowed_str_values
+
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """Validate password meets minimum security standards."""
+    if len(password) < 6:
+        return False, "Password must be at least 6 characters long."
+    return True, "Password meets requirements."
+

@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, Grid, Chip, Stack, useTheme
 } from '@mui/material';
 import {
-  Cpu, Storage, CheckCircle2, Hub, Security, VerifiedUser, Memory
+  Storage, CheckCircle, Hub, Security, VerifiedUser, Memory
 } from '@mui/icons-material';
 import { PROJECT_DETAILS } from '../../data/projectData';
 
