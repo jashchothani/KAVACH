@@ -129,40 +129,42 @@ export const DashboardLayout: React.FC = () => {
               anchorEl={notifAnchorEl}
               open={Boolean(notifAnchorEl)}
               onClose={handleNotifMenuClose}
-              PaperProps={{
-                sx: { width: 320, mt: 1.5, maxHeight: 400 }
+              slotProps={{
+                paper: {
+                  sx: { width: 320, mt: 1.5, maxHeight: 400 }
+                }
               }}
             >
               <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="subtitle1" fontWeight="bold">Active Alerts</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Active Alerts</Typography>
                 <Typography variant="caption" color="primary" sx={{ cursor: 'pointer' }} onClick={() => navigate('/alerts')}>View All</Typography>
               </Box>
               <Divider />
               <MenuItem onClick={handleNotifMenuClose}>
                 <Box sx={{ width: '100%' }}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="body2" fontWeight="bold" color="error.main">Ransomware Suspected</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }} color="error.main">Ransomware Suspected</Typography>
                     <Typography variant="caption" color="text.secondary">10m ago</Typography>
                   </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap display="block">Suspicious activity on host PROD-WEB-01</Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>Suspicious activity on host PROD-WEB-01</Typography>
                 </Box>
               </MenuItem>
               <MenuItem onClick={handleNotifMenuClose}>
                 <Box sx={{ width: '100%' }}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="body2" fontWeight="bold" color="warning.main">Deepfake Upload Analysis</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }} color="warning.main">Deepfake Upload Analysis</Typography>
                     <Typography variant="caption" color="text.secondary">1h ago</Typography>
                   </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap display="block">Authentication process complete (94% confidence)</Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>Authentication process complete (94% confidence)</Typography>
                 </Box>
               </MenuItem>
               <MenuItem onClick={handleNotifMenuClose}>
                 <Box sx={{ width: '100%' }}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="body2" fontWeight="bold" color="info.main">Playbook Success</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }} color="info.main">Playbook Success</Typography>
                     <Typography variant="caption" color="text.secondary">3h ago</Typography>
                   </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap display="block">Isolation playbook executed on DEV-APP-03</Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>Isolation playbook executed on DEV-APP-03</Typography>
                 </Box>
               </MenuItem>
             </Menu>
@@ -170,12 +172,12 @@ export const DashboardLayout: React.FC = () => {
             {/* User Profile */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1, cursor: 'pointer' }} onClick={handleProfileMenuOpen}>
               <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, fontSize: '0.95rem', fontWeight: 'bold' }}>
-                {user?.full_name[0] || 'U'}
+                {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
               </Avatar>
               <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1 }}>{user?.full_name}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1 }}>{user?.full_name || 'Security Analyst'}</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
-                  {user?.role_name.replace('_', ' ')}
+                  {user?.role_name ? user.role_name.replace('_', ' ') : 'Analyst'}
                 </Typography>
               </Box>
             </Box>
@@ -184,8 +186,10 @@ export const DashboardLayout: React.FC = () => {
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
               onClose={handleProfileMenuClose}
-              PaperProps={{
-                sx: { width: 180, mt: 1.5 }
+              slotProps={{
+                paper: {
+                  sx: { width: 180, mt: 1.5 }
+                }
               }}
             >
               <MenuItem onClick={() => { handleProfileMenuClose(); navigate('/settings'); }}>

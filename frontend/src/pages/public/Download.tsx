@@ -57,14 +57,14 @@ export const DownloadPage: React.FC = () => {
     <Box sx={{ py: { xs: 6, md: 10 } }}>
       <Container maxWidth="xl">
         {/* Header */}
-        <Box textAlign="center" mb={8}>
+        <Box sx={{ textAlign: 'center', mb: 8 }}>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <Chip
               icon={<Download sx={{ color: '#C1121F !important' }} />}
               label="KAVACH AGENT DOWNLOAD & DEPLOYMENT CENTER"
               sx={{ bgcolor: 'rgba(193, 18, 31, 0.1)', color: '#C1121F', fontWeight: 800, mb: 2 }}
             />
-            <Typography variant="h1" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 2 }}>
+            <Typography variant="h1" sx={{ fontFamily: 'Outfit', mb: 2, fontWeight: 900 }}>
               Deploy Endpoint & Server Protection
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 750, mx: 'auto', fontWeight: 400 }}>
@@ -74,9 +74,9 @@ export const DownloadPage: React.FC = () => {
         </Box>
 
         {/* Desktop OS Download Cards */}
-        <Grid container spacing={4} mb={8}>
+        <Grid container spacing={4} sx={{ mb: 8 }}>
           {downloads.map((item, idx) => (
-            <Grid item xs={12} md={4} key={idx}>
+            <Grid size={{ xs: 12, md: 4 }} key={idx}>
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: idx * 0.1 }}>
                 <Card
                   className="crimson-glow-card"
@@ -89,17 +89,17 @@ export const DownloadPage: React.FC = () => {
                   }}
                 >
                   <CardContent sx={{ p: 3 }}>
-                    <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                      <Box p={1.5} borderRadius={3} sx={{ bgcolor: 'rgba(255,255,255,0.03)' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                      <Box sx={{ p: 1.5, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)' }}>
                         {item.icon}
                       </Box>
                       <Chip label={item.ver} size="small" sx={{ bgcolor: 'rgba(193, 18, 31, 0.15)', color: '#C1121F', fontWeight: 800 }} />
                     </Box>
 
-                    <Typography variant="h5" fontWeight={800} sx={{ fontFamily: 'Outfit', mb: 1 }}>
+                    <Typography variant="h5" sx={{ fontFamily: 'Outfit', mb: 1, fontWeight: 800 }}>
                       {item.os}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block" mb={2}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
                       File: {item.filename} ({item.size})
                     </Typography>
 
@@ -123,7 +123,7 @@ export const DownloadPage: React.FC = () => {
                       Download Agent ({item.type.toUpperCase()})
                     </Button>
 
-                    <Box p={1.5} borderRadius={2} sx={{ bgcolor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.03)' }}>
+                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.03)' }}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', wordBreak: 'break-all', fontFamily: 'monospace' }}>
                         SHA-256: {item.sha}
                       </Typography>
@@ -147,9 +147,9 @@ export const DownloadPage: React.FC = () => {
             mb: 8,
           }}
         >
-          <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
             <Terminal sx={{ color: '#C1121F', fontSize: 32 }} />
-            <Typography variant="h5" fontWeight={800} sx={{ fontFamily: 'Outfit' }}>
+            <Typography variant="h5" sx={{ fontFamily: 'Outfit', fontWeight: 800 }}>
               1-Click Docker & Kubernetes Container Deployment
             </Typography>
           </Box>
@@ -157,7 +157,7 @@ export const DownloadPage: React.FC = () => {
             Run KAVACH agent as a non-intrusive background container on Linux servers, cloud instances, or Kubernetes clusters.
           </Typography>
 
-          <Box mb={3}>
+          <Box sx={{ mb: 3 }}>
             <Typography variant="caption" sx={{ color: '#CBD5E1', fontWeight: 700, mb: 1, display: 'block' }}>
               Docker Run Terminal Command:
             </Typography>
@@ -230,15 +230,15 @@ export const DownloadPage: React.FC = () => {
             border: '1px solid rgba(193, 18, 31, 0.2)',
           }}
         >
-          <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={8}>
-              <Box display="flex" alignItems="center" gap={1.5} mb={1}>
+          <Grid container spacing={4} sx={{ alignItems: 'center' }}>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
                 <PhoneIphone sx={{ color: '#C1121F', fontSize: 32 }} />
-                <Typography variant="h5" fontWeight={800} sx={{ fontFamily: 'Outfit' }}>
+                <Typography variant="h5" sx={{ fontFamily: 'Outfit', fontWeight: 800 }}>
                   KAVACH Mobile SOC Companion App
                 </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Receive real-time push alerts, approve critical playbook isolations, and monitor threat telemetry from your mobile device.
               </Typography>
 
@@ -262,7 +262,7 @@ export const DownloadPage: React.FC = () => {
               </Stack>
             </Grid>
 
-            <Grid item xs={12} md={4} textAlign="center">
+            <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'center' }}>
               <Download sx={{ fontSize: 100, color: '#C1121F', opacity: 0.3, filter: 'drop-shadow(0 0 20px rgba(193, 18, 31, 0.5))' }} />
             </Grid>
           </Grid>

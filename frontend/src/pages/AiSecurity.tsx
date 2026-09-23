@@ -72,8 +72,8 @@ export const AiSecurity: React.FC = () => {
 
   return (
     <Box>
-      <Box mb={4}>
-        <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
           AI Security Operations
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -93,13 +93,13 @@ export const AiSecurity: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Input Interface */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           {tabValue === 0 && (
             <GlassCard sx={{ p: 4, height: '100%' }}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontFamily: 'Outfit' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                 Upload Media for Analysis
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Upload video (.mp4) or audio (.wav, .mp3) files to detect deepfakes
               </Typography>
               <Paper
@@ -121,10 +121,10 @@ export const AiSecurity: React.FC = () => {
                 onClick={handleDeepfakeUpload}
               >
                 <CloudUpload sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-                <Typography variant="body2" fontWeight="bold">
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                   Drag and drop file here, or click to upload
                 </Typography>
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                   Maximum file size: 50MB
                 </Typography>
               </Paper>
@@ -133,10 +133,10 @@ export const AiSecurity: React.FC = () => {
 
           {tabValue === 1 && (
             <GlassCard sx={{ p: 4, height: '100%' }}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontFamily: 'Outfit' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                 Analyze Vishing Calls
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Upload recorded audio call streams to scan for synthetic cloned voice patterns
               </Typography>
               <Paper
@@ -158,10 +158,10 @@ export const AiSecurity: React.FC = () => {
                 onClick={handleVishingUpload}
               >
                 <PhoneCallback sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-                <Typography variant="body2" fontWeight="bold">
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                   Select Call Audio Record
                 </Typography>
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                   Supported formats: .mp3, .wav, .m4a
                 </Typography>
               </Paper>
@@ -170,10 +170,10 @@ export const AiSecurity: React.FC = () => {
 
           {tabValue === 2 && (
             <GlassCard sx={{ p: 4, height: '100%' }}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontFamily: 'Outfit' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                 Verify Link Reputation
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Input suspect URLs or domains to trigger AI brand spoofing reputation audits
               </Typography>
               <TextField
@@ -200,18 +200,18 @@ export const AiSecurity: React.FC = () => {
         </Grid>
 
         {/* Results Panel */}
-        <Grid item xs={12} md={6}>
-          <GlassCard sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column', justifyBetween: 'center' }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <GlassCard sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             {loading ? (
-              <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" sx={{ flexGrow: 1, py: 6 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexGrow: 1, py: 6 }}>
                 <CircularProgress size={50} sx={{ mb: 2 }} />
-                <Typography variant="body2" fontWeight="bold">
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                   AI Model processing telemetry patterns...
                 </Typography>
               </Box>
             ) : analysisResult ? (
               <Box>
-                <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontFamily: 'Outfit' }}>
+                <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                   Model Inspection Results
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
@@ -219,18 +219,18 @@ export const AiSecurity: React.FC = () => {
                 {analysisResult.type === 'deepfake' && (
                   <Box>
                     <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-                      <Typography variant="subtitle2" fontWeight="bold">{analysisResult.classification}</Typography>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{analysisResult.classification}</Typography>
                       <Typography variant="body2">{analysisResult.manipulation_type}</Typography>
                     </Alert>
 
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>Deepfake Confidence Score</Typography>
-                    <Box display="flex" alignItems="center" gap={2} mb={3}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                       <LinearProgress variant="determinate" value={analysisResult.confidence * 100} color="error" sx={{ flexGrow: 1, height: 10, borderRadius: 1 }} />
-                      <Typography variant="body2" fontWeight="bold">{(analysisResult.confidence * 100).toFixed(1)}%</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{(analysisResult.confidence * 100).toFixed(1)}%</Typography>
                     </Box>
 
-                    <Typography variant="body2" paragraph><strong>Processing Duration:</strong> {analysisResult.processing_time}</Typography>
-                    <Typography variant="body2" paragraph><strong>Frames Analyzed:</strong> {analysisResult.frames}</Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}><strong>Processing Duration:</strong> {analysisResult.processing_time}</Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}><strong>Frames Analyzed:</strong> {analysisResult.frames}</Typography>
                     <Typography variant="body2"><strong>Neural Network Depth:</strong> {analysisResult.neural_layers} Layers</Typography>
                   </Box>
                 )}
@@ -238,18 +238,18 @@ export const AiSecurity: React.FC = () => {
                 {analysisResult.type === 'vishing' && (
                   <Box>
                     <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-                      <Typography variant="subtitle2" fontWeight="bold">{analysisResult.risk_level}</Typography>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{analysisResult.risk_level}</Typography>
                       <Typography variant="body2">Synthesized voice clone probability high.</Typography>
                     </Alert>
 
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>AI Fraud Score</Typography>
-                    <Box display="flex" alignItems="center" gap={2} mb={3}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                       <LinearProgress variant="determinate" value={analysisResult.fraud_score * 100} color="error" sx={{ flexGrow: 1, height: 10, borderRadius: 1 }} />
-                      <Typography variant="body2" fontWeight="bold">{(analysisResult.fraud_score * 100).toFixed(1)}%</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{(analysisResult.fraud_score * 100).toFixed(1)}%</Typography>
                     </Box>
 
-                    <Typography variant="body2" paragraph><strong>Stress Indicators:</strong> {analysisResult.stress}</Typography>
-                    <Typography variant="body2" paragraph><strong>Frequency Spectral Traces:</strong> {analysisResult.synthetic_markers}</Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}><strong>Stress Indicators:</strong> {analysisResult.stress}</Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}><strong>Frequency Spectral Traces:</strong> {analysisResult.synthetic_markers}</Typography>
                     <Typography variant="body2"><strong>Duration:</strong> {analysisResult.duration}</Typography>
                   </Box>
                 )}
@@ -257,24 +257,24 @@ export const AiSecurity: React.FC = () => {
                 {analysisResult.type === 'phishing' && (
                   <Box>
                     <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-                      <Typography variant="subtitle2" fontWeight="bold">Malicious Phishing URL Identified</Typography>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Malicious Phishing URL Identified</Typography>
                       <Typography variant="body2">{analysisResult.similarity}</Typography>
                     </Alert>
 
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>Spoof Risk Index</Typography>
-                    <Box display="flex" alignItems="center" gap={2} mb={3}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                       <LinearProgress variant="determinate" value={analysisResult.risk_score} color="error" sx={{ flexGrow: 1, height: 10, borderRadius: 1 }} />
-                      <Typography variant="body2" fontWeight="bold">{analysisResult.risk_score}%</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{analysisResult.risk_score}%</Typography>
                     </Box>
 
-                    <Typography variant="body2" paragraph><strong>Domain Age:</strong> {analysisResult.domain_age}</Typography>
-                    <Typography variant="body2" paragraph><strong>Threat Feeds:</strong> {analysisResult.blacklist}</Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}><strong>Domain Age:</strong> {analysisResult.domain_age}</Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}><strong>Threat Feeds:</strong> {analysisResult.blacklist}</Typography>
                     <Typography variant="body2"><strong>Domain Reputation:</strong> {analysisResult.reputation}</Typography>
                   </Box>
                 )}
               </Box>
             ) : (
-              <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" sx={{ flexGrow: 1, py: 6, color: 'text.secondary' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexGrow: 1, py: 6, color: 'text.secondary' }}>
                 <Security sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
                 <Typography variant="body2">
                   Initiate target scans to generate telemetry analysis

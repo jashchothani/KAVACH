@@ -38,9 +38,9 @@ export const AlertCenter: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
-          <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+          <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
             Alert Center
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -59,7 +59,7 @@ export const AlertCenter: React.FC = () => {
 
       <Tabs 
         value={tabVal} 
-        onChange={(e, val) => setTabVal(val)} 
+        onChange={(_, val) => setTabVal(val)} 
         sx={{ mb: 4, borderBottom: 1, borderColor: 'divider' }}
       >
         <Tab label="All Alerts" sx={{ fontWeight: 'bold' }} />
@@ -89,13 +89,13 @@ export const AlertCenter: React.FC = () => {
                   }}
                 >
                   <Box sx={{ flexGrow: 1 }}>
-                    <Box display="flex" alignItems="center" gap={1.5} mb={1}>
-                      <Typography variant="body1" fontWeight={!alert.read ? 800 : 600}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                      <Typography variant="body1" sx={{ fontWeight: !alert.read ? 800 : 600 }}>
                         {alert.title}
                       </Typography>
                       <SeverityBadge severity={alert.severity} />
                     </Box>
-                    <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                       {alert.desc}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -103,7 +103,7 @@ export const AlertCenter: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  <Box display="flex" gap={1}>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
                     {!alert.read && (
                       <IconButton color="success" onClick={() => handleMarkRead(alert.id)}>
                         <Check />
@@ -117,7 +117,7 @@ export const AlertCenter: React.FC = () => {
               </React.Fragment>
             ))
           ) : (
-            <Box display="flex" flexDirection="column" alignItems="center" py={8} sx={{ color: 'text.secondary' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8, color: 'text.secondary' }}>
               <Notifications sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
               <Typography variant="body2">No alerts found in this category</Typography>
             </Box>

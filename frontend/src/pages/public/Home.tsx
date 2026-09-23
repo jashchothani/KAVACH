@@ -1,21 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Container, Typography, Button, Grid, Card, CardContent,
+  Box, Container, Typography, Button, Grid,
   Chip, Stack, Accordion, AccordionSummary, AccordionDetails,
-  Paper, useTheme, Slider, LinearProgress
+  Paper, Slider, LinearProgress, useTheme
 } from '@mui/material';
 import {
-  Shield, Security, RocketLaunch, Download, ExpandMore, CheckCircle,
-  PlayArrow, Memory, PrecisionManufacturing, BugReport,
-  AutoFixHigh, Hub, Storage, AutoAwesome, Terminal,
-  Speed, Lock, VerifiedUser, FlashOn, HelpOutline, ArrowForward,
-  Laptop, NotificationsActive, AssignmentTurnedIn, Dns, CalendarMonth,
-  Groups, Assessment
+  Shield, ExpandMore,
+  PlayArrow, PrecisionManufacturing,
+  Hub, Storage, AutoAwesome, Terminal,
+  Speed, ArrowForward, Download, Security,
+  Laptop, NotificationsActive, AssignmentTurnedIn, CalendarMonth
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
 import { GanttProjectPlan } from '../../components/common/GanttProjectPlan';
-import { PROJECT_DETAILS, TEAM_MEMBERS } from '../../data/projectData';
 
 interface AttackScenario {
   id: string;
@@ -180,7 +177,7 @@ export const Home: React.FC = () => {
   const [deviceCount, setDeviceCount] = useState<number>(500);
 
   // FAQ Category Filter State
-  const [faqCategory, setFaqCategory] = useState<string>('All');
+  const [faqCategory] = useState<string>('All');
 
   const runSimulation = () => {
     setSimState('running');
@@ -237,7 +234,6 @@ export const Home: React.FC = () => {
 
   // Plain language ROI Calculations
   const hoursSavedPerMonth = Math.round(deviceCount * 0.4);
-  const estimatedSavings = (deviceCount * 18).toLocaleString();
 
   return (
     <Box sx={{ position: 'relative', overflow: 'hidden' }}>
@@ -256,7 +252,7 @@ export const Home: React.FC = () => {
       >
         <Container maxWidth="xl">
           {/* Academic Sponsor & Diploma Project Badge */}
-          <Box display="flex" justifyContent="center" mb={1.5}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
             <Box
               sx={{
                 display: 'inline-flex',
@@ -285,7 +281,7 @@ export const Home: React.FC = () => {
           </Box>
 
           {/* Top Posture Badge */}
-          <Box display="flex" justifyContent="center" mb={3}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
             <Box
               sx={{
                 display: 'inline-flex',
@@ -313,9 +309,9 @@ export const Home: React.FC = () => {
             </Box>
           </Box>
 
-          <Grid container spacing={5} alignItems="center">
+          <Grid container spacing={5} sx={{ alignItems: 'center' }}>
             {/* Hero Left: Crystal Clear 5-Second Headline & Value Proposition */}
-            <Grid item xs={12} lg={7}>
+            <Grid size={{ xs: 12, lg: 7 }}>
               <Typography
                 variant="h1"
                 sx={{
@@ -345,7 +341,7 @@ export const Home: React.FC = () => {
               </Typography>
 
               {/* Primary Call to Action Buttons */}
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={5} flexWrap="wrap">
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 5, flexWrap: 'wrap' }}>
                 {/* 1. Primary Action */}
                 <Button
                   variant="contained"
@@ -422,7 +418,7 @@ export const Home: React.FC = () => {
             </Grid>
 
             {/* Hero Right: 5-Second "At a Glance" Clarity Card */}
-            <Grid item xs={12} lg={5}>
+            <Grid size={{ xs: 12, lg: 5 }}>
               <Paper
                 elevation={0}
                 className="glass-panel-enterprise"
@@ -434,7 +430,7 @@ export const Home: React.FC = () => {
                   position: 'relative',
                 }}
               >
-                <Box display="flex" alignItems="center" gap={1.2} mb={2.5}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 2.5 }}>
                   <Shield sx={{ color: '#C1121F', fontSize: 26 }} />
                   <Typography variant="h6" sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 800, color: '#FFFFFF' }}>
                     KAVACH At a Glance
@@ -474,7 +470,7 @@ export const Home: React.FC = () => {
                 </Stack>
 
                 {/* Direct Action Link */}
-                <Box mt={3} pt={2} borderTop="1px solid rgba(255, 255, 255, 0.1)" display="flex" justifyContent="space-between" alignItems="center">
+                <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.65)' }}>
                     Ready to see it in action?
                   </Typography>
@@ -492,8 +488,8 @@ export const Home: React.FC = () => {
           </Grid>
 
           {/* Quick Module Navigation Cards (From svdgamerz/KAVACH) */}
-          <Grid container spacing={3} mt={4}>
-            <Grid item xs={12} sm={6} md={3}>
+          <Grid container spacing={3} sx={{ mt: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 onClick={scrollToSandbox}
                 className="glass-panel-enterprise"
@@ -518,7 +514,7 @@ export const Home: React.FC = () => {
               </Paper>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 onClick={() => navigate('/about')}
                 className="glass-panel-enterprise"
@@ -543,7 +539,7 @@ export const Home: React.FC = () => {
               </Paper>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 onClick={scrollToSandbox}
                 className="glass-panel-enterprise"
@@ -568,7 +564,7 @@ export const Home: React.FC = () => {
               </Paper>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
                 onClick={() => {
                   const el = document.getElementById('project-roadmap-section');
@@ -602,7 +598,7 @@ export const Home: React.FC = () => {
 
       {/* 2. HOW IT WORKS: 3 Simple Steps */}
       <Container maxWidth="xl" sx={{ py: { xs: 8, md: 12 } }}>
-        <Box textAlign="center" mb={7}>
+        <Box sx={{ textAlign: 'center', mb: 7 }}>
           <Chip
             label="HOW KAVACH WORKS"
             size="small"
@@ -655,7 +651,7 @@ export const Home: React.FC = () => {
               color: '#10B981',
             },
           ].map((s) => (
-            <Grid item xs={12} md={4} key={s.step}>
+            <Grid size={{ xs: 12, md: 4 }} key={s.step}>
               <Paper
                 elevation={0}
                 className="glass-panel-enterprise"
@@ -669,7 +665,7 @@ export const Home: React.FC = () => {
                 }}
               >
                 <Box>
-                  <Box display="flex" alignItems="center" justifyContent="space-between" mb={2.5}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
                     <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: `${s.color}15`, border: `1px solid ${s.color}40` }}>
                       {s.icon}
                     </Box>
@@ -703,7 +699,7 @@ export const Home: React.FC = () => {
         }}
       >
         <Container maxWidth="xl">
-          <Box textAlign="center" mb={6}>
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
             <Chip
               label="INTERACTIVE 30-SECOND DEMO"
               size="small"
@@ -733,7 +729,7 @@ export const Home: React.FC = () => {
           </Box>
 
           {/* Scenario Tabs */}
-          <Box display="flex" flexWrap="wrap" gap={1.5} justifyContent="center" mb={4}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center', mb: 4 }}>
             {ATTACK_SCENARIOS.map((scenario) => {
               const isSelected = selectedScenario.id === scenario.id;
               return (
@@ -767,9 +763,9 @@ export const Home: React.FC = () => {
           </Box>
 
           {/* Simulation View */}
-          <Grid container spacing={4} alignItems="stretch">
+          <Grid container spacing={4} sx={{ alignItems: 'stretch' }}>
             {/* Left: What is happening */}
-            <Grid item xs={12} lg={4}>
+            <Grid size={{ xs: 12, lg: 4 }}>
               <Paper
                 elevation={0}
                 className="glass-panel-enterprise"
@@ -802,7 +798,7 @@ export const Home: React.FC = () => {
                     {selectedScenario.plainSummary}
                   </Typography>
 
-                  <Box p={2} borderRadius={2} bgcolor="rgba(255, 255, 255, 0.03)" border="1px solid rgba(255, 255, 255, 0.08)">
+                  <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                     <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.55)', fontWeight: 700 }}>
                       TARGETED SYSTEM:
                     </Typography>
@@ -812,7 +808,7 @@ export const Home: React.FC = () => {
                   </Box>
                 </Box>
 
-                <Box mt={4}>
+                <Box sx={{ mt: 4 }}>
                   <Button
                     fullWidth
                     variant="contained"
@@ -838,7 +834,7 @@ export const Home: React.FC = () => {
             </Grid>
 
             {/* Right: Step-by-Step Response in Plain English */}
-            <Grid item xs={12} lg={8}>
+            <Grid size={{ xs: 12, lg: 8 }}>
               <Paper
                 elevation={0}
                 className="terminal-window"
@@ -848,8 +844,8 @@ export const Home: React.FC = () => {
                   height: '100%',
                 }}
               >
-                <Box display="flex" alignItems="center" justifyContent="space-between" mb={3} pb={2} borderBottom="1px solid rgba(255, 255, 255, 0.1)">
-                  <Box display="flex" alignItems="center" gap={1.2}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, pb: 2, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                     <Shield sx={{ color: '#C1121F' }} />
                     <Typography sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 800, color: '#FFFFFF', fontSize: '1.1rem' }}>
                       Automated Defense Steps (Sub-12ms Response)
@@ -885,7 +881,7 @@ export const Home: React.FC = () => {
                           transition: 'all 0.3s ease',
                         }}
                       >
-                        <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                           <Typography
                             sx={{
                               fontFamily: '"Outfit", sans-serif',
@@ -942,7 +938,7 @@ export const Home: React.FC = () => {
 
       {/* 4. CORE PROTECTION AREAS */}
       <Container maxWidth="xl" sx={{ py: { xs: 8, md: 14 } }}>
-        <Box textAlign="center" mb={7}>
+        <Box sx={{ textAlign: 'center', mb: 7 }}>
           <Chip
             label="WHAT KAVACH PROTECTS"
             size="small"
@@ -1010,7 +1006,7 @@ export const Home: React.FC = () => {
               color: '#3B82F6',
             },
           ].map((item) => (
-            <Grid item xs={12} sm={6} lg={4} key={item.title}>
+            <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={item.title}>
               <Paper
                 elevation={0}
                 className="glass-panel-enterprise"
@@ -1052,8 +1048,8 @@ export const Home: React.FC = () => {
       {/* 5. TIME SAVINGS & ROI CALCULATOR */}
       <Box sx={{ bgcolor: isDark ? '#05060D' : '#F8FAFC', py: { xs: 8, md: 12 }, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
         <Container maxWidth="xl">
-          <Grid container spacing={5} alignItems="center">
-            <Grid item xs={12} lg={5}>
+          <Grid container spacing={5} sx={{ alignItems: 'center' }}>
+            <Grid size={{ xs: 12, lg: 5 }}>
               <Chip
                 label="TIME & COST SAVINGS"
                 size="small"
@@ -1081,8 +1077,8 @@ export const Home: React.FC = () => {
                 Move the slider to match your number of company laptops, servers, or factory machines to estimate your monthly time savings.
               </Typography>
 
-              <Box mb={2}>
-                <Box display="flex" justifyContent="space-between" mb={1}>
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography sx={{ fontWeight: 700, color: '#FFFFFF' }}>Company Devices / Computers:</Typography>
                   <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 800, color: '#C1121F', fontSize: '1.1rem' }}>
                     {deviceCount.toLocaleString()} devices
@@ -1099,9 +1095,9 @@ export const Home: React.FC = () => {
               </Box>
             </Grid>
 
-            <Grid item xs={12} lg={7}>
+            <Grid size={{ xs: 12, lg: 7 }}>
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Paper elevation={0} className="glass-panel-enterprise" sx={{ p: 4, borderRadius: 3, textAlign: 'center' }}>
                     <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.65)', fontWeight: 700 }}>
                       INCIDENT CONTAINMENT SPEED
@@ -1115,7 +1111,7 @@ export const Home: React.FC = () => {
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Paper elevation={0} className="glass-panel-enterprise" sx={{ p: 4, borderRadius: 3, textAlign: 'center' }}>
                     <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.65)', fontWeight: 700 }}>
                       IT HOURS SAVED PER MONTH
@@ -1136,7 +1132,7 @@ export const Home: React.FC = () => {
 
       {/* 6. SWASTIK CHEMICAL 3-PILLAR INDUSTRIAL ARCHITECTURE */}
       <Container maxWidth="xl" sx={{ py: { xs: 8, md: 10 } }}>
-        <Box textAlign="center" mb={6}>
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Chip
             label="SPONSORED INDUSTRIAL DEPLOYMENT"
             size="small"
@@ -1165,8 +1161,8 @@ export const Home: React.FC = () => {
           </Typography>
         </Box>
 
-        <Grid container spacing={4} mb={6}>
-          <Grid item xs={12} md={4}>
+        <Grid container spacing={4} sx={{ mb: 6 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Paper
               elevation={0}
               className="glass-panel-enterprise"
@@ -1184,7 +1180,7 @@ export const Home: React.FC = () => {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Paper
               elevation={0}
               className="glass-panel-enterprise"
@@ -1202,7 +1198,7 @@ export const Home: React.FC = () => {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Paper
               elevation={0}
               className="glass-panel-enterprise"
@@ -1225,7 +1221,7 @@ export const Home: React.FC = () => {
       {/* 7. 11-WEEK PROJECT ROADMAP & GANTT SECTION (Direct from svdgamerz/KAVACH) */}
       <Box id="project-roadmap-section" sx={{ py: { xs: 8, md: 12 }, bgcolor: isDark ? 'rgba(5, 5, 10, 0.6)' : 'rgba(241, 245, 249, 0.6)', borderTop: '1px solid rgba(255, 255, 255, 0.08)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
         <Container maxWidth="xl">
-          <Box textAlign="center" mb={6}>
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
             <Chip
               icon={<CalendarMonth sx={{ color: '#F59E0B !important' }} />}
               label="PROJECT ROADMAP & DEVELOPMENT PHASES"
@@ -1261,7 +1257,7 @@ export const Home: React.FC = () => {
 
       {/* 8. PLAIN ENGLISH FAQ */}
       <Container maxWidth="md" sx={{ py: { xs: 8, md: 14 } }}>
-        <Box textAlign="center" mb={6}>
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Chip
             label="FREQUENTLY ASKED QUESTIONS"
             size="small"
@@ -1346,7 +1342,7 @@ export const Home: React.FC = () => {
             Download the lightweight agent or explore the interactive platform console right now.
           </Typography>
 
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'center' }}>
             <Button
               variant="contained"
               size="large"

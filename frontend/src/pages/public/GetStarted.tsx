@@ -67,14 +67,14 @@ export const GetStarted: React.FC = () => {
     <Box sx={{ py: { xs: 6, md: 10 } }}>
       <Container maxWidth="xl">
         {/* Header */}
-        <Box textAlign="center" mb={8}>
+        <Box sx={{ textAlign: 'center', mb: 8 }}>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <Chip
               icon={<RocketLaunch sx={{ color: '#C1121F !important' }} />}
               label="KAVACH ONBOARDING WIZARD"
               sx={{ bgcolor: 'rgba(193, 18, 31, 0.1)', color: '#C1121F', fontWeight: 800, mb: 2 }}
             />
-            <Typography variant="h1" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 2 }}>
+            <Typography variant="h1" sx={{ fontFamily: 'Outfit', mb: 2, fontWeight: 900 }}>
               Get Started with KAVACH SOAR-XDR
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 700, mx: 'auto', fontWeight: 400 }}>
@@ -105,9 +105,9 @@ export const GetStarted: React.FC = () => {
 
         {/* Step 1: Select Plan / Scope */}
         {activeStep === 0 && (
-          <Box mb={8}>
-            <Box textAlign="center" mb={4}>
-              <Typography variant="h3" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 1 }}>
+          <Box sx={{ mb: 8 }}>
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h3" sx={{ fontFamily: 'Outfit', mb: 1, fontWeight: 900 }}>
                 Step 1: Choose Your Protection Scope
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -117,7 +117,7 @@ export const GetStarted: React.FC = () => {
 
             <Grid container spacing={4}>
               {plans.map((p, idx) => (
-                <Grid item xs={12} md={4} key={idx}>
+                <Grid size={{ xs: 12, md: 4 }} key={idx}>
                   <Card
                     className="crimson-glow-card"
                     onClick={() => setSelectedPlan(p.name)}
@@ -150,21 +150,21 @@ export const GetStarted: React.FC = () => {
 
                     <CardContent sx={{ p: 3 }}>
                       <Chip label={p.tag} size="small" sx={{ bgcolor: 'rgba(193, 18, 31, 0.1)', color: '#C1121F', fontWeight: 800, mb: 2 }} />
-                      <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 1 }}>
+                      <Typography variant="h4" sx={{ fontFamily: 'Outfit', mb: 1, fontWeight: 900 }}>
                         {p.name}
                       </Typography>
-                      <Typography variant="h5" fontWeight={800} color="primary" sx={{ mb: 2 }}>
+                      <Typography variant="h5" color="primary" sx={{ mb: 2, fontWeight: 800 }}>
                         {p.price}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" mb={3} sx={{ minHeight: 40 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ minHeight: 40, mb: 3 }}>
                         {p.desc}
                       </Typography>
 
                       <Divider sx={{ mb: 3 }} />
 
-                      <Stack spacing={1.5} mb={4}>
+                      <Stack spacing={1.5} sx={{ mb: 4 }}>
                         {p.features.map((feat, fidx) => (
-                          <Box display="flex" alignItems="center" gap={1} key={fidx}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} key={fidx}>
                             <Check sx={{ color: '#10B981', fontSize: 18 }} />
                             <Typography variant="body2">{feat}</Typography>
                           </Box>
@@ -210,10 +210,10 @@ export const GetStarted: React.FC = () => {
             }}
           >
             <VpnKey sx={{ fontSize: 50, color: '#C1121F', mb: 2 }} />
-            <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 1 }}>
+            <Typography variant="h4" sx={{ fontFamily: 'Outfit', mb: 1, fontWeight: 900 }}>
               Your KAVACH Sandbox API Key Generated
             </Typography>
-            <Typography variant="body2" color="text.secondary" mb={4}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
               Use this secret key to authenticate your background security agents with the KAVACH cloud backend.
             </Typography>
 
@@ -231,7 +231,7 @@ export const GetStarted: React.FC = () => {
                 mb: 4
               }}
             >
-              <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#C1121F', wordBreak: 'break-all' }}>
+              <Typography variant="subtitle1" sx={{ color: '#C1121F', wordBreak: 'break-all', fontWeight: 700 }}>
                 {generatedKey}
               </Typography>
               <IconButton onClick={handleCopyKey} color="primary">
@@ -239,7 +239,7 @@ export const GetStarted: React.FC = () => {
               </IconButton>
             </Paper>
 
-            <Stack direction="row" spacing={2} justifyContent="center">
+            <Stack direction="row" spacing={2} sx={{ justifyContent: 'center' }}>
               <Button
                 variant="contained"
                 startIcon={<Download />}

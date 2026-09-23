@@ -16,8 +16,8 @@ export const Settings: React.FC = () => {
 
   return (
     <Box>
-      <Box mb={4}>
-        <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
           Platform Settings
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -27,13 +27,13 @@ export const Settings: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* User Profile Info */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <GlassCard sx={{ height: '100%' }}>
             <CardContent sx={{ p: 4 }}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontFamily: 'Outfit' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                 User Profile
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Operator account settings for KAVACH SOC
               </Typography>
               <Divider sx={{ mb: 3 }} />
@@ -70,13 +70,13 @@ export const Settings: React.FC = () => {
         </Grid>
 
         {/* Security & Preferences */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <GlassCard sx={{ height: '100%' }}>
             <CardContent sx={{ p: 4 }}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontFamily: 'Outfit' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                 Security Settings
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Configure multi-factor and session rules
               </Typography>
               <Divider sx={{ mb: 3 }} />
@@ -93,7 +93,7 @@ export const Settings: React.FC = () => {
                 }
                 label={
                   <Box>
-                    <Typography variant="body2" fontWeight="bold">Two-Factor Authentication (2FA)</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Two-Factor Authentication (2FA)</Typography>
                     <Typography variant="caption" color="text.secondary">Secure user profile logons with TOTP secret verification</Typography>
                   </Box>
                 }
@@ -109,7 +109,7 @@ export const Settings: React.FC = () => {
                 }
                 label={
                   <Box>
-                    <Typography variant="body2" fontWeight="bold">Use Light Theme Option</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Use Light Theme Option</Typography>
                     <Typography variant="caption" color="text.secondary">Toggle between dark command center and clean enterprise view</Typography>
                   </Box>
                 }

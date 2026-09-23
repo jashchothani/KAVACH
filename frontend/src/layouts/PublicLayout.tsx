@@ -83,7 +83,7 @@ export const PublicLayout: React.FC = () => {
         }}
       >
         <Container maxWidth="xl">
-          <Box display="flex" alignItems="center" justifyContent="space-between" py={1.5}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.5 }}>
             {/* Brand Logo & Name */}
             <Box onClick={() => navigate('/')}>
               <KavachLogo size="md" showSubtitle={true} />
@@ -93,8 +93,7 @@ export const PublicLayout: React.FC = () => {
             <Stack
               direction="row"
               spacing={1}
-              alignItems="center"
-              sx={{ display: { xs: 'none', md: 'flex' } }}
+              sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}
             >
               {navLinks.map((link) => {
                 const isActive = location.pathname === link.path;
@@ -129,7 +128,7 @@ export const PublicLayout: React.FC = () => {
             </Stack>
 
             {/* Right Action CTA Buttons & Theme Toggle */}
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
               <Button
                 variant="outlined"
                 size="small"
@@ -240,19 +239,21 @@ export const PublicLayout: React.FC = () => {
         anchor="right"
         open={mobileOpen}
         onClose={handleDrawerToggle}
-        PaperProps={{
-          sx: {
-            width: 280,
-            bgcolor: isDark ? '#0A0A0F' : '#FFFFFF',
-            p: 3,
-            display: 'flex',
-            flexDirection: 'column',
-            justify: 'space-between',
+        slotProps={{
+          paper: {
+            sx: {
+              width: 280,
+              bgcolor: isDark ? '#0A0A0F' : '#FFFFFF',
+              p: 3,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }
           }
         }}
       >
         <Box>
-          <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <KavachLogo size="sm" />
             <IconButton onClick={handleDrawerToggle}>
               <CloseIcon />
@@ -277,17 +278,17 @@ export const PublicLayout: React.FC = () => {
                     }
                   }}
                 >
-                  <Box mr={2} color={location.pathname === link.path ? '#C1121F' : 'inherit'}>
+                  <Box sx={{ mr: 2, color: location.pathname === link.path ? '#C1121F' : 'inherit' }}>
                     {link.icon}
                   </Box>
-                  <ListItemText primary={link.label} primaryTypographyProps={{ fontWeight: 600 }} />
+                  <ListItemText primary={<Typography sx={{ fontWeight: 600 }}>{link.label}</Typography>} />
                 </ListItemButton>
               </ListItem>
             ))}
           </List>
         </Box>
 
-        <Box mt={4}>
+        <Box sx={{ mt: 4 }}>
           <Button
             fullWidth
             variant="contained"
@@ -337,10 +338,10 @@ export const PublicLayout: React.FC = () => {
         }}
       >
         <Container maxWidth="xl">
-          <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr', md: '2fr 1fr 1fr 1fr' }} gap={4} mb={6}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '2fr 1fr 1fr 1fr' }, gap: 4, mb: 6 }}>
             {/* Col 1: Brand Info */}
             <Box>
-              <Box mb={2}>
+              <Box sx={{ mb: 2 }}>
                 <KavachLogo size="sm" showSubtitle={true} />
               </Box>
               <Typography variant="body2" sx={{ color: '#94A3B8', mb: 2, maxWidth: 360, lineHeight: 1.7 }}>
@@ -350,7 +351,7 @@ export const PublicLayout: React.FC = () => {
                 <strong>Project Team:</strong> Jash Bharat Chothani (B007) • Shishir Jaimin Bhavsar (B030) • Ved Kantilal Waghela (B061)<br />
                 <span style={{ color: '#94A3B8' }}>Shri Bhagubhai Mafatlal Polytechnic</span>
               </Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <Chip
                   icon={<CheckCircle style={{ color: '#10B981', fontSize: 14 }} />}
                   label="SOC Systems Operational"
@@ -362,7 +363,7 @@ export const PublicLayout: React.FC = () => {
 
             {/* Col 2: Navigation Links */}
             <Box>
-              <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#C1121F', letterSpacing: 1, textTransform: 'uppercase', mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#C1121F', letterSpacing: 1, textTransform: 'uppercase', mb: 2 }}>
                 Navigation
               </Typography>
               <Stack spacing={1.2}>
@@ -376,7 +377,7 @@ export const PublicLayout: React.FC = () => {
 
             {/* Col 3: Core Security Modules */}
             <Box>
-              <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#C1121F', letterSpacing: 1, textTransform: 'uppercase', mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#C1121F', letterSpacing: 1, textTransform: 'uppercase', mb: 2 }}>
                 Modules & Engines
               </Typography>
               <Stack spacing={1.2}>
@@ -390,10 +391,10 @@ export const PublicLayout: React.FC = () => {
 
             {/* Col 4: Compliance & Certifications */}
             <Box>
-              <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#C1121F', letterSpacing: 1, textTransform: 'uppercase', mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#C1121F', letterSpacing: 1, textTransform: 'uppercase', mb: 2 }}>
                 Certifications
               </Typography>
-              <Stack spacing={1} mb={2}>
+              <Stack spacing={1} sx={{ mb: 2 }}>
                 <Chip label="ISO/IEC 27001 Certified" size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.06)', color: '#E2E8F0' }} />
                 <Chip label="SOC2 Type II Compliant" size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.06)', color: '#E2E8F0' }} />
                 <Chip label="GDPR & CERT-In Ready" size="small" sx={{ bgcolor: 'rgba(255, 255, 255, 0.06)', color: '#E2E8F0' }} />
@@ -403,7 +404,7 @@ export const PublicLayout: React.FC = () => {
 
           <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', mb: 3 }} />
 
-          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" gap={2}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
             <Typography variant="caption" sx={{ color: '#64748B' }}>
               © {new Date().getFullYear()} <strong>KAVACH BY SWASTIK CHEMICAL (INDIA)</strong>. All Rights Reserved. Protected by Military-Grade Encryption.
             </Typography>
@@ -430,19 +431,21 @@ export const PublicLayout: React.FC = () => {
         onClose={() => setSpecsModalOpen(false)}
         maxWidth="lg"
         fullWidth
-        PaperProps={{
-          sx: {
-            bgcolor: isDark ? '#0A0A10' : '#FFFFFF',
-            borderRadius: 4,
-            border: '1px solid rgba(193, 18, 31, 0.3)',
-            p: { xs: 2, md: 3 },
+        slotProps={{
+          paper: {
+            sx: {
+              bgcolor: isDark ? '#0A0A10' : '#FFFFFF',
+              borderRadius: 4,
+              border: '1px solid rgba(193, 18, 31, 0.3)',
+              p: { xs: 2, md: 3 },
+            }
           }
         }}
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1 }}>
-          <Box display="flex" alignItems="center" gap={1.5}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <KavachLogo size="sm" />
-            <Typography variant="h6" fontWeight={800} sx={{ fontFamily: 'Outfit' }}>
+            <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 800 }}>
               System Specifications & Architecture
             </Typography>
           </Box>

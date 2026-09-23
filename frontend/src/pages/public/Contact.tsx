@@ -47,14 +47,14 @@ export const Contact: React.FC = () => {
     <Box sx={{ py: { xs: 6, md: 10 } }}>
       <Container maxWidth="xl">
         {/* Header */}
-        <Box textAlign="center" mb={8}>
+        <Box sx={{ textAlign: 'center', mb: 8 }}>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <Chip
               icon={<PhoneCallback sx={{ color: '#C1121F !important' }} />}
               label="24/7 THREAT RESPONSE & INQUIRY CENTER"
               sx={{ bgcolor: 'rgba(193, 18, 31, 0.1)', color: '#C1121F', fontWeight: 800, mb: 2 }}
             />
-            <Typography variant="h1" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 2 }}>
+            <Typography variant="h1" sx={{ fontFamily: 'Outfit', fontWeight: 900, mb: 2 }}>
               Get in Touch with Our Security Engineers
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 700, mx: 'auto', fontWeight: 400 }}>
@@ -76,11 +76,11 @@ export const Contact: React.FC = () => {
             border: '1px solid rgba(255, 255, 255, 0.2)',
           }}
         >
-          <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={8}>
-              <Box display="flex" alignItems="center" gap={1.5} mb={1}>
+          <Grid container spacing={3} sx={{ alignItems: 'center' }}>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
                 <Alarm sx={{ fontSize: 32 }} />
-                <Typography variant="h5" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+                <Typography variant="h5" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
                   ACTIVE THREAT EMERGENCY HOTLINE
                 </Typography>
               </Box>
@@ -89,8 +89,8 @@ export const Contact: React.FC = () => {
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={4} textAlign={{ xs: 'left', md: 'right' }}>
-              <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit', letterSpacing: 1 }}>
+            <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+              <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900, letterSpacing: 1 }}>
                 +91 1800-KAVACH-SOC
               </Typography>
               <Typography variant="caption" sx={{ opacity: 0.8 }}>
@@ -102,7 +102,7 @@ export const Contact: React.FC = () => {
 
         <Grid container spacing={6}>
           {/* Interactive Form */}
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Paper
               elevation={0}
               sx={{
@@ -112,10 +112,10 @@ export const Contact: React.FC = () => {
                 border: '1px solid rgba(193, 18, 31, 0.2)',
               }}
             >
-              <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 1 }}>
+              <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900, mb: 1 }}>
                 Send an Inquiry
               </Typography>
-              <Typography variant="body2" color="text.secondary" mb={4}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
                 Fill out the form below and a Kavach Security Specialist will respond within 1 hour.
               </Typography>
 
@@ -125,7 +125,7 @@ export const Contact: React.FC = () => {
                   icon={<CheckCircle fontSize="inherit" />}
                   sx={{ borderRadius: 3, p: 3 }}
                 >
-                  <Typography variant="subtitle1" fontWeight={800}>Inquiry Submitted Successfully!</Typography>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Inquiry Submitted Successfully!</Typography>
                   <Typography variant="body2">
                     Thank you, {formData.name}. Our security team has received your message regarding <strong>{formData.department}</strong> and will reach out to {formData.email} shortly.
                   </Typography>
@@ -133,7 +133,7 @@ export const Contact: React.FC = () => {
               ) : (
                 <form onSubmit={handleSubmit}>
                   <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label="Your Full Name"
@@ -143,7 +143,7 @@ export const Contact: React.FC = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         type="email"
@@ -154,7 +154,7 @@ export const Contact: React.FC = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label="Company / Organization"
@@ -163,7 +163,7 @@ export const Contact: React.FC = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         select
@@ -178,7 +178,7 @@ export const Contact: React.FC = () => {
                       </TextField>
                     </Grid>
 
-                    <Grid item xs={12}>
+                    <Grid size={{ xs: 12 }}>
                       <TextField
                         fullWidth
                         multiline
@@ -190,7 +190,7 @@ export const Contact: React.FC = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12}>
+                    <Grid size={{ xs: 12 }}>
                       <Button
                         type="submit"
                         variant="contained"
@@ -215,7 +215,7 @@ export const Contact: React.FC = () => {
           </Grid>
 
           {/* Offices List */}
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Stack spacing={4}>
               {offices.map((office, idx) => (
                 <Paper
@@ -229,20 +229,20 @@ export const Contact: React.FC = () => {
                   }}
                 >
                   <Chip label={office.tag} size="small" sx={{ bgcolor: 'rgba(193, 18, 31, 0.15)', color: '#C1121F', fontWeight: 800, mb: 2 }} />
-                  <Typography variant="h5" fontWeight={800} sx={{ fontFamily: 'Outfit', mb: 2 }}>
+                  <Typography variant="h5" sx={{ fontFamily: 'Outfit', fontWeight: 800, mb: 2 }}>
                     {office.city}
                   </Typography>
 
                   <Stack spacing={1.5}>
-                    <Box display="flex" alignItems="center" gap={1.5}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <LocationOn sx={{ color: '#C1121F' }} />
                       <Typography variant="body2" color="text.secondary">{office.address}</Typography>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={1.5}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <PhoneCallback sx={{ color: '#C1121F' }} />
                       <Typography variant="body2" color="text.secondary">{office.phone}</Typography>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={1.5}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <Email sx={{ color: '#C1121F' }} />
                       <Typography variant="body2" color="text.secondary">{office.email}</Typography>
                     </Box>

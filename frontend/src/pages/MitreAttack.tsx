@@ -58,16 +58,16 @@ export const MitreAttack: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
-          <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+          <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
             MITRE ATT&CK Explorer
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Coverage analysis across tactical categories and automated detection validation
           </Typography>
         </Box>
-        <Box display="flex" gap={1}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Chip label="Covered (12)" size="small" icon={<CheckCircle sx={{ color: 'success.main !important' }} />} variant="outlined" />
           <Chip label="Partial (4)" size="small" icon={<Warning sx={{ color: 'warning.main !important' }} />} variant="outlined" />
           <Chip label="Uncovered (2)" size="small" icon={<Help sx={{ color: 'error.main !important' }} />} variant="outlined" />
@@ -80,13 +80,13 @@ export const MitreAttack: React.FC = () => {
           {TACTICS.map((tactic) => (
             <Box key={tactic} sx={{ flex: 1, minWidth: 160 }}>
               <GlassCard sx={{ bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)', p: 1.5, mb: 2 }}>
-                <Typography variant="subtitle2" align="center" fontWeight="bold" noWrap>
+                <Typography variant="subtitle2" align="center" noWrap sx={{ fontWeight: 'bold' }}>
                   {tactic}
                 </Typography>
               </GlassCard>
 
               {/* Techniques list under each tactic */}
-              <Box display="flex" flexDirection="column" gap={1.5}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {(TECHNIQUES[tactic] || []).map((tech) => (
                   <Card
                     key={tech.id}
@@ -106,13 +106,13 @@ export const MitreAttack: React.FC = () => {
                     }}
                   >
                     <CardContent sx={{ p: '12px !important' }}>
-                      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                        <Typography variant="caption" color="text.secondary" fontWeight="bold">
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
                           {tech.id}
                         </Typography>
                         {getStatusIcon(tech.status)}
                       </Box>
-                      <Typography variant="body2" fontWeight="bold" sx={{ lineHeight: 1.2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
                         {tech.name}
                       </Typography>
                       {tech.count > 0 && (
@@ -136,14 +136,16 @@ export const MitreAttack: React.FC = () => {
         anchor="right"
         open={Boolean(selectedTech)}
         onClose={() => setSelectedTech(null)}
-        PaperProps={{
-          sx: { width: { xs: '100%', sm: 400 }, p: 3, pt: 8 }
+        slotProps={{
+          paper: {
+            sx: { width: { xs: '100%', sm: 400 }, p: 3, pt: 8 }
+          }
         }}
       >
         {selectedTech && (
           <Box>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h5" fontWeight="bold" sx={{ fontFamily: 'Outfit' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h5" sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                 {selectedTech.id}
               </Typography>
               <Chip
@@ -156,13 +158,13 @@ export const MitreAttack: React.FC = () => {
                 sx={{ fontWeight: 'bold' }}
               />
             </Box>
-            <Typography variant="h6" fontWeight="bold" mb={2}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
               {selectedTech.name}
             </Typography>
             <Divider sx={{ mb: 2 }} />
 
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>Description</Typography>
-            <Typography variant="body2" paragraph sx={{ lineHeight: 1.6 }}>
+            <Typography variant="body2" sx={{ lineHeight: 1.6, mb: 2 }}>
               {selectedTech.desc}
             </Typography>
 

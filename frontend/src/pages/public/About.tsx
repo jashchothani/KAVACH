@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import {
   Shield, PrecisionManufacturing, Memory, RocketLaunch, WorkspacePremium,
-  CalendarMonth, Storage, Info
+  CalendarMonth, Storage, Info, AutoAwesome
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { KavachLogo } from '../../components/common/KavachLogo';
@@ -53,14 +53,14 @@ export const About: React.FC = () => {
     <Box sx={{ py: { xs: 6, md: 10 } }}>
       <Container maxWidth="xl">
         {/* Header Banner */}
-        <Box textAlign="center" mb={6}>
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <Chip
               icon={<Shield sx={{ color: '#C1121F !important' }} />}
               label="ABOUT SWASTIK CHEMICAL & KAVACH"
               sx={{ bgcolor: 'rgba(193, 18, 31, 0.12)', color: '#C1121F', fontWeight: 800, mb: 2 }}
             />
-            <Typography variant="h1" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 2 }}>
+            <Typography variant="h1" sx={{ fontFamily: 'Outfit', fontWeight: 900, mb: 2 }}>
               Pioneering Industrial & AI Cyber Defense
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 800, mx: 'auto', fontWeight: 400, lineHeight: 1.7 }}>
@@ -74,35 +74,34 @@ export const About: React.FC = () => {
           <Tabs
             value={sectionTab}
             onChange={(_, val) => setSectionTab(val)}
-            variant="scrollable"
-            scrollButtons="auto"
             sx={{
-              bgcolor: isDark ? 'rgba(13, 14, 24, 0.8)' : '#FFFFFF',
-              p: 0.8,
+              bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+              p: 0.6,
               borderRadius: 3,
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              '& .MuiTabs-indicator': { bgcolor: '#C1121F', height: 3, borderRadius: '3px' },
+              '& .MuiTabs-indicator': { display: 'none' },
               '& .MuiTab-root': {
-                color: 'rgba(255, 255, 255, 0.7)',
+                borderRadius: 2.5,
                 fontWeight: 700,
-                textTransform: 'none',
-                fontSize: '0.92rem',
+                fontSize: '0.9rem',
                 minHeight: 44,
-                borderRadius: 2,
-                '&.Mui-selected': { color: '#FFFFFF', bgcolor: 'rgba(193, 18, 31, 0.15)' }
+                px: 3,
+                color: isDark ? '#94A3B8' : '#64748B',
+                '&.Mui-selected': {
+                  bgcolor: '#C1121F',
+                  color: '#FFFFFF',
+                }
               }
             }}
           >
-            <Tab icon={<Info sx={{ fontSize: 18 }} />} iconPosition="start" label="Heritage & Vision" />
-            <Tab icon={<CalendarMonth sx={{ fontSize: 18 }} />} iconPosition="start" label="11-Week Gantt Roadmap" />
-            <Tab icon={<Storage sx={{ fontSize: 18 }} />} iconPosition="start" label="System Architecture & Specs" />
+            <Tab icon={<AutoAwesome sx={{ fontSize: 18 }} />} iconPosition="start" label="Overview & Mission" />
+            <Tab icon={<CalendarMonth sx={{ fontSize: 18 }} />} iconPosition="start" label="Engineering Plan & Gantt" />
           </Tabs>
         </Box>
 
-        {/* TAB 0: Heritage & Vision */}
+        {/* TAB 0: Mission, Swastik Chemical, Core Pillars */}
         {sectionTab === 0 && (
           <Box>
-            {/* Brand Story Section */}
+            {/* Heritage Card */}
             <Paper
               elevation={0}
               className="glass-panel-enterprise"
@@ -112,15 +111,15 @@ export const About: React.FC = () => {
                 mb: 8,
               }}
             >
-              <Grid container spacing={6} alignItems="center">
-                <Grid item xs={12} md={5} textAlign="center">
+              <Grid container spacing={6} sx={{ alignItems: 'center' }}>
+                <Grid size={{ xs: 12, md: 5 }} sx={{ textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                     <KavachLogo size="lg" showSubtitle={true} />
                   </Box>
                 </Grid>
 
-                <Grid item xs={12} md={7}>
-                  <Typography variant="h3" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 2, color: '#FFFFFF' }}>
+                <Grid size={{ xs: 12, md: 7 }}>
+                  <Typography variant="h3" sx={{ fontFamily: 'Outfit', fontWeight: 900, mb: 2, color: '#FFFFFF' }}>
                     Our Heritage & Vision
                   </Typography>
                   <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.75)', lineHeight: 1.8, mb: 2 }}>
@@ -165,9 +164,9 @@ export const About: React.FC = () => {
             </Paper>
 
             {/* Four Core Pillars */}
-            <Box mb={8}>
-              <Box textAlign="center" mb={5}>
-                <Typography variant="h2" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 1.5, color: '#FFFFFF' }}>
+            <Box sx={{ mb: 8 }}>
+              <Box sx={{ textAlign: 'center', mb: 5 }}>
+                <Typography variant="h2" sx={{ fontFamily: 'Outfit', fontWeight: 900, mb: 1.5, color: '#FFFFFF' }}>
                   Core Engineering Pillars
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
@@ -177,7 +176,7 @@ export const About: React.FC = () => {
 
               <Grid container spacing={3.5}>
                 {corePillars.map((pillar, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={index}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
                     <Card
                       className="glass-panel-enterprise"
                       sx={{
@@ -187,8 +186,8 @@ export const About: React.FC = () => {
                       }}
                     >
                       <CardContent sx={{ p: 3 }}>
-                        <Box mb={2}>{pillar.icon}</Box>
-                        <Typography variant="h6" fontWeight={800} sx={{ fontFamily: 'Outfit', mb: 1.5, color: '#FFFFFF' }}>
+                        <Box sx={{ mb: 2 }}>{pillar.icon}</Box>
+                        <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 800, mb: 1.5, color: '#FFFFFF' }}>
                           {pillar.title}
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.72)', lineHeight: 1.6 }}>
@@ -203,15 +202,15 @@ export const About: React.FC = () => {
 
             {/* Milestone Timeline */}
             <Box>
-              <Box textAlign="center" mb={5}>
-                <Typography variant="h2" fontWeight={900} sx={{ fontFamily: 'Outfit', color: '#FFFFFF' }}>
+              <Box sx={{ textAlign: 'center', mb: 5 }}>
+                <Typography variant="h2" sx={{ fontFamily: 'Outfit', fontWeight: 900, color: '#FFFFFF' }}>
                   Milestones & Innovation Journey
                 </Typography>
               </Box>
 
               <Grid container spacing={3}>
                 {milestones.map((m, i) => (
-                  <Grid item xs={12} sm={6} md={3} key={i}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }} key={i}>
                     <Paper
                       elevation={0}
                       className="glass-panel-enterprise"
@@ -221,10 +220,10 @@ export const About: React.FC = () => {
                         borderRadius: 3,
                       }}
                     >
-                      <Typography variant="h3" fontWeight={900} sx={{ color: '#C1121F', fontFamily: 'Outfit', mb: 1 }}>
+                      <Typography variant="h3" sx={{ color: '#C1121F', fontFamily: 'Outfit', fontWeight: 900, mb: 1 }}>
                         {m.year}
                       </Typography>
-                      <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1, color: '#FFFFFF' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, color: '#FFFFFF' }}>
                         {m.title}
                       </Typography>
                       <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>

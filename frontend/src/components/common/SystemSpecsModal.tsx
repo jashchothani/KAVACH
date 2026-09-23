@@ -1,11 +1,11 @@
 import React from 'react';
 import {
-  Box, Typography, Paper, Grid, Chip, Stack, useTheme
+  Box, Typography, Paper, Grid, Stack, useTheme
 } from '@mui/material';
 import {
-  Cpu, Storage, CheckCircle2, Hub, Security, VerifiedUser, Memory
+  Storage, Memory
 } from '@mui/icons-material';
-import { PROJECT_DETAILS } from '../../data/projectData';
+
 
 export const SystemSpecsModal: React.FC = () => {
   const theme = useTheme();
@@ -24,7 +24,7 @@ export const SystemSpecsModal: React.FC = () => {
           border: '1px solid rgba(193, 18, 31, 0.25)',
         }}
       >
-        <Box display="flex" alignItems="center" gap={1} mb={1}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           <Storage sx={{ color: '#3B82F6', fontSize: 20 }} />
           <Typography variant="caption" sx={{ color: '#60A5FA', fontWeight: 800, letterSpacing: '0.04em' }}>
             TECHNICAL SPECIFICATIONS & ARCHITECTURE
@@ -39,15 +39,15 @@ export const SystemSpecsModal: React.FC = () => {
       </Paper>
 
       {/* Software & Hardware Specs Grid */}
-      <Grid container spacing={4} mb={4}>
+      <Grid container spacing={4} sx={{ mb: 4 }}>
         {/* Software Stack */}
-        <Grid item xs={12} lg={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Paper
             elevation={0}
             className="glass-panel-enterprise"
             sx={{ p: { xs: 3, md: 4 }, borderRadius: 3, height: '100%' }}
           >
-            <Box display="flex" alignItems="center" gap={1.5} mb={3}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'rgba(59, 130, 246, 0.15)', color: '#60A5FA' }}>
                 <Memory />
               </Box>
@@ -87,13 +87,13 @@ export const SystemSpecsModal: React.FC = () => {
         </Grid>
 
         {/* Hardware Specifications */}
-        <Grid item xs={12} lg={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Paper
             elevation={0}
             className="glass-panel-enterprise"
             sx={{ p: { xs: 3, md: 4 }, borderRadius: 3, height: '100%' }}
           >
-            <Box display="flex" alignItems="center" gap={1.5} mb={3}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'rgba(193, 18, 31, 0.15)', color: '#F87171' }}>
                 <Storage />
               </Box>

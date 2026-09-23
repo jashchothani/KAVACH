@@ -40,16 +40,16 @@ export const Analytics: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
-          <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+          <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
             Executive Reporting & Analytics
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Long-term threat trends, incident tracking and endpoint risk reports
           </Typography>
         </Box>
-        <Box display="flex" gap={1.5}>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Button startIcon={<Download />} variant="outlined" onClick={() => handleExport('csv')} sx={{ fontWeight: 'bold' }}>
             CSV
           </Button>
@@ -64,9 +64,9 @@ export const Analytics: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Long term trend */}
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <GlassCard sx={{ p: 3, height: 380 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom sx={{ fontFamily: 'Outfit' }}>
+            <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Outfit', fontWeight: 700 }}>
               Threats & Incidents Long-term Trends
             </Typography>
             <Box sx={{ width: '100%', height: 300 }}>
@@ -102,9 +102,9 @@ export const Analytics: React.FC = () => {
         </Grid>
 
         {/* Endpoint Health */}
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <GlassCard sx={{ p: 3, height: 380 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom sx={{ fontFamily: 'Outfit' }}>
+            <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Outfit', fontWeight: 700 }}>
               Endpoint Agent Health Status
             </Typography>
             <Box sx={{ width: '100%', height: 300 }}>
@@ -132,9 +132,9 @@ export const Analytics: React.FC = () => {
         </Grid>
 
         {/* Security score trend */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <GlassCard sx={{ p: 3, height: 380 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom sx={{ fontFamily: 'Outfit' }}>
+            <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Outfit', fontWeight: 700 }}>
               Weekly Security Posture Growth
             </Typography>
             <Box sx={{ width: '100%', height: 300 }}>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Grid, Typography, useTheme, Button, Paper, Stack, Chip } from '@mui/material';
 import {
   BugReport, Shield, Assignment, Security, PlayCircleFilled,
-  Warning, Assessment, Launch, AddModerator, PlayArrow, CheckCircle
+  Warning, Assessment, Launch, PlayArrow, CheckCircle
 } from '@mui/icons-material';
 import { StatCard } from '../components/common/StatCard';
 import { GlassCard } from '../components/common/GlassCard';
@@ -68,9 +68,9 @@ export const Dashboard: React.FC = () => {
         }}
       >
         <Box>
-          <Box display="flex" alignItems="center" gap={1.2} mb={0.5}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 0.5 }}>
             <CheckCircle sx={{ color: '#10B981', fontSize: 20 }} />
-            <Typography variant="h6" fontWeight={800} sx={{ fontFamily: 'Outfit' }}>
+            <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 800 }}>
               System Status: All 156 Devices Protected
             </Typography>
             <Chip label="15 ATTACKS STOPPED TODAY" size="small" sx={{ bgcolor: 'rgba(16, 185, 129, 0.15)', color: '#10B981', fontWeight: 800, height: 22 }} />
@@ -80,7 +80,7 @@ export const Dashboard: React.FC = () => {
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1.5} flexWrap="wrap">
+        <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap' }}>
           <Button
             variant="outlined"
             size="small"
@@ -103,8 +103,8 @@ export const Dashboard: React.FC = () => {
       </Paper>
 
       {/* 2. Key Metrics Row with Plain-English Subtitles */}
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={4} lg={2}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
           <StatCard
             title="Safety Grade"
             value="87.5 / 100"
@@ -115,7 +115,7 @@ export const Dashboard: React.FC = () => {
             sparklineData={[{ value: 85 }, { value: 84 }, { value: 86 }, { value: 88 }, { value: 87.5 }]}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4} lg={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
           <StatCard
             title="Suspicious Events"
             value="23"
@@ -125,7 +125,7 @@ export const Dashboard: React.FC = () => {
             sparklineData={[{ value: 15 }, { value: 18 }, { value: 20 }, { value: 22 }, { value: 23 }]}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4} lg={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
           <StatCard
             title="Protected Devices"
             value="156"
@@ -135,7 +135,7 @@ export const Dashboard: React.FC = () => {
             sparklineData={[{ value: 148 }, { value: 150 }, { value: 152 }, { value: 155 }, { value: 156 }]}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4} lg={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
           <StatCard
             title="Open Incidents"
             value="8"
@@ -145,7 +145,7 @@ export const Dashboard: React.FC = () => {
             sparklineData={[{ value: 10 }, { value: 9 }, { value: 8 }, { value: 8 }, { value: 8 }]}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4} lg={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
           <StatCard
             title="AI Flagged Threats"
             value="42"
@@ -155,7 +155,7 @@ export const Dashboard: React.FC = () => {
             sparklineData={[{ value: 30 }, { value: 35 }, { value: 38 }, { value: 40 }, { value: 42 }]}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4} lg={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
           <StatCard
             title="Automated Blocks"
             value="15"
@@ -168,12 +168,12 @@ export const Dashboard: React.FC = () => {
       </Grid>
 
       {/* 3. Main Charts Grid */}
-      <Grid container spacing={3} mb={4}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Security Score Trend */}
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <GlassCard sx={{ p: 3, height: 380 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="h6" fontWeight={700} sx={{ fontFamily: 'Outfit' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 700 }}>
                 Security Score Trend (Last 24 Hours)
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -207,12 +207,12 @@ export const Dashboard: React.FC = () => {
         </Grid>
 
         {/* Incident Status */}
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <GlassCard sx={{ p: 3, height: 380 }}>
-            <Typography variant="h6" fontWeight={700} sx={{ fontFamily: 'Outfit', mb: 0.5 }}>
+            <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 700, mb: 0.5 }}>
               Incident Status Breakdown
             </Typography>
-            <Typography variant="caption" color="text.secondary" display="block" mb={2}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
               45 of 80 total incidents resolved automatically
             </Typography>
             <Box sx={{ width: '100%', height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -252,12 +252,12 @@ export const Dashboard: React.FC = () => {
         </Grid>
 
         {/* Threat Categories */}
-        <Grid item xs={12} lg={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <GlassCard sx={{ p: 3, height: 380 }}>
-            <Typography variant="h6" fontWeight={700} sx={{ fontFamily: 'Outfit', mb: 0.5 }}>
+            <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 700, mb: 0.5 }}>
               Threats Blocked by Type
             </Typography>
-            <Typography variant="caption" color="text.secondary" display="block" mb={2}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
               Malware and Phishing constitute 55% of all blocked attempts
             </Typography>
             <Box sx={{ width: '100%', height: 280 }}>
@@ -285,11 +285,11 @@ export const Dashboard: React.FC = () => {
         </Grid>
 
         {/* Threat Timeline / Recent Feed */}
-        <Grid item xs={12} lg={6}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <GlassCard sx={{ p: 3, height: 380, display: 'flex', flexDirection: 'column' }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
               <Box>
-                <Typography variant="h6" fontWeight={700} sx={{ fontFamily: 'Outfit' }}>
+                <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 700 }}>
                   Live Threat Feed
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -322,10 +322,10 @@ export const Dashboard: React.FC = () => {
                   }}
                 >
                   <Box>
-                    <Typography variant="body2" fontWeight="bold">
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                       {threat.name}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       Target: {threat.target} • Neutralized {threat.time}
                     </Typography>
                   </Box>

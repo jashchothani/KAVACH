@@ -57,9 +57,9 @@ export const IncidentManagement: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
-          <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+          <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
             Incident Response Center
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -123,10 +123,12 @@ export const IncidentManagement: React.FC = () => {
         onClose={() => setSelectedIncident(null)}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 4,
-            border: `1px solid ${theme.palette.divider}`
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              border: `1px solid ${theme.palette.divider}`
+            }
           }
         }}
       >
@@ -134,7 +136,7 @@ export const IncidentManagement: React.FC = () => {
           <>
             <DialogTitle sx={{ borderBottom: `1px solid ${theme.palette.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 3 }}>
               <Box>
-                <Typography variant="h6" fontWeight="bold" sx={{ fontFamily: 'Outfit' }}>
+                <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                   INC-{selectedIncident.id.toString().padStart(3, '0')}: {selectedIncident.title}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -147,7 +149,7 @@ export const IncidentManagement: React.FC = () => {
             <DialogContent sx={{ p: 3 }}>
               <Grid container spacing={3}>
                 {/* Notes & details */}
-                <Grid item xs={12} md={7}>
+                <Grid size={{ xs: 12, md: 7 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>Investigation Notes</Typography>
                   <TextField
                     multiline
@@ -178,21 +180,20 @@ export const IncidentManagement: React.FC = () => {
                 </Grid>
 
                 {/* Timeline & Evidence */}
-                <Grid item xs={12} md={5}>
+                <Grid size={{ xs: 12, md: 5 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>Investigation Timeline</Typography>
                   <List dense sx={{ mb: 3, bgcolor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.02)', borderRadius: 2, p: 1 }}>
                     {selectedIncident.timeline.map((step, idx) => (
                       <ListItem key={idx}>
                         <ListItemText 
-                          primary={step} 
-                          primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
+                          primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{step}</Typography>}
                         />
                       </ListItem>
                     ))}
                   </List>
 
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>Evidence Files</Typography>
-                  <Box display="flex" flexWrap="wrap" gap={1}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {selectedIncident.evidence.length > 0 ? (
                       selectedIncident.evidence.map((file, idx) => (
                         <Chip key={idx} label={file} variant="outlined" size="small" sx={{ fontFamily: 'monospace' }} />

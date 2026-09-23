@@ -35,8 +35,8 @@ export const ThreatIntelligence: React.FC = () => {
 
   return (
     <Box>
-      <Box mb={4}>
-        <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
           Threat Intelligence Center
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -46,12 +46,12 @@ export const ThreatIntelligence: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Search IOC */}
-        <Grid item xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}>
           <GlassCard sx={{ p: 4 }}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontFamily: 'Outfit' }}>
+            <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
               Indicator Lookup
             </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Submit an IP address, domain name, file hash, or URL to query threat records
             </Typography>
 
@@ -93,12 +93,12 @@ export const ThreatIntelligence: React.FC = () => {
         </Grid>
 
         {/* Results display */}
-        <Grid item xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}>
           <GlassCard sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column' }}>
             {result ? (
               <Box>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h6" fontWeight="bold" sx={{ fontFamily: 'Outfit' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                     IOC Reputation Report
                   </Typography>
                   <Paper 
@@ -113,31 +113,31 @@ export const ThreatIntelligence: React.FC = () => {
                 </Box>
                 <Divider sx={{ mb: 3 }} />
 
-                <Typography variant="body1" fontWeight="bold" sx={{ fontFamily: 'monospace', mb: 3, wordBreak: 'break-all' }}>
+                <Typography variant="body1" sx={{ fontFamily: 'monospace', fontWeight: 'bold', mb: 3, wordBreak: 'break-all' }}>
                   {result.ioc}
                 </Typography>
 
-                <Grid container spacing={2} mb={3}>
-                  <Grid item xs={6}>
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="caption" color="text.secondary">Indicator Type</Typography>
-                    <Typography variant="body2" fontWeight="bold" sx={{ textTransform: 'uppercase' }}>{result.type}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{result.type}</Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="caption" color="text.secondary">Threat Feed Source</Typography>
-                    <Typography variant="body2" fontWeight="bold">{result.source}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{result.source}</Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="caption" color="text.secondary">Geographic Origin</Typography>
-                    <Typography variant="body2" fontWeight="bold">{result.country}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{result.country}</Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="caption" color="text.secondary">Autonomous System (ASN)</Typography>
-                    <Typography variant="body2" fontWeight="bold">{result.asn}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{result.asn}</Typography>
                   </Grid>
                 </Grid>
 
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>Intelligence Tags</Typography>
-                <Box display="flex" flexWrap="wrap" gap={1} mb={3}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
                   {result.tags.map((tag: string) => (
                     <Paper 
                       key={tag} 
@@ -154,18 +154,18 @@ export const ThreatIntelligence: React.FC = () => {
                 </Box>
 
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="caption" color="text.secondary">First Detected</Typography>
-                    <Typography variant="body2" fontWeight="bold">{result.first_seen}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{result.first_seen}</Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <Typography variant="caption" color="text.secondary">Last Observed</Typography>
-                    <Typography variant="body2" fontWeight="bold">{result.last_seen}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{result.last_seen}</Typography>
                   </Grid>
                 </Grid>
               </Box>
             ) : (
-              <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" sx={{ flexGrow: 1, py: 6, color: 'text.secondary' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexGrow: 1, py: 6, color: 'text.secondary' }}>
                 <Search sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
                 <Typography variant="body2">
                   Submit an IOC value to load correlated threat data

@@ -45,9 +45,9 @@ export const SoarCenter: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
-          <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+          <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
             SOAR Orchestration Center
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -62,11 +62,11 @@ export const SoarCenter: React.FC = () => {
       {/* Grid of Playbooks */}
       <Grid container spacing={3}>
         {playbooks.map((playbook) => (
-          <Grid item xs={12} md={6} lg={4} key={playbook.id}>
-            <GlassCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyBetween: 'space-between' }}>
-              <Box p={3} sx={{ flexGrow: 1 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
-                  <Typography variant="h6" fontWeight="bold" sx={{ fontFamily: 'Outfit' }}>
+          <Grid size={{ xs: 12, md: 6, lg: 4 }} key={playbook.id}>
+            <GlassCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <Box sx={{ p: 3, flexGrow: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                  <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                     {playbook.name}
                   </Typography>
                   <Paper
@@ -79,19 +79,19 @@ export const SoarCenter: React.FC = () => {
                     {playbook.type}
                   </Paper>
                 </Box>
-                <Typography variant="body2" color="text.secondary" paragraph>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   {playbook.desc}
                 </Typography>
                 <Divider sx={{ my: 1.5 }} />
-                <Typography variant="caption" color="text.secondary" display="block">
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                   Last Executed: {playbook.last_executed}
                 </Typography>
-                <Typography variant="caption" color="text.secondary" display="block">
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                   Total Runs: {playbook.runs}
                 </Typography>
               </Box>
 
-              <Box p={2} sx={{ bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)', borderTop: `1px solid ${theme.palette.divider}`, display: 'flex', gap: 1 }}>
+              <Box sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)', borderTop: `1px solid ${theme.palette.divider}`, display: 'flex', gap: 1 }}>
                 <Button
                   variant="contained"
                   startIcon={<PlayArrow />}
@@ -123,10 +123,12 @@ export const SoarCenter: React.FC = () => {
         }}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 4,
-            border: `1px solid ${theme.palette.divider}`
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              border: `1px solid ${theme.palette.divider}`
+            }
           }
         }}
       >

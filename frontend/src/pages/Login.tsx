@@ -118,18 +118,20 @@ export const Login: React.FC = () => {
           margin="normal"
           disabled={loading}
           sx={{ mb: 2 }}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={handleTogglePassword} edge="end" disabled={loading}>
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={handleTogglePassword} edge="end" disabled={loading}>
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }
           }}
         />
 
-        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <FormControlLabel
             control={
               <Checkbox
@@ -189,7 +191,7 @@ export const Login: React.FC = () => {
 
       {/* Footer */}
       <Divider sx={{ width: '100%', mb: 2 }} />
-      <Box display="flex" flexDirection="column" alignItems="center">
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Typography variant="caption" color="text.secondary" align="center">
           Authorized Access Only. Actions are logged.
         </Typography>

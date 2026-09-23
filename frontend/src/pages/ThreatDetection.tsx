@@ -43,9 +43,9 @@ export const ThreatDetection: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
-          <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+          <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
             Threat Detection Center
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -59,20 +59,22 @@ export const ThreatDetection: React.FC = () => {
 
       {/* Filter Row */}
       <GlassCard sx={{ p: 2, mb: 4 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={6}>
+        <Grid container spacing={2} sx={{ alignItems: 'center' }}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               placeholder="Search threats by name or target host..."
               fullWidth
               size="small"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+              slotProps={{
+                input: {
+                  startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                }
               }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <TextField
               select
               label="Severity"
@@ -88,7 +90,7 @@ export const ThreatDetection: React.FC = () => {
               <MenuItem value="low">Low</MenuItem>
             </TextField>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Button
               variant="contained"
               fullWidth
@@ -143,12 +145,14 @@ export const ThreatDetection: React.FC = () => {
         onClose={() => setSelectedThreat(null)}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 4,
-            bgcolor: 'background.paper',
-            border: `1px solid ${theme.palette.divider}`,
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              bgcolor: 'background.paper',
+              border: `1px solid ${theme.palette.divider}`,
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+            }
           }
         }}
       >
@@ -156,7 +160,7 @@ export const ThreatDetection: React.FC = () => {
           <>
             <DialogTitle sx={{ borderBottom: `1px solid ${theme.palette.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 3 }}>
               <Box>
-                <Typography variant="h6" fontWeight="bold" sx={{ fontFamily: 'Outfit' }}>
+                <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
                   {selectedThreat.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -168,12 +172,12 @@ export const ThreatDetection: React.FC = () => {
 
             <DialogContent sx={{ p: 3 }}>
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>Target Endpoint</Typography>
-                  <Typography variant="body1" fontWeight="bold" gutterBottom>{selectedThreat.endpoint}</Typography>
+                  <Typography variant="body1" gutterBottom sx={{ fontWeight: 'bold' }}>{selectedThreat.endpoint}</Typography>
                   
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mt: 2 }}>MITRE ATT&CK Technique</Typography>
-                  <Typography variant="body1" fontWeight="bold" gutterBottom>{selectedThreat.mitre}</Typography>
+                  <Typography variant="body1" gutterBottom sx={{ fontWeight: 'bold' }}>{selectedThreat.mitre}</Typography>
                   
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mt: 2 }}>Indicators of Compromise (IOC)</Typography>
                   <Typography 
@@ -190,11 +194,11 @@ export const ThreatDetection: React.FC = () => {
                     {selectedThreat.ioc}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>Recommended SOAR Playbook Action</Typography>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                     <Shield color="primary" />
-                    <Typography variant="body1" fontWeight="bold" color="primary">{selectedThreat.action}</Typography>
+                    <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>{selectedThreat.action}</Typography>
                   </Box>
 
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>AI Threat Analysis</Typography>

@@ -28,12 +28,12 @@ export const StatCard: React.FC<StatCardProps> = ({
 }) => {
   return (
     <GlassCard glow={glow} glowColor={`${color}1A`} sx={{ p: 2.5, position: 'relative', height: '100%' }}>
-      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
         <Box>
-          <Typography variant="body2" color="text.secondary" fontWeight={600} gutterBottom>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontWeight: 600 }}>
             {title}
           </Typography>
-          <Typography variant="h4" fontWeight={800} sx={{ fontFamily: 'Outfit' }}>
+          <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 800 }}>
             {value}
           </Typography>
         </Box>
@@ -52,9 +52,9 @@ export const StatCard: React.FC<StatCardProps> = ({
         </Box>
       </Box>
 
-      <Box display="flex" alignItems="center" justifyContent="space-between" mt={1}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
         {trend && (
-          <Box display="flex" alignItems="center" gap={0.5}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box 
               sx={{ 
                 display: 'flex', 

@@ -71,8 +71,8 @@ export const KavachLogo: React.FC<KavachLogoProps> = ({ size = 'md', showSubtitl
       </Box>
 
       {/* Brand Typography */}
-      <Box display="flex" flexDirection="column">
-        <Box display="flex" alignItems="center" gap={1}>
+      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography
             sx={{
               fontFamily: '"Outfit", "Space Grotesk", sans-serif',

@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, Grid, Button, Stack, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, useTheme
 } from '@mui/material';
-import { CalendarMonth, Layers, CheckCircle2, Engineering, Hub } from '@mui/icons-material';
+import { CalendarMonth } from '@mui/icons-material';
 import { GANTT_WEEKS, GANTT_ACTIVITIES, DEVELOPMENT_MODULES, PROJECT_DETAILS, TEAM_MEMBERS } from '../../data/projectData';
 
 export const GanttProjectPlan: React.FC = () => {
@@ -30,7 +30,7 @@ export const GanttProjectPlan: React.FC = () => {
         }}
       >
         <Box>
-          <Box display="flex" alignItems="center" gap={1} mb={1}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
             <CalendarMonth sx={{ color: '#3B82F6', fontSize: 20 }} />
             <Typography variant="caption" sx={{ color: '#60A5FA', fontWeight: 800, letterSpacing: '0.04em' }}>
               PROJECT EXECUTION SCHEDULE (2026–2027)
@@ -108,11 +108,11 @@ export const GanttProjectPlan: React.FC = () => {
             overflow: 'hidden',
           }}
         >
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2.5}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
             <Typography variant="h6" sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 800, color: '#FFFFFF' }}>
               11-Week Milestone Timeline
             </Typography>
-            <Box display="flex" alignItems="center" gap={1}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ width: 12, height: 12, borderRadius: '3px', bgcolor: '#C1121F' }} />
               <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                 Active Development Phase
@@ -130,7 +130,7 @@ export const GanttProjectPlan: React.FC = () => {
                   {GANTT_WEEKS.map((w) => (
                     <TableCell key={w.weekNum} align="center" sx={{ color: '#93C5FD', fontWeight: 800, fontSize: '0.75rem', px: 1 }}>
                       W{w.weekNum}
-                      <Typography variant="caption" display="block" sx={{ color: 'rgba(255, 255, 255, 0.45)', fontSize: '0.65rem' }}>
+                      <Typography variant="caption" sx={{ display: 'block', color: 'rgba(255, 255, 255, 0.45)', fontSize: '0.65rem' }}>
                         {w.dates}
                       </Typography>
                     </TableCell>
@@ -183,7 +183,7 @@ export const GanttProjectPlan: React.FC = () => {
       {activeTab === 'modules' && (
         <Grid container spacing={3}>
           {DEVELOPMENT_MODULES.map((mod) => (
-            <Grid item xs={12} md={6} key={mod.number}>
+            <Grid size={{ xs: 12, md: 6 }} key={mod.number}>
               <Paper
                 elevation={0}
                 className="glass-panel-enterprise"
@@ -197,7 +197,7 @@ export const GanttProjectPlan: React.FC = () => {
                 }}
               >
                 <Box>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                     <Chip
                       label={`Module ${mod.number}`}
                       size="small"
@@ -217,11 +217,11 @@ export const GanttProjectPlan: React.FC = () => {
                   </Typography>
                 </Box>
 
-                <Box pt={2} borderTop="1px solid rgba(255, 255, 255, 0.08)">
+                <Box sx={{ pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.55)', fontWeight: 700, display: 'block', mb: 1 }}>
                     KEY DELIVERABLES:
                   </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                     {mod.deliverables.map((d) => (
                       <Chip
                         key={d}
@@ -246,7 +246,7 @@ export const GanttProjectPlan: React.FC = () => {
       {/* Tab 3: Project Team & Academic Credentials */}
       {activeTab === 'team' && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Paper
               elevation={0}
               className="glass-panel-enterprise"
@@ -280,7 +280,7 @@ export const GanttProjectPlan: React.FC = () => {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Paper
               elevation={0}
               className="glass-panel-enterprise"
@@ -290,23 +290,23 @@ export const GanttProjectPlan: React.FC = () => {
                 Academic & Industry Details
               </Typography>
               <Stack spacing={1.8} sx={{ fontSize: '0.88rem' }}>
-                <Box display="flex" justifyContent="space-between" borderBottom="1px solid rgba(255, 255, 255, 0.08)" pb={1}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', pb: 1 }}>
                   <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>Sponsor:</Typography>
                   <Typography sx={{ fontWeight: 700, color: '#F59E0B' }}>{PROJECT_DETAILS.sponsor}</Typography>
                 </Box>
-                <Box display="flex" justifyContent="space-between" borderBottom="1px solid rgba(255, 255, 255, 0.08)" pb={1}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', pb: 1 }}>
                   <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>Institute:</Typography>
                   <Typography sx={{ fontWeight: 600, color: '#FFFFFF', textAlign: 'right', maxWidth: 220 }}>SBMP (SVKM)</Typography>
                 </Box>
-                <Box display="flex" justifyContent="space-between" borderBottom="1px solid rgba(255, 255, 255, 0.08)" pb={1}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', pb: 1 }}>
                   <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>Project Guide:</Typography>
                   <Typography sx={{ fontWeight: 700, color: '#FFFFFF' }}>{PROJECT_DETAILS.guide}</Typography>
                 </Box>
-                <Box display="flex" justifyContent="space-between" borderBottom="1px solid rgba(255, 255, 255, 0.08)" pb={1}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', pb: 1 }}>
                   <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>H.O.D.:</Typography>
                   <Typography sx={{ fontWeight: 700, color: '#FFFFFF' }}>{PROJECT_DETAILS.hod}</Typography>
                 </Box>
-                <Box display="flex" justifyContent="space-between">
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>Course Code:</Typography>
                   <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 700, color: '#10B981' }}>{PROJECT_DETAILS.courseCode}</Typography>
                 </Box>

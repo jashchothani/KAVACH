@@ -40,16 +40,16 @@ export const AuditCenter: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
-          <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
+          <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
             Audit Center
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Immutable system logs tracking analyst actions, playbook execution approvals, and login metrics
           </Typography>
         </Box>
-        <Box display="flex" gap={1.5}>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Button startIcon={<Refresh />} variant="outlined" onClick={handleRefresh} sx={{ fontWeight: 'bold' }}>
             Refresh
           </Button>
@@ -61,20 +61,22 @@ export const AuditCenter: React.FC = () => {
 
       {/* Filters */}
       <GlassCard sx={{ p: 2, mb: 4 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={7}>
+        <Grid container spacing={2} sx={{ alignItems: 'center' }}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <TextField
               placeholder="Search logs by user, action, resource..."
               fullWidth
               size="small"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+              slotProps={{
+                input: {
+                  startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                }
               }}
             />
           </Grid>
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <TextField
               select
               label="Execution Status"
