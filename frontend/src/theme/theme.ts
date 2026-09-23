@@ -133,7 +133,7 @@ export const lightThemeOptions: ThemeOptions = {
             boxShadow: '0 4px 12px rgba(220, 38, 38, 0.2)',
           },
         },
-        containedPrimary: {
+        contained: {
           backgroundColor: brandColors.primary,
           '&:hover': {
             backgroundColor: brandColors.primaryHover,

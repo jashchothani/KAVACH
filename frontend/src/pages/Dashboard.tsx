@@ -9,7 +9,7 @@ import {
   Search, Psychology, Language, Computer, Memory, Router,
   Refresh, Launch, ArrowForward, BugReport, Assignment, AutoGraph,
   NotificationsActive, DoneAll, Laptop, PhoneAndroid, Dns, Terminal,
-  ExpandMore, ExpandLess, Security, Storage, PlayCircleFilled, Assessment
+  ExpandMore, ExpandLess, Security, Storage,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useViewMode } from '../context/ViewModeContext';
@@ -152,269 +152,6 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-<<<<<<< HEAD
-    <Box>
-      {/* 1. First-Time User Orientation Banner */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 2.5, md: 3 },
-          mb: 4,
-          borderRadius: 3,
-          bgcolor: theme.palette.mode === 'dark' ? 'rgba(13, 14, 24, 0.85)' : 'rgba(255, 255, 255, 0.9)',
-          border: '1px solid rgba(193, 18, 31, 0.25)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'flex-start', md: 'center' },
-          justifyContent: 'space-between',
-          gap: 2,
-        }}
-      >
-        <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 0.5 }}>
-            <CheckCircle sx={{ color: '#10B981', fontSize: 20 }} />
-            <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 800 }}>
-              System Status: All 156 Devices Protected
-            </Typography>
-            <Chip label="15 ATTACKS STOPPED TODAY" size="small" sx={{ bgcolor: 'rgba(16, 185, 129, 0.15)', color: '#10B981', fontWeight: 800, height: 22 }} />
-          </Box>
-          <Typography variant="body2" color="text.secondary">
-            Welcome to your Command Center. Here is your real-time security posture across all computers, cloud servers, and factory sensors.
-          </Typography>
-        </Box>
-
-        <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap' }}>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<PlayArrow />}
-            onClick={() => navigate('/soar')}
-            sx={{ fontWeight: 700, borderRadius: 2 }}
-          >
-            Test Defense Playbook
-          </Button>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<Assessment />}
-            onClick={() => navigate('/analytics')}
-            sx={{ fontWeight: 800, borderRadius: 2, bgcolor: '#C1121F', '&:hover': { bgcolor: '#E63946' } }}
-          >
-            Executive Report
-          </Button>
-        </Stack>
-      </Paper>
-
-      {/* 2. Key Metrics Row with Plain-English Subtitles */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <StatCard
-            title="Safety Grade"
-            value="87.5 / 100"
-            icon={<Shield />}
-            color={theme.palette.success.main}
-            glow
-            trend={{ value: 1.2, isUp: true }}
-            sparklineData={[{ value: 85 }, { value: 84 }, { value: 86 }, { value: 88 }, { value: 87.5 }]}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <StatCard
-            title="Suspicious Events"
-            value="23"
-            icon={<Warning />}
-            color="#C1121F"
-            trend={{ value: 12, isUp: false }}
-            sparklineData={[{ value: 15 }, { value: 18 }, { value: 20 }, { value: 22 }, { value: 23 }]}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <StatCard
-            title="Protected Devices"
-            value="156"
-            icon={<BugReport />}
-            color={theme.palette.info.main}
-            trend={{ value: 4.8, isUp: true }}
-            sparklineData={[{ value: 148 }, { value: 150 }, { value: 152 }, { value: 155 }, { value: 156 }]}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <StatCard
-            title="Open Incidents"
-            value="8"
-            icon={<Assignment />}
-            color={theme.palette.warning.main}
-            trend={{ value: 20, isUp: false }}
-            sparklineData={[{ value: 10 }, { value: 9 }, { value: 8 }, { value: 8 }, { value: 8 }]}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <StatCard
-            title="AI Flagged Threats"
-            value="42"
-            icon={<Security />}
-            color="#8B5CF6"
-            trend={{ value: 15.4, isUp: true }}
-            sparklineData={[{ value: 30 }, { value: 35 }, { value: 38 }, { value: 40 }, { value: 42 }]}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <StatCard
-            title="Automated Blocks"
-            value="15"
-            icon={<PlayCircleFilled />}
-            color="#10B981"
-            trend={{ value: 8.5, isUp: true }}
-            sparklineData={[{ value: 10 }, { value: 12 }, { value: 11 }, { value: 14 }, { value: 15 }]}
-          />
-        </Grid>
-      </Grid>
-
-      {/* 3. Main Charts Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Security Score Trend */}
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <GlassCard sx={{ p: 3, height: 380 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 700 }}>
-                Security Score Trend (Last 24 Hours)
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Calculated from real-time device health & mitigated risks
-              </Typography>
-            </Box>
-            <Box sx={{ width: '100%', height: 290 }}>
-              <ResponsiveContainer>
-                <AreaChart data={securityTrendData}>
-                  <defs>
-                    <linearGradient id="scoreColor" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.25}/>
-                      <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0.0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                  <XAxis dataKey="name" stroke={theme.palette.text.secondary} fontSize={12} />
-                  <YAxis domain={[80, 100]} stroke={theme.palette.text.secondary} fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: theme.palette.background.paper, 
-                      borderColor: theme.palette.divider,
-                      color: theme.palette.text.primary 
-                    }} 
-                  />
-                  <Area type="monotone" dataKey="score" stroke={theme.palette.primary.main} strokeWidth={2.5} fillOpacity={1} fill="url(#scoreColor)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </Box>
-          </GlassCard>
-        </Grid>
-
-        {/* Incident Status */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <GlassCard sx={{ p: 3, height: 380 }}>
-            <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 700, mb: 0.5 }}>
-              Incident Status Breakdown
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-              45 of 80 total incidents resolved automatically
-            </Typography>
-            <Box sx={{ width: '100%', height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={incidentStatusData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {incidentStatusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: theme.palette.background.paper, 
-                      borderColor: theme.palette.divider,
-                      color: theme.palette.text.primary 
-                    }} 
-                  />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    height={36} 
-                    iconSize={10} 
-                    iconType="circle"
-                    formatter={(value) => <span style={{ color: theme.palette.text.primary, fontSize: 12 }}>{value}</span>}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </GlassCard>
-        </Grid>
-
-        {/* Threat Categories */}
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <GlassCard sx={{ p: 3, height: 380 }}>
-            <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 700, mb: 0.5 }}>
-              Threats Blocked by Type
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-              Malware and Phishing constitute 55% of all blocked attempts
-            </Typography>
-            <Box sx={{ width: '100%', height: 280 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryData} layout="vertical" margin={{ left: 20, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} horizontal={false} />
-                  <XAxis type="number" stroke={theme.palette.text.secondary} fontSize={12} />
-                  <YAxis dataKey="name" type="category" stroke={theme.palette.text.secondary} fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: theme.palette.background.paper, 
-                      borderColor: theme.palette.divider,
-                      color: theme.palette.text.primary 
-                    }} 
-                  />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={16}>
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          </GlassCard>
-        </Grid>
-
-        {/* Threat Timeline / Recent Feed */}
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <GlassCard sx={{ p: 3, height: 380, display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-              <Box>
-                <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 700 }}>
-                  Live Threat Feed
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Most recent attacks stopped by automated playbooks
-                </Typography>
-              </Box>
-              <Button 
-                size="small" 
-                endIcon={<Launch />} 
-                onClick={() => navigate('/threats')}
-                sx={{ fontWeight: 'bold' }}
-              >
-                View All
-              </Button>
-            </Box>
-            <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-              {recentThreats.map((threat) => (
-                <Paper
-                  key={threat.id}
-                  elevation={0}
-=======
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* ========================================================================= */}
       {/* 1. SIMPLE MODE: Clean, Reassuring, Human-Centric Protection Dashboard     */}
@@ -459,7 +196,6 @@ export const Dashboard: React.FC = () => {
                 <Typography
                   variant="h4"
                   fontWeight={900}
->>>>>>> upstream/main
                   sx={{
                     fontFamily: 'Outfit',
                     letterSpacing: '-0.02em',
@@ -471,14 +207,6 @@ export const Dashboard: React.FC = () => {
                         : '#ef4444',
                   }}
                 >
-<<<<<<< HEAD
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                      {threat.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                      Target: {threat.target} • Neutralized {threat.time}
-=======
                   {headline}
                 </Typography>
               </Box>
@@ -801,7 +529,6 @@ export const Dashboard: React.FC = () => {
                     </Box>
                     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
                       Risk Score: {urlResult.threat_score}/100 • Findings: {urlResult.findings?.join(', ') || 'No threats detected'}
->>>>>>> upstream/main
                     </Typography>
                   </Box>
                 )}

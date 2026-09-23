@@ -32,8 +32,17 @@ interface NavSection {
 export const DashboardLayout: React.FC = () => {
   const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
   const { isAdvanced, toggleMode } = useViewMode();
   const [wsConnected, setWsConnected] = useState(false);
+
+  const handleNotifMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setNotifAnchorEl(event.currentTarget);
+  };
+
+  const handleNotifMenuClose = () => {
+    setNotifAnchorEl(null);
+  };
   const { user, logout } = useAuth();
   const { mode, toggleTheme } = useAppTheme();
   const theme = useTheme();
