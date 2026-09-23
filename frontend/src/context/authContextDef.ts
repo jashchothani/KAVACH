@@ -1,14 +1,16 @@
 import { createContext } from 'react';
 
 export interface User {
-  id: number;
+  id: string | number;
   email: string;
   username: string;
-  full_name: string;
-  role_id: number;
-  role_name: 'super_admin' | 'soc_analyst' | 'incident_responder' | 'security_manager' | 'auditor';
+  full_name?: string;
+  role: string;
+  role_id?: number;
+  role_name?: string;
   is_active: boolean;
-  mfa_enabled: boolean;
+  mfa_enabled?: boolean;
+  permissions?: string[];
   department?: string;
   avatar_url?: string;
 }
@@ -18,7 +20,9 @@ export interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (identifier: string, password: string) => Promise<boolean>;
+  loginWithOtp?: (identifier: string, otpCode: string) => Promise<boolean>;
+  register?: (username: string, email: string, password: string, role?: string) => Promise<boolean>;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
 }

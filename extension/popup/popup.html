@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAVACH — Web Safety & Phishing Protection</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="kavach-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <span class="shield-logo">🛡️</span>
+        <div>
+          <h1 class="logo">KAVACH</h1>
+          <p class="tagline">Neural Phishing & Web Shield</p>
+        </div>
+      </div>
+      <div class="backend-status" id="backendStatus">
+        <span class="dot"></span> <span id="statusText">Checking...</span>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="activeTabSection">Current Site</button>
+      <button class="nav-tab" data-tab="scannerSection">URL Scanner</button>
+      <button class="nav-tab" data-tab="settingsSection">Shield & Threats</button>
+    </nav>
+
+    <!-- TAB 1: Current Active Tab -->
+    <section class="tab-pane active" id="activeTabSection">
+      <!-- Active URL Pill -->
+      <div class="url-card">
+        <span class="lock-icon" id="schemeIcon">🔒</span>
+        <span class="url-display" id="targetUrl">Inspecting active tab...</span>
+      </div>
+
+      <!-- Main Verdict & Radial Gauge -->
+      <div class="verdict-banner" id="verdictCard">
+        <div class="gauge-container">
+          <svg class="radial-gauge" viewBox="0 0 36 36">
+            <path class="gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path class="gauge-fill" id="gaugeProgress" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          </svg>
+          <div class="gauge-text">
+            <span class="gauge-score" id="scoreVal">--</span>
+            <span class="gauge-label">RISK</span>
+          </div>
+        </div>
+        <div class="verdict-info">
+          <div class="status-badge" id="statusBadge">ANALYZING</div>
+          <div class="verdict-title" id="verdictTitle">Inspecting site structure...</div>
+          <div class="verdict-subtitle" id="verdictSubtitle">Neural heuristics & threat intel active</div>
+        </div>
+      </div>
+
+      <!-- Security Checklist Grid -->
+      <div class="checklist-grid">
+        <div class="check-item" id="checkSsl">
+          <span class="icon">🔒</span>
+          <div class="check-text">
+            <strong>SSL / TLS</strong>
+            <span id="checkSslVal">Checking</span>
+          </div>
+        </div>
+        <div class="check-item" id="checkDomain">
+          <span class="icon">🌐</span>
+          <div class="check-text">
+            <strong>Reputation</strong>
+            <span id="checkDomainVal">Evaluating</span>
+          </div>
+        </div>
+        <div class="check-item" id="checkHeuristics">
+          <span class="icon">🧬</span>
+          <div class="check-text">
+            <strong>Heuristics</strong>
+            <span id="checkHeuristicsVal">Scanning</span>
+          </div>
+        </div>
+        <div class="check-item" id="checkAi">
+          <span class="icon">✨</span>
+          <div class="check-text">
+            <strong>Raksha AI</strong>
+            <span id="checkAiVal">Active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Indicators List -->
+      <div class="section-box">
+        <div class="section-heading">Threat Indicators</div>
+        <ul class="indicator-list" id="indicatorList">
+          <li class="indicator-item">Connecting to KAVACH Engine...</li>
+        </ul>
+      </div>
+
+      <!-- Raksha AI Plain-English Card -->
+      <div class="ai-box">
+        <div class="ai-box-header">
+          <span class="ai-spark">✨</span>
+          <strong>Raksha AI Plain-English Assessment</strong>
+        </div>
+        <p class="ai-desc" id="aiSummary">
+          Raksha AI is inspecting page security signals, TLS integrity, and brand imitation baselines...
+        </p>
+      </div>
+    </section>
+
+    <!-- TAB 2: Quick URL Scanner -->
+    <section class="tab-pane" id="scannerSection">
+      <div class="scanner-card">
+        <label class="scanner-label" for="manualUrlInput">Quick URL Security Scanner</label>
+        <p class="scanner-subtext">Inspect any link or domain without opening it in your browser.</p>
+        <div class="scanner-input-group">
+          <input type="text" id="manualUrlInput" placeholder="https://example.com/login" autocomplete="off" />
+          <button id="manualScanBtn">Analyze</button>
+        </div>
+      </div>
+
+      <div class="scan-result-card" id="scanResultCard" style="display: none;">
+        <div class="scan-header">
+          <strong id="scanResultDomain">domain.com</strong>
+          <span class="status-badge" id="scanResultBadge">SAFE</span>
+        </div>
+        <div class="scan-score-row">
+          <span>Evaluated Risk Score:</span>
+          <strong id="scanResultScore">0/100</strong>
+        </div>
+        <p class="scan-summary" id="scanResultSummary">Verified safe domain.</p>
+        <ul class="indicator-list" id="scanResultIndicators"></ul>
+      </div>
+    </section>
+
+    <!-- TAB 3: Shield Controls & Recent Threats -->
+    <section class="tab-pane" id="settingsSection">
+      <div class="settings-group">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>McAfee SiteAdvisor Link Annotator</strong>
+            <span>Shows green ticks (✓) and red crosses (✗) on search results</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="linkAnnotatorToggle" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>Strict Phishing Shield</strong>
+            <span>Blocks high-risk phishing sites with interstitial warning</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="strictShieldToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="recent-threats-box">
+        <div class="section-heading">Recently Intercepted Threats</div>
+        <ul class="threat-feed" id="recentThreatsList">
+          <li class="threat-empty">No malicious domains encountered recently. You are fully protected!</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Footer Actions -->
+    <footer class="footer">
+      <button class="footer-btn secondary" id="rescanBtn">🔄 Re-scan</button>
+      <button class="footer-btn primary" id="openSocBtn">🛡️ Open SOC Console</button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

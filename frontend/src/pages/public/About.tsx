@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Container, Typography, Grid, Paper, Chip, Stack,
-  Button, useTheme, Card, CardContent, Tabs, Tab
+  Button, useTheme, Card, CardContent, Tabs, Tab, Divider
 } from '@mui/material';
 import {
   Shield, PrecisionManufacturing, Memory, RocketLaunch, WorkspacePremium,
-  CalendarMonth, Storage, Info, AutoAwesome
+  CalendarMonth, Storage, Info, CheckCircle, ArrowForward
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { KavachLogo } from '../../components/common/KavachLogo';
@@ -14,57 +14,65 @@ import { GanttProjectPlan } from '../../components/common/GanttProjectPlan';
 import { SystemSpecsModal } from '../../components/common/SystemSpecsModal';
 
 export const About: React.FC = () => {
-  const theme = useTheme();
   const navigate = useNavigate();
-  const isDark = theme.palette.mode === 'dark';
   const [sectionTab, setSectionTab] = useState<number>(0);
 
   const milestones = [
     { year: '2018', title: 'Industrial Security Foundation', desc: 'Swastik Chemical (India) established internal cybersecurity protocols for chemical manufacturing plants.' },
     { year: '2020', title: 'SCADA & OT Protocol R&D', desc: 'Developed native real-time telemetry parsers for Modbus, DNP3, and industrial PLCs.' },
     { year: '2022', title: 'Neural AI Correlation Engine', desc: 'Integrated deep learning models for zero-day execution signature correlation.' },
-    { year: '2024', title: 'KAVACH SOAR-XDR Global Release', desc: 'Unveiled the full autonomous SOAR-XDR platform protecting global enterprise and industrial infrastructure.' },
+    { year: '2024', title: 'KAVACH Sovereign Release', desc: 'Unveiled the full autonomous SOAR-XDR platform protecting global enterprise and industrial infrastructure.' },
   ];
 
   const corePillars = [
     {
       title: 'Autonomous Speed',
       desc: 'Executing containment playbooks in under 12 milliseconds to preempt lateral movement and ransomware encryption.',
-      icon: <RocketLaunch sx={{ fontSize: 36, color: '#C1121F' }} />
+      icon: <RocketLaunch sx={{ fontSize: 36, color: '#DC2626' }} />
     },
     {
       title: 'Neural Precision',
       desc: 'Multi-layer neural networks eliminating false positives while detecting stealthy zero-day exfiltration patterns.',
-      icon: <Memory sx={{ fontSize: 36, color: '#F59E0B' }} />
+      icon: <Memory sx={{ fontSize: 36, color: '#D97706' }} />
     },
     {
       title: 'Industrial OT Resilience',
       desc: 'Deep domain expertise from Swastik Chemical (India) ensuring air-gapped chemical & SCADA safety.',
-      icon: <PrecisionManufacturing sx={{ fontSize: 36, color: '#10B981' }} />
+      icon: <PrecisionManufacturing sx={{ fontSize: 36, color: '#16A34A' }} />
     },
     {
       title: 'Immutable Compliance',
       desc: 'Cryptographically sealed audit trails satisfying SOC2 Type II, ISO 27001, and CERT-In mandates.',
-      icon: <WorkspacePremium sx={{ fontSize: 36, color: '#3B82F6' }} />
+      icon: <WorkspacePremium sx={{ fontSize: 36, color: '#0284C7' }} />
     }
   ];
 
   return (
-    <Box sx={{ py: { xs: 6, md: 10 } }}>
+    <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC', color: '#0F172A', minHeight: '100vh' }}>
       <Container maxWidth="xl">
         {/* Header Banner */}
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box textAlign="center" mb={7}>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <Chip
-              icon={<Shield sx={{ color: '#C1121F !important' }} />}
+              icon={<Shield sx={{ color: '#DC2626 !important' }} />}
               label="ABOUT SWASTIK CHEMICAL & KAVACH"
-              sx={{ bgcolor: 'rgba(193, 18, 31, 0.12)', color: '#C1121F', fontWeight: 800, mb: 2 }}
+              sx={{ bgcolor: 'rgba(220, 38, 38, 0.1)', color: '#DC2626', fontWeight: 800, mb: 2 }}
             />
-            <Typography variant="h1" sx={{ fontFamily: 'Outfit', fontWeight: 900, mb: 2 }}>
+            <Typography
+              variant="h1"
+              fontWeight={900}
+              sx={{
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: { xs: '2.4rem', md: '3.6rem' },
+                color: '#0F172A',
+                letterSpacing: '-0.02em',
+                mb: 2,
+              }}
+            >
               Pioneering Industrial & AI Cyber Defense
             </Typography>
-            <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 800, mx: 'auto', fontWeight: 400, lineHeight: 1.7 }}>
-              Born from the industrial chemical manufacturing heritage of <strong>Swastik Chemical (India)</strong>, KAVACH represents the pinnacle of AI-driven SOAR-XDR threat intelligence.
+            <Typography variant="h6" sx={{ maxWidth: 800, mx: 'auto', color: '#64748B', fontWeight: 400, lineHeight: 1.7 }}>
+              Born from the industrial chemical manufacturing heritage of <strong>Swastik Chemical (India)</strong>, KAVACH represents the pinnacle of AI-driven threat intelligence and effortless user protection.
             </Typography>
           </motion.div>
         </Box>
@@ -75,58 +83,83 @@ export const About: React.FC = () => {
             value={sectionTab}
             onChange={(_, val) => setSectionTab(val)}
             sx={{
-              bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-              p: 0.6,
-              borderRadius: 3,
-              '& .MuiTabs-indicator': { display: 'none' },
+              bgcolor: '#FFFFFF',
+              p: 0.8,
+              borderRadius: 3.5,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
+              '& .MuiTabs-indicator': { bgcolor: '#DC2626', height: 3, borderRadius: '3px' },
               '& .MuiTab-root': {
-                borderRadius: 2.5,
+                color: '#64748B',
                 fontWeight: 700,
-                fontSize: '0.9rem',
+                textTransform: 'none',
+                fontSize: '0.92rem',
                 minHeight: 44,
-                px: 3,
-                color: isDark ? '#94A3B8' : '#64748B',
-                '&.Mui-selected': {
-                  bgcolor: '#C1121F',
-                  color: '#FFFFFF',
-                }
+                borderRadius: 2.5,
+                '&.Mui-selected': { color: '#DC2626', bgcolor: 'rgba(220, 38, 38, 0.08)' }
               }
             }}
           >
-            <Tab icon={<AutoAwesome sx={{ fontSize: 18 }} />} iconPosition="start" label="Overview & Mission" />
-            <Tab icon={<CalendarMonth sx={{ fontSize: 18 }} />} iconPosition="start" label="Engineering Plan & Gantt" />
+            <Tab icon={<Info sx={{ fontSize: 18 }} />} iconPosition="start" label="Heritage & Corporate Vision" />
+            <Tab icon={<Storage sx={{ fontSize: 18 }} />} iconPosition="start" label="Architecture & Specifications" />
           </Tabs>
         </Box>
 
-        {/* TAB 0: Mission, Swastik Chemical, Core Pillars */}
+        {/* TAB 0: Heritage & Vision */}
         {sectionTab === 0 && (
           <Box>
-            {/* Heritage Card */}
+            {/* Brand Story Section */}
             <Paper
               elevation={0}
-              className="glass-panel-enterprise"
               sx={{
                 p: { xs: 4, md: 6 },
-                borderRadius: 4,
+                borderRadius: 4.5,
+                bgcolor: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 8px 32px rgba(15, 23, 42, 0.04)',
                 mb: 8,
               }}
             >
-              <Grid container spacing={6} sx={{ alignItems: 'center' }}>
-                <Grid size={{ xs: 12, md: 5 }} sx={{ textAlign: 'center' }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                    <KavachLogo size="lg" showSubtitle={true} />
+              <Grid container spacing={6} alignItems="center">
+                <Grid item xs={12} md={5} textAlign="center">
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      p: 4,
+                      borderRadius: 3.5,
+                      bgcolor: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="/kavach-logo-transparent.png"
+                      alt="KAVACH"
+                      onError={(e: any) => { e.currentTarget.src = '/kavach-logo.png'; }}
+                      sx={{ height: 80, width: 'auto', objectFit: 'contain', mb: 2 }}
+                    />
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                        Swastik Chemical (India)
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B' }}>
+                        Enterprise Cyber R&D Division
+                      </Typography>
+                    </Box>
                   </Box>
                 </Grid>
 
-                <Grid size={{ xs: 12, md: 7 }}>
-                  <Typography variant="h3" sx={{ fontFamily: 'Outfit', fontWeight: 900, mb: 2, color: '#FFFFFF' }}>
+                <Grid item xs={12} md={7}>
+                  <Typography variant="h3" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 2, color: '#0F172A' }}>
                     Our Heritage & Vision
                   </Typography>
-                  <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.75)', lineHeight: 1.8, mb: 2 }}>
-                    Swastik Chemical (India) has long stood as a leader in chemical manufacturing and industrial operations. Recognizing that modern industrial infrastructure faces unprecedented cyber threats, our engineering teams created <strong>KAVACH</strong>—a dedicated AI-driven Security Orchestration, Automation, and Response (SOAR-XDR) platform.
+                  <Typography variant="body1" sx={{ color: '#475569', lineHeight: 1.8, mb: 2 }}>
+                    Swastik Chemical (India) has long stood as a leader in chemical manufacturing and industrial operations. Recognizing that modern industrial and everyday computing environments face unprecedented cyber threats, our engineering teams created <strong>KAVACH</strong>—a dedicated autonomous threat deflection and security platform.
                   </Typography>
-                  <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.75)', lineHeight: 1.8, mb: 4 }}>
-                    KAVACH bridges the gap between traditional IT cybersecurity and specialized industrial OT/SCADA environments. By combining real-time neural AI telemetry analysis with instant automated containment playbooks, KAVACH ensures continuous operational resilience.
+                  <Typography variant="body1" sx={{ color: '#475569', lineHeight: 1.8, mb: 4 }}>
+                    KAVACH bridges the gap between complex enterprise cybersecurity and everyday simplicity. By combining real-time kernel telemetry analysis with instant automated containment playbooks, KAVACH delivers effortless peace of mind to individuals, businesses, and critical infrastructure alike.
                   </Typography>
 
                   <Stack direction="row" spacing={2}>
@@ -135,11 +168,14 @@ export const About: React.FC = () => {
                       startIcon={<RocketLaunch />}
                       onClick={() => navigate('/download')}
                       sx={{
-                        background: 'linear-gradient(135deg, #C1121F 0%, #8B0000 100%)',
+                        bgcolor: '#DC2626',
+                        color: '#FFFFFF',
                         fontWeight: 800,
                         px: 3,
-                        py: 1.2,
-                        borderRadius: 2
+                        py: 1.3,
+                        borderRadius: 2.5,
+                        boxShadow: '0 4px 16px rgba(220, 38, 38, 0.3)',
+                        '&:hover': { bgcolor: '#B91C1C' },
                       }}
                     >
                       Explore Platform Agents
@@ -148,15 +184,16 @@ export const About: React.FC = () => {
                       variant="outlined"
                       onClick={() => navigate('/contact')}
                       sx={{
-                        borderColor: 'rgba(255, 255, 255, 0.3)',
-                        color: '#FFFFFF',
+                        borderColor: '#CBD5E1',
+                        color: '#0F172A',
                         fontWeight: 700,
                         px: 3,
-                        py: 1.2,
-                        borderRadius: 2
+                        py: 1.3,
+                        borderRadius: 2.5,
+                        '&:hover': { borderColor: '#0F172A', bgcolor: '#F8FAFC' },
                       }}
                     >
-                      Contact SOC Team
+                      Contact Support
                     </Button>
                   </Stack>
                 </Grid>
@@ -164,33 +201,41 @@ export const About: React.FC = () => {
             </Paper>
 
             {/* Four Core Pillars */}
-            <Box sx={{ mb: 8 }}>
-              <Box sx={{ textAlign: 'center', mb: 5 }}>
-                <Typography variant="h2" sx={{ fontFamily: 'Outfit', fontWeight: 900, mb: 1.5, color: '#FFFFFF' }}>
+            <Box mb={8}>
+              <Box textAlign="center" mb={5}>
+                <Typography variant="h2" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 1.5, color: '#0F172A' }}>
                   Core Engineering Pillars
                 </Typography>
-                <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                <Typography variant="body1" sx={{ color: '#64748B' }}>
                   The foundational principles guiding KAVACH's autonomous threat defense architecture.
                 </Typography>
               </Box>
 
               <Grid container spacing={3.5}>
                 {corePillars.map((pillar, index) => (
-                  <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
+                  <Grid item xs={12} sm={6} md={3} key={index}>
                     <Card
-                      className="glass-panel-enterprise"
+                      elevation={0}
                       sx={{
                         height: '100%',
-                        borderRadius: 3,
-                        p: 1
+                        borderRadius: 3.5,
+                        bgcolor: '#FFFFFF',
+                        border: '1px solid #E2E8F0',
+                        boxShadow: '0 4px 20px rgba(15, 23, 42, 0.03)',
+                        transition: 'all 0.25s ease',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 12px 32px rgba(15, 23, 42, 0.08)',
+                          borderColor: '#CBD5E1',
+                        },
                       }}
                     >
-                      <CardContent sx={{ p: 3 }}>
-                        <Box sx={{ mb: 2 }}>{pillar.icon}</Box>
-                        <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 800, mb: 1.5, color: '#FFFFFF' }}>
+                      <CardContent sx={{ p: 3.5 }}>
+                        <Box mb={2}>{pillar.icon}</Box>
+                        <Typography variant="h6" fontWeight={800} sx={{ fontFamily: 'Outfit', mb: 1.5, color: '#0F172A' }}>
                           {pillar.title}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.72)', lineHeight: 1.6 }}>
+                        <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.6 }}>
                           {pillar.desc}
                         </Typography>
                       </CardContent>
@@ -202,31 +247,33 @@ export const About: React.FC = () => {
 
             {/* Milestone Timeline */}
             <Box>
-              <Box sx={{ textAlign: 'center', mb: 5 }}>
-                <Typography variant="h2" sx={{ fontFamily: 'Outfit', fontWeight: 900, color: '#FFFFFF' }}>
+              <Box textAlign="center" mb={5}>
+                <Typography variant="h2" fontWeight={900} sx={{ fontFamily: 'Outfit', color: '#0F172A' }}>
                   Milestones & Innovation Journey
                 </Typography>
               </Box>
 
               <Grid container spacing={3}>
                 {milestones.map((m, i) => (
-                  <Grid size={{ xs: 12, sm: 6, md: 3 }} key={i}>
+                  <Grid item xs={12} sm={6} md={3} key={i}>
                     <Paper
                       elevation={0}
-                      className="glass-panel-enterprise"
                       sx={{
-                        p: 3,
+                        p: 3.5,
                         height: '100%',
-                        borderRadius: 3,
+                        borderRadius: 3.5,
+                        bgcolor: '#FFFFFF',
+                        border: '1px solid #E2E8F0',
+                        boxShadow: '0 4px 20px rgba(15, 23, 42, 0.03)',
                       }}
                     >
-                      <Typography variant="h3" sx={{ color: '#C1121F', fontFamily: 'Outfit', fontWeight: 900, mb: 1 }}>
+                      <Typography variant="h3" fontWeight={900} sx={{ color: '#DC2626', fontFamily: 'Outfit', mb: 1 }}>
                         {m.year}
                       </Typography>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, color: '#FFFFFF' }}>
+                      <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1, color: '#0F172A' }}>
                         {m.title}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.6 }}>
                         {m.desc}
                       </Typography>
                     </Paper>
@@ -237,16 +284,12 @@ export const About: React.FC = () => {
           </Box>
         )}
 
-        {/* TAB 1: 11-Week Gantt Project Plan */}
+        {/* TAB 1: System Specifications & Architecture */}
         {sectionTab === 1 && (
-          <GanttProjectPlan />
-        )}
-
-        {/* TAB 2: System Specifications & Architecture */}
-        {sectionTab === 2 && (
           <SystemSpecsModal />
         )}
       </Container>
     </Box>
   );
 };
+export default About;

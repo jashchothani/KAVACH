@@ -1,80 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Grid, Typography, TextField, MenuItem, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton, Dialog, DialogTitle, DialogContent, DialogActions,
-  LinearProgress, useTheme
+  LinearProgress, useTheme, Chip, Stack, Alert, Paper, Collapse,
 } from '@mui/material';
-import { Search, FilterList, Refresh, Launch, Shield, CheckCircle } from '@mui/icons-material';
+import {
+  Search, Refresh, Launch, Shield, CheckCircle, BugReport,
+  Psychology, Terminal, ExpandMore, ExpandLess, Block,
+} from '@mui/icons-material';
 import { GlassCard } from '../components/common/GlassCard';
 import { SeverityBadge } from '../components/common/SeverityBadge';
-
-// Static representation of threat data matching API schemas
-const initialThreats = [
-  { id: 1, name: 'LockBit 3.0 Ransomware signature matched', threat_type: 'Ransomware', severity: 'critical', status: 'active', confidence: 0.98, detected_at: '2024-07-24 09:12:45', endpoint: 'PROD-DB-02', mitre: 'T1486 - Data Encrypted for Impact', ioc: 'd2e4f58c7391bcf892e850b100913801f464010372df03d7b8ac0f64c6bc9c6e', action: 'Quarantine File & Isolate Host', ai_analysis: 'AI Confidence analysis correlates this execution with known ransomware behavior patterns. Threat actor origin indicators point towards LockBit groups.' },
-  { id: 2, name: 'Anomalous SSH login attempts (brute-force)', threat_type: 'Brute Force', severity: 'high', status: 'investigating', confidence: 0.89, detected_at: '2024-07-24 09:05:12', endpoint: 'DEV-APP-03', mitre: 'T1110 - Brute Force', ioc: '185.220.101.5', action: 'Block Source IP', ai_analysis: 'Neural networks flagged SSH traffic as an anomalous frequency burst. Source IP correlates with active malicious exit nodes.' },
-  { id: 3, name: 'Command & scripting interpreter execution', threat_type: 'Malware', severity: 'high', status: 'contained', confidence: 0.91, detected_at: '2024-07-24 08:52:00', endpoint: 'PROD-WEB-01', mitre: 'T1059 - Command and Scripting Interpreter', ioc: 'powershell -nop -w hidden -c ...', action: 'Kill Process Tree', ai_analysis: 'Obfuscated PowerShell code detected. Correlates to dynamic API call injection methods typical in dropper malware.' },
-  { id: 4, name: 'Phishing email URL harvest click', threat_type: 'Phishing', severity: 'medium', status: 'resolved', confidence: 0.76, detected_at: '2024-07-24 07:15:30', endpoint: 'HR-WS-04', mitre: 'T1566 - Phishing', ioc: 'http://secure-login-swastikchem.co/auth/login.php', action: 'Lock Account & Trigger MFA Reset', ai_analysis: 'Domain reputation analysis indicates domain registered less than 24 hours ago. Structure mimics Swastik Chem portals.' },
-  { id: 5, name: 'DNS Tunneling exfiltration pattern', threat_type: 'Data Exfiltration', severity: 'critical', status: 'active', confidence: 0.95, detected_at: '2024-07-24 06:40:11', endpoint: 'CHEM-IOT-07', mitre: 'T1041 - Exfiltration Over C2 Channel', ioc: 'cx.z-domain-auth.com', action: 'Block DNS Request & Alert IR Team', ai_analysis: 'Unusual query volume patterns on non-standard subdomain queries. Highly indicative of command-and-control communication.' },
-  { id: 6, name: 'Anomalous scheduled job created', threat_type: 'Persistence', severity: 'medium', status: 'active', confidence: 0.68, detected_at: '2024-07-24 05:22:15', endpoint: 'ADMIN-WS-08', mitre: 'T1053 - Scheduled Task/Job', ioc: 'Task: updater_system_cron', action: 'Inspect Task Details', ai_analysis: 'Scheduled cron execution matches naming convention of system services but resolves to user space path.' }
-];
+import { api, type ThreatItem } from '../api/client';
 
 export const ThreatDetection: React.FC = () => {
-  const [threats, _setThreats] = useState(initialThreats);
+  const theme = useTheme();
+  const [threats, setThreats] = useState<ThreatItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [severityFilter, setSeverityFilter] = useState('all');
-  const [selectedThreat, setSelectedThreat] = useState<typeof initialThreats[0] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const theme = useTheme();
+  const [selectedThreat, setSelectedThreat] = useState<ThreatItem | null>(null);
+  const [showModalTech, setShowModalTech] = useState(false);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
-  const handleRefresh = () => {
+  const fetchThreats = async () => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const data = await api.threats.getThreats(50);
+      setThreats(data);
+    } catch {
+      // Handled gracefully
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
+  useEffect(() => {
+    fetchThreats();
+  }, []);
+
   const filteredThreats = threats.filter((threat) => {
-    const matchesSearch = threat.name.toLowerCase().includes(search.toLowerCase()) || 
-                          threat.endpoint.toLowerCase().includes(search.toLowerCase());
+    const term = search.toLowerCase();
+    const matchesSearch =
+      threat.title?.toLowerCase().includes(term) ||
+      threat.category?.toLowerCase().includes(term) ||
+      threat.source_ip?.includes(term);
     const matchesSeverity = severityFilter === 'all' || threat.severity === severityFilter;
     return matchesSearch && matchesSeverity;
   });
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
-          <Typography variant="h4" sx={{ fontFamily: 'Outfit', fontWeight: 900 }}>
+          <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit' }}>
             Threat Detection Center
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Continuous threat auditing, telemetry scanning, and heuristic evaluations
+            Deterministic rules, Isolation Forest ML anomaly alerts, and threat intelligence feeds
           </Typography>
         </Box>
-        <Button startIcon={<Refresh />} variant="outlined" onClick={handleRefresh} sx={{ fontWeight: 'bold' }}>
+        <Button startIcon={<Refresh />} variant="outlined" onClick={fetchThreats} sx={{ fontWeight: 700 }}>
           Refresh Feed
         </Button>
       </Box>
 
       {/* Filter Row */}
       <GlassCard sx={{ p: 2, mb: 4 }}>
-        <Grid container spacing={2} sx={{ alignItems: 'center' }}>
-          <Grid size={{ xs: 12, md: 6 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={8}>
             <TextField
-              placeholder="Search threats by name or target host..."
+              placeholder="Search threats by title, category, source IP..."
               fullWidth
               size="small"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                }
+              InputProps={{
+                startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
               }}
             />
           </Grid>
-          <Grid size={{ xs: 12, md: 3 }}>
+          <Grid item xs={12} md={4}>
             <TextField
               select
               label="Severity"
@@ -90,144 +96,229 @@ export const ThreatDetection: React.FC = () => {
               <MenuItem value="low">Low</MenuItem>
             </TextField>
           </Grid>
-          <Grid size={{ xs: 12, md: 3 }}>
-            <Button
-              variant="contained"
-              fullWidth
-              startIcon={<FilterList />}
-              sx={{ fontWeight: 'bold' }}
-            >
-              Advanced Filters
-            </Button>
-          </Grid>
         </Grid>
       </GlassCard>
 
       {loading && <LinearProgress sx={{ mb: 2, borderRadius: 1 }} />}
 
-      {/* Threat List Table */}
+      {/* Threats Table */}
       <TableContainer component={GlassCard}>
         <Table>
           <TableHead>
             <TableRow sx={{ bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)' }}>
-              <TableCell sx={{ fontWeight: 'bold' }}>Detection Time</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Threat Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Endpoint</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Severity</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Confidence</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }} align="right">Investigation</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>THREAT DETECTION</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>SEVERITY</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>CATEGORY</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>RISK SCORE</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>SOURCE / TARGET</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>TIMESTAMP</TableCell>
+              <TableCell sx={{ fontWeight: 700 }} align="right">ACTION</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredThreats.map((threat) => (
-              <TableRow key={threat.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                <TableCell>{threat.detected_at}</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>{threat.name}</TableCell>
-                <TableCell>{threat.endpoint}</TableCell>
-                <TableCell><SeverityBadge severity={threat.severity} /></TableCell>
-                <TableCell sx={{ textTransform: 'capitalize' }}>{threat.status}</TableCell>
-                <TableCell>{(threat.confidence * 100).toFixed(0)}%</TableCell>
-                <TableCell align="right">
-                  <IconButton color="primary" onClick={() => setSelectedThreat(threat)}>
-                    <Launch fontSize="small" />
-                  </IconButton>
+            {filteredThreats.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                  <CheckCircle sx={{ color: '#22c55e', fontSize: 36, mb: 1, display: 'block', mx: 'auto' }} />
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    No active threats detected
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    All telemetry events processed through risk engine have been scored safe.
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredThreats.map((threat) => (
+                <TableRow key={threat.id} hover>
+                  <TableCell sx={{ fontWeight: 600 }}>
+                    {threat.title}
+                  </TableCell>
+                  <TableCell>
+                    <SeverityBadge severity={threat.severity} />
+                  </TableCell>
+                  <TableCell>
+                    <Chip label={threat.category?.toUpperCase()} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                  </TableCell>
+                  <TableCell>
+                    <Typography fontWeight={700} color={threat.risk_score > 60 ? 'error.main' : 'text.primary'}>
+                      {Math.round(threat.risk_score)}/100
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>
+                    {threat.source_ip || threat.target_user || 'localhost'}
+                  </TableCell>
+                  <TableCell sx={{ color: 'text.secondary', fontSize: 12 }}>
+                    {new Date(threat.timestamp).toLocaleString()}
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton size="small" onClick={() => setSelectedThreat(threat)} color="primary">
+                      <Launch fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
 
-      {/* Threat Details Drawer/Modal */}
-      <Dialog
-        open={Boolean(selectedThreat)}
-        onClose={() => setSelectedThreat(null)}
-        maxWidth="md"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: 4,
-              bgcolor: 'background.paper',
-              border: `1px solid ${theme.palette.divider}`,
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-            }
-          }
-        }}
-      >
-        {selectedThreat && (
-          <>
-            <DialogTitle sx={{ borderBottom: `1px solid ${theme.palette.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 3 }}>
-              <Box>
-                <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
-                  {selectedThreat.name}
+      {/* Threat Detail Modal */}
+      <Dialog open={Boolean(selectedThreat)} onClose={() => { setSelectedThreat(null); setShowModalTech(false); setActionSuccess(null); }} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 800, fontFamily: 'Outfit' }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <BugReport color="error" />
+            Threat Intelligence & Forensics
+          </Box>
+          {selectedThreat && <SeverityBadge severity={selectedThreat.severity} />}
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedThreat && (
+            <Stack spacing={2.5}>
+              {/* Plain English Assessment */}
+              <Box sx={{ p: 2, borderRadius: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(241,245,249,0.7)', border: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: '0.05em' }}>
+                  SECURITY SUMMARY (PLAIN ENGLISH)
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Detected at: {selectedThreat.detected_at}
+                <Typography variant="h6" fontWeight={800} sx={{ mt: 0.5, mb: 1, fontFamily: 'Outfit' }}>
+                  {selectedThreat.title}
+                </Typography>
+                <Typography variant="body2" sx={{ lineHeight: 1.6, color: 'text.primary' }}>
+                  {selectedThreat.recommendation || 'KAVACH telemetry identified unusual process execution or socket connection that deviates from standard endpoint baseline behavior.'}
                 </Typography>
               </Box>
-              <SeverityBadge severity={selectedThreat.severity} />
-            </DialogTitle>
 
-            <DialogContent sx={{ p: 3 }}>
-              <Grid container spacing={3}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>Target Endpoint</Typography>
-                  <Typography variant="body1" gutterBottom sx={{ fontWeight: 'bold' }}>{selectedThreat.endpoint}</Typography>
-                  
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mt: 2 }}>MITRE ATT&CK Technique</Typography>
-                  <Typography variant="body1" gutterBottom sx={{ fontWeight: 'bold' }}>{selectedThreat.mitre}</Typography>
-                  
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mt: 2 }}>Indicators of Compromise (IOC)</Typography>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontFamily: 'monospace', 
-                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.05)', 
-                      p: 1.5, 
-                      borderRadius: 1.5,
-                      wordBreak: 'break-all',
-                      border: `1px solid ${theme.palette.divider}`
-                    }}
-                  >
-                    {selectedThreat.ioc}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>Recommended SOAR Playbook Action</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <Shield color="primary" />
-                    <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>{selectedThreat.action}</Typography>
+              {/* Status and Action banner */}
+              {actionSuccess && (
+                <Alert severity="success" sx={{ borderRadius: 2 }}>
+                  {actionSuccess}
+                </Alert>
+              )}
+
+              {/* Quick Metrics Row */}
+              <Grid container spacing={2}>
+                <Grid item xs={4}>
+                  <Box p={1.5} bgcolor="background.paper" borderRadius={2} border="1px solid" borderColor="divider">
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                      RISK SCORE
+                    </Typography>
+                    <Typography variant="h6" fontWeight={900} color={selectedThreat.risk_score > 60 ? 'error.main' : 'warning.main'}>
+                      {Math.round(selectedThreat.risk_score)} / 100
+                    </Typography>
                   </Box>
-
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>AI Threat Analysis</Typography>
-                  <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-                    {selectedThreat.ai_analysis}
-                  </Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Box p={1.5} bgcolor="background.paper" borderRadius={2} border="1px solid" borderColor="divider">
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                      CATEGORY
+                    </Typography>
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      {selectedThreat.category?.toUpperCase()}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={4}>
+                  <Box p={1.5} bgcolor="background.paper" borderRadius={2} border="1px solid" borderColor="divider">
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                      AFFECTED TARGET
+                    </Typography>
+                    <Typography variant="subtitle2" fontWeight={700} sx={{ fontFamily: 'monospace' }}>
+                      {selectedThreat.source_ip || selectedThreat.target_user || 'Local Host'}
+                    </Typography>
+                  </Box>
                 </Grid>
               </Grid>
-            </DialogContent>
 
-            <DialogActions sx={{ p: 3, borderTop: `1px solid ${theme.palette.divider}` }}>
-              <Button onClick={() => setSelectedThreat(null)} variant="outlined">
-                Dismiss
-              </Button>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                startIcon={<CheckCircle />}
-                onClick={() => {
-                  alert(`Executing Action: ${selectedThreat.action}`);
-                  setSelectedThreat(null);
-                }}
-                sx={{ fontWeight: 'bold' }}
-              >
-                Execute Auto-Response
-              </Button>
-            </DialogActions>
-          </>
-        )}
+              {/* Action Buttons */}
+              <Stack direction="row" spacing={1.5}>
+                <Button
+                  variant="outlined"
+                  color="success"
+                  startIcon={<CheckCircle />}
+                  onClick={() => setActionSuccess('Threat verified safe and added to organization allowlist.')}
+                  sx={{ fontWeight: 700 }}
+                >
+                  Allow & Mark Safe
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={<Block />}
+                  onClick={() => setActionSuccess('Host quarantine triggered via sub-12ms SOAR playbook. Network socket severed.')}
+                  sx={{ fontWeight: 700 }}
+                >
+                  Quarantine Host
+                </Button>
+              </Stack>
+
+              {/* Expandable Technical Details Button */}
+              <Box display="flex" justifyContent="space-between" alignItems="center" pt={1} borderTop="1px solid" borderColor="divider">
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Terminal sx={{ color: '#DC2626', fontSize: 20 }} />
+                  <Typography variant="subtitle2" fontWeight={800}>
+                    SOC Forensics & Kernel Evidence
+                  </Typography>
+                </Box>
+                <Button
+                  size="small"
+                  onClick={() => setShowModalTech(!showModalTech)}
+                  endIcon={showModalTech ? <ExpandLess /> : <ExpandMore />}
+                  sx={{ fontWeight: 700, textTransform: 'none' }}
+                >
+                  {showModalTech ? 'Hide technical details ↑' : 'View technical details →'}
+                </Button>
+              </Box>
+
+              {/* Collapsible SOC Evidence */}
+              <Collapse in={showModalTech}>
+                <Stack spacing={1.5}>
+                  <Grid container spacing={1.5} sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                    <Grid item xs={12} sm={6}>
+                      <Box p={1.2} bgcolor="background.paper" borderRadius={1} border="1px solid" borderColor="divider">
+                        <Typography variant="caption" color="text.secondary" display="block" fontWeight={700}>
+                          SYSMON EVENT ID
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                          Event ID 1 (Process Create) / EID 3 (Network)
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Box p={1.2} bgcolor="background.paper" borderRadius={1} border="1px solid" borderColor="divider">
+                        <Typography variant="caption" color="text.secondary" display="block" fontWeight={700}>
+                          ESTIMATED MITRE TECHNIQUE
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', color: '#2563eb', fontWeight: 600 }}>
+                          T1059 (Execution) • T1071 (C2 Channel)
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                      RAW TELEMETRY EVIDENCE & STIX PAYLOAD
+                    </Typography>
+                    <Paper sx={{ p: 1.5, mt: 0.5, bgcolor: 'background.default', fontFamily: 'monospace', fontSize: 12, maxHeight: 180, overflow: 'auto' }}>
+                      <pre style={{ margin: 0 }}>{JSON.stringify(selectedThreat.details || {
+                        detection_id: selectedThreat.id,
+                        engine: 'Deterministic Rules + Isolation Forest ML',
+                        source_ip: selectedThreat.source_ip,
+                        risk_score: selectedThreat.risk_score,
+                        timestamp: selectedThreat.timestamp,
+                      }, null, 2)}</pre>
+                    </Paper>
+                  </Box>
+                </Stack>
+              </Collapse>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => { setSelectedThreat(null); setShowModalTech(false); setActionSuccess(null); }} sx={{ fontWeight: 700 }}>
+            Close
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

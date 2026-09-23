@@ -1,71 +1,93 @@
 """
-KAVACH — AI-Driven SOAR-XDR Threat Intelligence & Response Platform
-Main FastAPI Application
+KAVACH — AI-Driven SOAR-XDR Threat Intelligence & Response Platform.
+
+Main entry point. Starts the FastAPI backend with Uvicorn.
+
+Usage:
+    python main.py                  # Start backend server on port 8000
+    python main.py --no-collectors  # Run API without telemetry collectors
+    python main.py --no-ml          # Run with ML anomaly detector disabled
+    python main.py --port 8000      # Custom port
+    uvicorn app.main:app --reload   # Direct ASGI runner
 """
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
+
+from __future__ import annotations
+
+import argparse
+import sys
 import os
+from pathlib import Path
 
-from app.core.config import settings
-from app.api.v1 import auth, threats, incidents, mitre, soar, analytics, alerts, audit, ai_security, threat_intel
-from app.websocket.manager import websocket_router
+# Ensure backend/ and backend/app/ are on python path
+CURRENT_DIR = Path(__file__).resolve().parent
+if str(CURRENT_DIR) not in sys.path:
+    sys.path.insert(0, str(CURRENT_DIR))
 
+from app.main import create_app
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    print(f"[KAVACH] Backend v{settings.APP_VERSION} starting...")
-    print(f"[API] Docs at: http://localhost:8000/docs")
-    yield
-    # Shutdown
-    print("[KAVACH] Backend shutting down...")
+# Module-level ASGI app for uvicorn (e.g. `uvicorn main:app`)
+app = create_app()
 
 
-app = FastAPI(
-    title="KAVACH API",
-    description="AI-Driven SOAR-XDR Threat Intelligence & Response Platform",
-    version=settings.APP_VERSION,
-    lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
-)
+def main() -> None:
+    """Parse arguments and start the KAVACH backend independently."""
+    parser = argparse.ArgumentParser(
+        description="KAVACH SOAR-XDR Backend Server",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+    parser.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
+    parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
+    parser.add_argument("--workers", type=int, default=1, help="Number of worker processes")
+    parser.add_argument("--log-level", default="info", help="Log level (debug, info, warning, error)")
+    parser.add_argument(
+        "--no-collectors",
+        action="store_true",
+        help="Run without background telemetry collectors",
+    )
+    parser.add_argument(
+        "--no-ml",
+        action="store_true",
+        help="Run with machine learning anomaly detection disabled",
+    )
+    args = parser.parse_args()
 
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    if args.no_collectors:
+        os.environ["COLLECTOR_ENABLED"] = "false"
+    if args.no_ml:
+        os.environ["ML_ENABLED"] = "false"
 
-# API Routes
-app.include_router(auth.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["Authentication"])
-app.include_router(threats.router, prefix=f"{settings.API_V1_PREFIX}/threats", tags=["Threats"])
-app.include_router(incidents.router, prefix=f"{settings.API_V1_PREFIX}/incidents", tags=["Incidents"])
-app.include_router(mitre.router, prefix=f"{settings.API_V1_PREFIX}/mitre", tags=["MITRE ATT&CK"])
-app.include_router(soar.router, prefix=f"{settings.API_V1_PREFIX}/soar", tags=["SOAR"])
-app.include_router(analytics.router, prefix=f"{settings.API_V1_PREFIX}/analytics", tags=["Analytics"])
-app.include_router(alerts.router, prefix=f"{settings.API_V1_PREFIX}/alerts", tags=["Alerts"])
-app.include_router(audit.router, prefix=f"{settings.API_V1_PREFIX}/audit", tags=["Audit"])
-app.include_router(ai_security.router, prefix=f"{settings.API_V1_PREFIX}/ai-security", tags=["AI Security"])
-app.include_router(threat_intel.router, prefix=f"{settings.API_V1_PREFIX}/threat-intel", tags=["Threat Intelligence"])
-app.include_router(websocket_router, tags=["WebSocket"])
+    import uvicorn
+
+    banner = rf"""
+    ╔═════════════════════════════════════════════════════════════╗
+    ║                                                             ║
+    ║   K A V A C H                                               ║
+    ║   Intelligent Cybersecurity & Threat Response Platform      ║
+    ║                                                             ║
+    ║   Backend API:    http://{args.host}:{args.port}                     ║
+    ║   API Docs:       http://{args.host}:{args.port}/docs                ║
+    ║   Health Check:   http://{args.host}:{args.port}/api/v1/health       ║
+    ║   AI Assistant:   Raksha AI                                 ║
+    ║   ML Engine:      Isolation Forest                          ║
+    ║                                                             ║
+    ╚═════════════════════════════════════════════════════════════╝
+    """
+    try:
+        print(banner)
+    except Exception:
+        print(f"KAVACH Backend API starting on http://{args.host}:{args.port}")
+
+    uvicorn.run(
+        "app.main:create_app",
+        factory=True,
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+        workers=args.workers,
+        log_level=args.log_level,
+    )
 
 
-@app.get("/", tags=["Health"])
-async def root():
-    return {
-        "name": "KAVACH API",
-        "version": settings.APP_VERSION,
-        "status": "operational",
-        "description": "AI-Driven SOAR-XDR Threat Intelligence & Response Platform"
-    }
-
-
-@app.get("/health", tags=["Health"])
-async def health_check():
-    return {"status": "healthy", "version": settings.APP_VERSION}
+if __name__ == "__main__":
+    main()

@@ -24,20 +24,20 @@ export interface DevelopmentModule {
 }
 
 export const TEAM_MEMBERS: TeamMember[] = [
-  { name: 'Jash Bharat Chothani', roll: 'B007', role: 'Security Architect & AI Lead' },
-  { name: 'Shishir Jaimin Bhavsar', roll: 'B030', role: 'Frontend & 3D WebGL Lead' },
-  { name: 'Ved Kantilal Waghela', roll: 'B061', role: 'Backend & SOAR Engine Lead' },
+  { name: 'Jash Bharat Chothani', roll: 'ENG-007', role: 'Chief Security Architect & AI Lead' },
+  { name: 'Shishir Jaimin Bhavsar', roll: 'ENG-030', role: 'Principal Frontend & 3D WebGL Lead' },
+  { name: 'Ved Kantilal Waghela', roll: 'ENG-061', role: 'Principal Backend & SOAR Engine Lead' },
 ];
 
 export const PROJECT_DETAILS = {
-  title: 'Kavach – AI-Driven SOAR-XDR Threat Intelligence & Response Platform',
-  subtitle: 'Diploma Final Year Project in Computer Engineering (2026–2027)',
-  institute: "Shri Bhagubhai Mafatlal Polytechnic (Shri Vile Parle Kelavani Mandal's)",
-  guide: 'Smt. Priti Bokariya',
-  hod: 'Shri J. S. Kulkarni',
+  title: 'KAVACH – AI-Driven SOAR-XDR Threat Intelligence & Response Platform',
+  subtitle: 'Commercial Enterprise Cybersecurity Platform (2026–2027 Production Release)',
+  institute: 'Swastik Chemical (India) • Enterprise Security & Cyber R&D Division',
+  guide: 'Cyber Defense Operations Advisory',
+  hod: 'Enterprise Engineering Council',
   sponsor: 'Swastik Chemical (India)',
-  courseCode: 'PRO230812',
-  semester: 'VI',
+  courseCode: 'KVCH-ENT-2026',
+  semester: 'Production v2.4',
 };
 
 export const GANTT_WEEKS: GanttWeek[] = [

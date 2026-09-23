@@ -20,158 +20,133 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
-  background-color: #030408;
-  color: #F8FAFC;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  background-color: #F8FAFC;
+  color: #0F172A;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Custom Scrollbar Styles for premium Command Center look */
+body.dark {
+  background-color: #08080C;
+  color: #F8FAFC;
+}
+
+body.light {
+  background-color: #F8FAFC;
+  color: #0F172A;
+}
+
+/* Custom Scrollbar Styles */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-body.dark ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-track {
-  background: #030408;
+  background: #F1F5F9;
 }
 
-body.dark ::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb {
-  background: #1C1C28;
-  border-radius: 3px;
-}
-
-body.dark ::-webkit-scrollbar-thumb:hover,
-::-webkit-scrollbar-thumb:hover {
-  background: #C1121F;
-}
-
-body.light ::-webkit-scrollbar-track {
-  background: #F8FAFC;
-}
-
-body.light ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
-body.light ::-webkit-scrollbar-thumb:hover {
-  background: #C1121F;
+::-webkit-scrollbar-thumb:hover {
+  background: #DC2626;
 }
 
-/* Enterprise Gradient Utilities */
-.crimson-gradient-text {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F59E0B 35%, #E63946 70%, #C1121F 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+body.dark ::-webkit-scrollbar-track {
+  background: #0B0F19;
 }
 
-.subtle-gradient-text {
-  background: linear-gradient(180deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+body.dark ::-webkit-scrollbar-thumb {
+  background: #1E293B;
 }
 
-.crimson-heading-glow {
-  text-shadow: 0 0 35px rgba(193, 18, 31, 0.45);
+body.dark ::-webkit-scrollbar-thumb:hover {
+  background: #DC2626;
 }
 
-/* Linear / Stripe Style Glassmorphism Panels */
-.glass-panel-enterprise {
-  background: rgba(13, 14, 24, 0.72);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-panel-enterprise:hover {
-  border-color: rgba(193, 18, 31, 0.35);
-  box-shadow: 0 20px 48px -12px rgba(193, 18, 31, 0.25);
-  transform: translateY(-2px);
-}
-
-/* Shimmer Border Animation */
-.shimmer-border {
-  position: relative;
-  border-radius: 16px;
-  background: linear-gradient(60deg, rgba(255,255,255,0.06), rgba(193,18,31,0.25), rgba(255,255,255,0.06));
-  background-size: 300% 300%;
-  animation: shimmerMove 8s ease infinite;
-}
-
-@keyframes shimmerMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Live Telemetry Terminal Screen */
-.terminal-window {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  background: #04050A;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8), 0 20px 50px rgba(0, 0, 0, 0.6);
-}
-
-/* Glowing Capsule Container */
-.neon-capsule {
-  background: rgba(193, 18, 31, 0.12);
-  border: 1px solid rgba(193, 18, 31, 0.35);
-  box-shadow: 0 0 20px rgba(193, 18, 31, 0.2);
-  border-radius: 9999px;
-  padding: 6px 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Cybernetic Grid Background */
+/* Light & Dark Grid Patterns */
 .cyber-grid-bg {
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
+  background-image:
+    linear-gradient(to right, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-.cyber-mesh-glow {
-  background: radial-gradient(circle at 50% 0%, rgba(193, 18, 31, 0.18) 0%, rgba(30, 58, 138, 0.12) 40%, transparent 75%);
+body.dark .cyber-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
 }
 
-/* Pulse Glow & Radar FX */
-@keyframes radarSweep {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+/* Modern Typography Gradient Helpers */
+.brand-crimson-gradient {
+  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.radar-spinner {
-  animation: radarSweep 6s linear infinite;
+.brand-dark-gradient {
+  background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Live Status Dot */
+body.dark .brand-dark-gradient {
+  background: linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Corporate Glass Card Styling */
+.commercial-card-light {
+  background: #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.commercial-card-light:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.03);
+}
+
+/* Live Operational Status Dot */
 .live-status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background-color: #10B981;
-  box-shadow: 0 0 10px #10B981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  display: inline-block;
   animation: liveStatusPulse 2s ease-in-out infinite;
 }
 
 @keyframes liveStatusPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
-    transform: scale(1.3);
+    transform: scale(1.25);
     opacity: 0.6;
+  }
+}
+
+/* Respect Accessibility Preferences */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

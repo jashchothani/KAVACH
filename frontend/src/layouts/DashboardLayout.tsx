@@ -1,29 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
   Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton,
   ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Menu,
-  MenuItem, Badge, Tooltip, useTheme
+  MenuItem, Badge, Tooltip, useTheme, Chip, Switch, FormControlLabel,
 } from '@mui/material';
 import {
-  Menu as MenuIcon, Dashboard, Security, Explore,
-  PlayCircleFilled, Assignment, Settings, ExitToApp, Brightness4,
-  Brightness7, Notifications, Shield, Gavel, BarChart, BugReport
+  Menu as MenuIcon, Dashboard, BugReport, Notifications, Assignment,
+  Computer, Memory, Router, AccessTime, Language, Shield, AutoGraph,
+  Psychology, Assessment, Settings, ExitToApp, Brightness4, Brightness7,
+  Search, FiberManualRecord,
 } from '@mui/icons-material';
 import { useAuth } from '../context/useAuth';
 import { useAppTheme } from '../context/useAppTheme';
+import { useViewMode } from '../context/ViewModeContext';
+import { KavachLogo } from '../components/common/KavachLogo';
+import { CinematicIntro } from '../components/common/CinematicIntro';
 
 const drawerWidth = 260;
+
+interface NavSection {
+  title?: string;
+  items: {
+    text: string;
+    icon: React.ReactNode;
+    path: string;
+    badge?: number;
+  }[];
+}
 
 export const DashboardLayout: React.FC = () => {
   const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
+  const { isAdvanced, toggleMode } = useViewMode();
+  const [wsConnected, setWsConnected] = useState(false);
   const { user, logout } = useAuth();
   const { mode, toggleTheme } = useAppTheme();
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    return sessionStorage.getItem('kavach_trigger_login_intro') === 'true';
+  });
+
+  const handleIntroComplete = () => {
+    sessionStorage.removeItem('kavach_trigger_login_intro');
+    setShowIntro(false);
+  };
+
+  // Test live WebSocket connectivity
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    try {
+      ws = new WebSocket('ws://localhost:8000/api/v1/dashboard/live');
+      ws.onopen = () => setWsConnected(true);
+      ws.onclose = () => setWsConnected(false);
+      ws.onerror = () => setWsConnected(false);
+    } catch (e) {
+      setWsConnected(false);
+    }
+    return () => {
+      if (ws) ws.close();
+    };
+  }, []);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -33,32 +73,56 @@ export const DashboardLayout: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleNotifMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setNotifAnchorEl(event.currentTarget);
-  };
-
-  const handleNotifMenuClose = () => {
-    setNotifAnchorEl(null);
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Nav Items configured for KAVACH SOC
-  const menuItems = [
-    { text: 'SOC Dashboard', icon: <Dashboard />, path: '/dashboard' },
-    { text: 'Threat Detection', icon: <BugReport />, path: '/threats' },
-    { text: 'MITRE ATT&CK', icon: <Explore />, path: '/mitre' },
-    { text: 'SOAR Playbooks', icon: <PlayCircleFilled />, path: '/soar' },
-    { text: 'Incident Response', icon: <Assignment />, path: '/incidents' },
-    { text: 'AI Security', icon: <Security />, path: '/ai-security' },
-    { text: 'Threat Intelligence', icon: <Shield />, path: '/threat-intel' },
-    { text: 'Alert Center', icon: <Notifications />, path: '/alerts', badge: 5 },
-    { text: 'Analytics Center', icon: <BarChart />, path: '/analytics' },
-    { text: 'Audit Center', icon: <Gavel />, path: '/audit' },
-    { text: 'Settings', icon: <Settings />, path: '/settings' },
+  // Structured menu items according to KAVACH master specification
+  const navSections: NavSection[] = [
+    {
+      items: [
+        { text: 'Overview', icon: <Dashboard />, path: '/dashboard' },
+      ],
+    },
+    {
+      title: 'SECURITY',
+      items: [
+        { text: 'Threats', icon: <BugReport />, path: '/threats' },
+        { text: 'Alerts', icon: <Notifications />, path: '/alerts', badge: 3 },
+        { text: 'Incidents', icon: <Assignment />, path: '/incidents' },
+      ],
+    },
+    {
+      title: 'MONITORING',
+      items: [
+        { text: 'Devices', icon: <Computer />, path: '/devices' },
+        { text: 'Processes', icon: <Memory />, path: '/processes' },
+        { text: 'Network', icon: <Router />, path: '/network' },
+        { text: 'Activity', icon: <AccessTime />, path: '/activity' },
+      ],
+    },
+    {
+      title: 'INTELLIGENCE',
+      items: [
+        { text: 'URL Scanner', icon: <Language />, path: '/url-scanner' },
+        { text: 'Threat Intelligence', icon: <Shield />, path: '/threat-intel' },
+        { text: 'ML Detection', icon: <AutoGraph />, path: '/ml-detection' },
+      ],
+    },
+    {
+      title: 'INTELLIGENT ASSISTANT',
+      items: [
+        { text: 'Raksha AI', icon: <Psychology sx={{ color: '#38bdf8' }} />, path: '/raksha-ai' },
+      ],
+    },
+    {
+      title: 'PLATFORM',
+      items: [
+        { text: 'Reports', icon: <Assessment />, path: '/reports' },
+        { text: 'Settings', icon: <Settings />, path: '/settings' },
+      ],
+    },
   ];
 
   return (
@@ -67,7 +131,7 @@ export const DashboardLayout: React.FC = () => {
         position="fixed"
         sx={{
           zIndex: theme.zIndex.drawer + 1,
-          bgcolor: mode === 'dark' ? 'rgba(17, 17, 24, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+          bgcolor: mode === 'dark' ? 'rgba(10, 14, 23, 0.85)' : 'rgba(255, 255, 255, 0.85)',
           backdropFilter: 'blur(10px)',
           boxShadow: 'none',
           borderBottom: `1px solid ${theme.palette.divider}`,
@@ -75,45 +139,57 @@ export const DashboardLayout: React.FC = () => {
         }}
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
+          {/* Left brand area */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              onClick={() => setOpen(!open)}
-              edge="start"
-              sx={{ mr: 1 }}
-            >
+            <IconButton color="inherit" onClick={() => setOpen(!open)} edge="start" sx={{ mr: 0.5 }}>
               <MenuIcon />
             </IconButton>
 
-            {/* Logo area */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }} onClick={() => navigate('/')}>
-              <Box
-                component="img"
-                src="/assets/kavach-logo.png"
-                alt="KAVACH"
-                sx={{
-                  height: 32,
-                  width: 'auto',
-                  filter: 'drop-shadow(0 0 6px rgba(193, 18, 31, 0.6))',
-                }}
-              />
-              <Box>
-                <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 800, letterSpacing: '0.05em', lineHeight: 1.1, fontFamily: 'Outfit', color: mode === 'dark' ? '#FFFFFF' : '#0F172A' }}>
-                  KAVACH <span style={{ color: '#C1121F' }}>SOC</span>
-                </Typography>
-                <Typography variant="caption" sx={{ fontSize: '0.65rem', letterSpacing: '0.1em', color: '#C1121F', display: 'block', fontWeight: 700 }}>
-                  SWASTIK CHEMICAL (INDIA)
-                </Typography>
-              </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+              <KavachLogo size="sm" showSubtitle={false} />
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Right actions */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Live WebSocket Status Pill */}
+            <Tooltip title={wsConnected ? 'WebSocket live telemetry stream connected to :8000' : 'WebSocket disconnected (offline)'}>
+              <Chip
+                icon={<FiberManualRecord sx={{ fontSize: 10 }} />}
+                label={wsConnected ? 'LIVE FEED' : 'OFFLINE'}
+                size="small"
+                sx={{
+                  bgcolor: wsConnected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                  color: wsConnected ? '#10B981' : '#EF4444',
+                  fontWeight: 700,
+                  fontSize: 10,
+                  border: `1px solid ${wsConnected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                }}
+              />
+            </Tooltip>
+
+            {/* Layman Mode vs SOC Analyst Mode Toggle */}
+            <Tooltip title={isAdvanced ? "SOC Analyst Mode (Deep telemetry, raw event logs & MITRE mapping active)" : "Layman User Mode (Simple protection status, 1-click scan & friendly advice active)"}>
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.8, bgcolor: 'background.paper', px: 1.5, py: 0.4, borderRadius: 9999, border: '1px solid', borderColor: isAdvanced ? '#7C3AED' : '#10B981' }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: !isAdvanced ? '#10B981' : 'text.secondary' }}>
+                  🛡️ Layman
+                </Typography>
+                <Switch
+                  size="small"
+                  checked={isAdvanced}
+                  onChange={toggleMode}
+                  color="secondary"
+                />
+                <Typography variant="caption" sx={{ fontWeight: 700, color: isAdvanced ? '#7C3AED' : 'text.secondary' }}>
+                  ⚡ SOC Analyst
+                </Typography>
+              </Box>
+            </Tooltip>
+
             {/* Theme Toggle */}
-            <Tooltip title="Toggle Light/Dark Theme">
-              <IconButton onClick={toggleTheme} color="inherit">
-                {mode === 'dark' ? <Brightness7 sx={{ color: '#F59E0B' }} /> : <Brightness4 />}
+            <Tooltip title="Toggle Theme">
+              <IconButton onClick={toggleTheme} color="inherit" size="small">
+                {mode === 'dark' ? <Brightness7 sx={{ color: '#F59E0B', fontSize: 20 }} /> : <Brightness4 sx={{ fontSize: 20 }} />}
               </IconButton>
             </Tooltip>
 
@@ -206,6 +282,7 @@ export const DashboardLayout: React.FC = () => {
         </Toolbar>
       </AppBar>
 
+      {/* Sidebar Drawer */}
       <Drawer
         variant="permanent"
         open={open}
@@ -220,77 +297,113 @@ export const DashboardLayout: React.FC = () => {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
             }),
-            bgcolor: mode === 'dark' ? '#0F0F16' : '#FFFFFF',
+            bgcolor: mode === 'dark' ? '#080c14' : '#FFFFFF',
             borderRight: `1px solid ${theme.palette.divider}`,
             boxSizing: 'border-box',
             pt: 8,
           },
         }}
       >
-        <List sx={{ px: 1.5, py: 2 }}>
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <ListItem key={item.text} disablePadding sx={{ display: 'block', mb: 0.5 }}>
-                <ListItemButton
-                  onClick={() => navigate(item.path)}
-                  selected={isActive}
+        <Box sx={{ overflowY: 'auto', px: 1.5, py: 1.5 }}>
+          {navSections.map((section, sIdx) => (
+            <Box key={sIdx} sx={{ mb: 1.5 }}>
+              {section.title && open && (
+                <Typography
+                  variant="caption"
                   sx={{
-                    minHeight: 48,
-                    justifyContent: open ? 'initial' : 'center',
-                    px: 2.5,
-                    borderRadius: 2,
-                    '&.Mui-selected': {
-                      bgcolor: 'rgba(193, 18, 31, 0.1)',
-                      color: 'primary.main',
-                      '&:hover': {
-                        bgcolor: 'rgba(193, 18, 31, 0.15)',
-                      },
-                      '& .MuiListItemIcon-root': {
-                        color: 'primary.main',
-                      }
-                    },
-                    '&:hover': {
-                      bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-                    }
+                    px: 1.5,
+                    py: 0.5,
+                    display: 'block',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    color: 'text.secondary',
                   }}
                 >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 0,
-                      mr: open ? 2 : 'auto',
-                      justifyContent: 'center',
-                      color: isActive ? 'primary.main' : 'text.secondary',
-                      transition: 'color 0.2s',
-                    }}
-                  >
-                    {item.badge ? (
-                      <Badge badgeContent={item.badge} color="error" variant="dot">
-                        {item.icon}
-                      </Badge>
-                    ) : item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    sx={{
-                      opacity: open ? 1 : 0,
-                      transition: 'opacity 0.2s',
-                      '& .MuiTypography-root': {
-                        fontWeight: isActive ? 700 : 500,
-                        fontSize: '0.85rem',
-                      }
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
-        </List>
+                  {section.title}
+                </Typography>
+              )}
+              <List disablePadding>
+                {section.items.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <ListItem key={item.text} disablePadding sx={{ display: 'block', mb: 0.3 }}>
+                      <ListItemButton
+                        onClick={() => navigate(item.path)}
+                        selected={isActive}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2,
+                          borderRadius: 1.5,
+                          '&.Mui-selected': {
+                            bgcolor: mode === 'dark' ? 'rgba(220, 38, 38, 0.15)' : 'rgba(220, 38, 38, 0.08)',
+                            color: '#DC2626',
+                            '&:hover': { bgcolor: mode === 'dark' ? 'rgba(220, 38, 38, 0.22)' : 'rgba(220, 38, 38, 0.12)' },
+                            '& .MuiListItemIcon-root': { color: '#DC2626' },
+                          },
+                          '&:hover': {
+                            bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                          },
+                        }}
+                      >
+                        <ListItemIcon
+                          sx={{
+                            minWidth: 0,
+                            mr: open ? 1.8 : 'auto',
+                            justifyContent: 'center',
+                            color: isActive ? '#DC2626' : 'text.secondary',
+                            fontSize: 18,
+                          }}
+                        >
+                          {item.badge ? (
+                            <Badge badgeContent={item.badge} color="error" variant="dot">
+                              {item.icon}
+                            </Badge>
+                          ) : (
+                            item.icon
+                          )}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={item.text}
+                          sx={{
+                            opacity: open ? 1 : 0,
+                            transition: 'opacity 0.2s',
+                            '& .MuiTypography-root': {
+                              fontWeight: isActive ? 800 : 500,
+                              fontSize: '0.82rem',
+                            },
+                          }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </Box>
+          ))}
+
+          {/* Drawer Footer Attribution */}
+          {open && (
+            <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', mt: 'auto', textAlign: 'center' }}>
+              <Typography variant="caption" sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'text.secondary', display: 'block' }}>
+                KAVACH Platform v2.4
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: '0.64rem', fontWeight: 800, color: '#DC2626' }}>
+                By Swastik Chemical (India)
+              </Typography>
+            </Box>
+          )}
+        </Box>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3, pt: 11, width: '100%', overflowX: 'hidden' }}>
-        <Outlet />
+      {/* Main Outlet */}
+      <Box component="main" sx={{ flexGrow: 1, p: 3, pt: 10, width: '100%', overflowX: 'hidden' }}>
+        <Outlet context={{ analystMode: isAdvanced }} />
       </Box>
+
+      {/* Cinematic Intro Overlay on First Login */}
+      {showIntro && <CinematicIntro onComplete={handleIntroComplete} />}
     </Box>
   );
 };

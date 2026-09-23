@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<body
+    style="margin: 0; padding: 0; background-color: #f0f2f5; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; color: #1a1a2e;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%"
+        style="background-color: #f0f2f5; padding: 40px 10px;">
+        <tr>
+            <td align="center">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%"
+                    style="max-width: 550px; background-color: #ffffff; border: 1px solid #dc2626; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(220,38,38,0.10);">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center"
+                            style="background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%); padding: 30px; text-align: center;">
+                            <img src="kavach-logo.png" alt="KAVACH"
+                                style="height: 48px; width: auto; margin-bottom: 8px;"
+                                onerror="this.style.display='none'">
+                            <h1
+                                style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: 1px; text-transform: uppercase;">
+                                🚨 KAVACH THREAT DETECTED</h1>
+                            <p
+                                style="color: rgba(255,255,255,0.85); font-size: 13px; margin: 4px 0 0 0; font-weight: 500;">
+                                Autonomous Endpoint Defense Active</p>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 32px; background-color: #ffffff;">
+                            <h2
+                                style="color: #dc2626; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 20px;">
+                                CRITICAL SECURITY ALERT</h2>
+                            <p style="font-size: 15px; line-height: 1.7; color: #5a6072;">
+                                KAVACH Security Engine has intercepted a high-risk malicious activity on the monitored
+                                host.
+                            </p>
+
+                            <!-- Telemetry Table -->
+                            <table border="0" cellpadding="10" cellspacing="0" width="100%"
+                                style="margin: 24px 0; font-size: 14px; background-color: #f8f9fa; border: 1px solid #e2e5ea; border-radius: 10px; color: #1a1a2e;">
+                                <tr>
+                                    <td width="35%"
+                                        style="font-weight: 600; border-bottom: 1px solid #eef0f3; color: #5a6072;">
+                                        Threat Description:</td>
+                                    <td style="border-bottom: 1px solid #eef0f3; color: #1a1a2e; font-weight: 600;">{{
+                                        title }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: 600; border-bottom: 1px solid #eef0f3; color: #5a6072;">
+                                        Severity:</td>
+                                    <td style="border-bottom: 1px solid #eef0f3; color: #dc2626; font-weight: 700;">{{
+                                        severity }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: 600; border-bottom: 1px solid #eef0f3; color: #5a6072;">
+                                        Affected Device:</td>
+                                    <td style="border-bottom: 1px solid #eef0f3; color: #1a1a2e;">{{ hostname }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: 600; border-bottom: 1px solid #eef0f3; color: #5a6072;">Risk
+                                        Score:</td>
+                                    <td style="border-bottom: 1px solid #eef0f3; color: #dc2626; font-weight: 700;">{{
+                                        risk_score }}/100</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: 600; color: #5a6072;">Timestamp:</td>
+                                    <td style="color: #1a1a2e;">{{ timestamp }}</td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 15px; line-height: 1.7; color: #5a6072; margin-bottom: 24px;">
+                                Details: <br>
+                                <span
+                                    style="font-family: 'JetBrains Mono', monospace; background-color: #fef2f2; padding: 12px; display: block; border-radius: 8px; border: 1px solid #fee2e2; color: #8B1A1A; margin-top: 8px; font-size: 13px;">{{
+                                    description }}</span>
+                            </p>
+
+                            <div style="text-align: center; margin: 35px 0;">
+                                <a href="{{ dashboard_url }}"
+                                    style="background: linear-gradient(135deg, #dc2626, #ef4444); color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-block; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
+                                    VIEW IN DASHBOARD
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background-color: #f8f9fa; padding: 24px 32px; text-align: center; border-top: 1px solid #eef0f3;">
+                            <p style="font-size: 11px; color: #8b92a5; margin: 0; line-height: 1.6;">
+                                Generated automatically by KAVACH Security Engine.<br>
+                                © 2026 KAVACH. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

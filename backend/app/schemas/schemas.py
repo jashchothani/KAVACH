@@ -337,3 +337,31 @@ class EndpointResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ──────────────────────────────────────────────
+# Alert Explanation & Standard Error Schemas
+# ──────────────────────────────────────────────
+class AlertExplanationResponse(BaseModel):
+    alert_id: str
+    explanation: str
+    status: str = "success"
+    confidence: float = 1.0
+    recommended_action: Optional[str] = None
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ErrorDetail(BaseModel):
+    code: str
+    message: str
+    request_id: Optional[str] = None
+    details: Optional[Any] = None
+
+
+class ErrorEnvelope(BaseModel):
+    success: bool = False
+    error: ErrorDetail
+
