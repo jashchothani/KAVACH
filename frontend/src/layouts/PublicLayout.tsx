@@ -1,357 +1,347 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, Container, Typography, Button, IconButton, Drawer, List,
-  ListItem, ListItemButton, ListItemText, Stack, Divider, ThemeProvider
+  ListItem, ListItemButton, ListItemText, Stack, Divider
 } from '@mui/material';
 import {
-  Menu as MenuIcon, Close as CloseIcon,
-  ArrowForward, Lock, RocketLaunch, KeyboardArrowUp, Shield
+  Menu as MenuIcon, Close as CloseIcon, Brightness4, Brightness7
 } from '@mui/icons-material';
-import { lightTheme } from '../theme/theme';
-import { KavachLogo } from '../components/common/KavachLogo';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useThemeMode } from '../context/ThemeContext';
+import { Footer } from '../components/home/Footer';
+import { AnimatedGradientBackground } from '../components/common/AnimatedGradientBackground';
+
+const CR = '#DC2626';
 
 export const PublicLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { mode, toggleTheme } = useThemeMode();
+  const isDark = mode === 'dark';
+
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  const navLinks = [
-    { label: 'Overview', path: '/#overview' },
-    { label: 'Features', path: '/#features' },
-    { label: 'Protection', path: '/#protection' },
-    { label: 'Devices', path: '/#devices' },
-    { label: 'About', path: '/about' },
-  ];
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 30);
+    };
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
-  const scrollToTop = () => {
+  const handleNavigation = (path: string) => {
+    setMobileOpen(false);
+    navigate(path);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const navLinks = [
+    { label: 'Product', path: '/' },
+    { label: 'Protection', path: '/features' },
+    { label: 'Intelligence', path: '/how-it-works' },
+    { label: 'Raksha AI', path: '/raksha-ai' },
+    { label: 'Security', path: '/security' },
+    { label: 'About', path: '/about' },
+  ];
+
   return (
-    <ThemeProvider theme={lightTheme}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: isDark ? '#08080C' : '#FFFFFF',
+        color: isDark ? '#FFFFFF' : '#0B0B0F',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        transition: 'background-color 0.3s ease, color 0.3s ease',
+        overflowX: 'hidden',
+      }}
+    >
+      {/* ─── GLOBAL INNOVATIVE ANIMATED CHANGING GRADIENT BACKGROUND (NO DOTS) ─── */}
+      <AnimatedGradientBackground isDark={isDark} />
+
+      {/* Premium Full-Width Navbar */}
       <Box
+        component={motion.header}
+        initial={{ y: -80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         sx={{
-          minHeight: '100vh',
-          bgcolor: '#F8FAFC',
-          color: '#0F172A',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1100,
+          height: { xs: 76, md: 84 },
           display: 'flex',
-          flexDirection: 'column',
-          position: 'relative',
+          alignItems: 'center',
+          backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
+          WebkitBackdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
+          bgcolor: isDark
+            ? (scrolled ? 'rgba(5, 5, 8, 0.85)' : 'transparent')
+            : (scrolled ? 'rgba(253, 252, 251, 0.9)' : 'transparent'),
+          borderBottom: scrolled ? (isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)') : '1px solid transparent',
+          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* Top Navigation Bar: Clean White Glassmorphism Sticky Header */}
         <Box
-          component="header"
           sx={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 1100,
-            backdropFilter: 'blur(20px)',
-            bgcolor: 'rgba(255, 255, 255, 0.92)',
-            borderBottom: '1px solid #E2E8F0',
-            boxShadow: '0 2px 14px rgba(15, 23, 42, 0.04)',
-            transition: 'all 0.25s ease',
+            maxWidth: 1440,
+            width: '100%',
+            mx: 'auto',
+            px: { xs: 3, md: 6 },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: '100%',
           }}
         >
-          <Container maxWidth="xl">
-            <Box display="flex" alignItems="center" justifyContent="space-between" py={1.5}>
-              {/* Left: Official KAVACH Transparent Logo */}
-              <Box onClick={() => navigate('/')} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                <KavachLogo size="md" showSubtitle={true} tagline="AI-Driven Security. Simplified for Everyone." />
-              </Box>
+          {/* Left: Brand Logo & Tagline */}
+          <Box
+            onClick={() => handleNavigation('/')}
+            sx={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              userSelect: 'none',
+              flexShrink: 0,
+            }}
+          >
+            <Box
+              component="img"
+              src="/kavach-logo-transparent.png"
+              alt="KAVACH"
+              onError={(e: any) => { e.currentTarget.src = '/kavach-logo.png'; }}
+              sx={{
+                height: { xs: 44, sm: 54, md: 68 },
+                width: 'auto',
+                objectFit: 'contain'
+              }}
+            />
+          </Box>
 
-              {/* Center: Overview, Features, Protection, Devices, About */}
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                sx={{ display: { xs: 'none', md: 'flex' } }}
-              >
-                {navLinks.map((link) => {
-                  const isActive = location.pathname === link.path || (link.path === '/#overview' && location.pathname === '/' && !location.hash);
-                  return (
-                    <Button
-                      key={link.label}
-                      onClick={() => {
-                        if (link.path.startsWith('/#')) {
-                          if (location.pathname !== '/') {
-                            navigate(link.path);
-                          } else {
-                            const targetId = link.path.replace('/#', '');
-                            const el = document.getElementById(targetId);
-                            if (el) {
-                              el.scrollIntoView({ behavior: 'smooth' });
-                            } else {
-                              navigate(link.path);
-                            }
-                          }
-                        } else {
-                          navigate(link.path);
-                        }
-                      }}
-                      sx={{
-                        color: isActive ? '#DC2626' : '#334155',
-                        fontWeight: isActive ? 800 : 600,
-                        fontSize: '0.92rem',
-                        px: 2,
-                        py: 0.8,
-                        borderRadius: 2.5,
-                        bgcolor: isActive ? 'rgba(220, 38, 38, 0.08)' : 'transparent',
-                        '&:hover': {
-                          bgcolor: 'rgba(220, 38, 38, 0.06)',
-                          color: '#DC2626',
-                        },
-                        textTransform: 'none',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      {link.label}
-                    </Button>
-                  );
-                })}
-              </Stack>
-
-              {/* Right: Sign In + High-Impact "Get Started" CTA */}
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <Button
-                  variant="text"
-                  onClick={() => navigate('/login')}
-                  startIcon={<Lock sx={{ fontSize: 16 }} />}
+          {/* Center: Premium Text Navigation */}
+          <Box
+            sx={{
+              display: { xs: 'none', lg: 'flex' },
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexGrow: 1,
+              gap: 4.5,
+            }}
+          >
+            {navLinks.map((link) => {
+              const isActive = location.pathname === link.path;
+              return (
+                <Box
+                  key={link.label}
+                  onClick={() => handleNavigation(link.path)}
                   sx={{
-                    color: '#0F172A',
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    textTransform: 'none',
-                    display: { xs: 'none', sm: 'inline-flex' },
-                    px: 2,
-                    py: 0.9,
-                    borderRadius: 2.5,
-                    '&:hover': {
-                      bgcolor: 'rgba(0, 0, 0, 0.04)',
-                    },
-                  }}
-                >
-                  Sign In
-                </Button>
-
-                <Button
-                  variant="contained"
-                  onClick={() => navigate('/login')}
-                  endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
-                  sx={{
-                    bgcolor: '#DC2626',
-                    color: '#FFFFFF',
-                    fontWeight: 800,
-                    fontSize: '0.9rem',
-                    textTransform: 'none',
-                    px: 2.8,
+                    position: 'relative',
+                    cursor: 'pointer',
                     py: 1,
-                    borderRadius: 2.5,
-                    boxShadow: '0 4px 16px rgba(220, 38, 38, 0.3)',
-                    '&:hover': {
-                      bgcolor: '#B91C1C',
-                      boxShadow: '0 6px 20px rgba(220, 38, 38, 0.4)',
-                    },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
                   }}
                 >
-                  Get Started Free
-                </Button>
+                  <Typography
+                    sx={{
+                      fontSize: '0.9rem',
+                      fontWeight: isActive ? 600 : 500,
+                      color: isActive
+                        ? (isDark ? '#FFFFFF' : '#0B0B0F')
+                        : (isDark ? 'rgba(255,255,255,0.7)' : '#475569'),
+                      transition: 'color 0.2s',
+                      '&:hover': {
+                        color: isDark ? '#FFFFFF' : '#0B0B0F',
+                      },
+                    }}
+                  >
+                    {link.label}
+                  </Typography>
+                  {isActive && (
+                    <Box
+                      component={motion.div}
+                      layoutId="nav-indicator"
+                      sx={{
+                        position: 'absolute',
+                        bottom: -4,
+                        width: 4,
+                        height: 4,
+                        borderRadius: '50%',
+                        bgcolor: CR,
+                      }}
+                    />
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
 
-                {/* Mobile Menu Hamburger */}
-                <IconButton
-                  onClick={handleDrawerToggle}
-                  sx={{ display: { md: 'none' }, color: '#0F172A' }}
-                >
-                  {mobileOpen ? <CloseIcon /> : <MenuIcon />}
-                </IconButton>
-              </Stack>
-            </Box>
-          </Container>
-        </Box>
+          {/* Right: Actions */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexShrink: 0 }}>
+            <IconButton
+              onClick={toggleTheme}
+              size="small"
+              sx={{
+                color: isDark ? 'rgba(255,255,255,0.85)' : '#475569',
+                display: 'inline-flex',
+                '&:hover': { color: isDark ? '#FFFFFF' : '#0B0B0F' }
+              }}
+            >
+              {isDark ? <Brightness7 fontSize="small" /> : <Brightness4 fontSize="small" />}
+            </IconButton>
 
-        {/* Mobile Navigation Drawer */}
-        <Drawer
-          anchor="right"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
-          PaperProps={{
-            sx: {
-              width: 280,
-              bgcolor: '#FFFFFF',
-              p: 3,
-            }
-          }}
-        >
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <KavachLogo size="sm" showSubtitle={false} />
-            <IconButton onClick={handleDrawerToggle} size="small">
-              <CloseIcon />
+            <Typography
+              onClick={() => handleNavigation('/login')}
+              sx={{
+                display: { xs: 'none', lg: 'block' },
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                color: isDark ? '#FFFFFF' : '#0B0B0F',
+                transition: 'opacity 0.2s',
+                '&:hover': { opacity: 0.7 }
+              }}
+            >
+              Sign In
+            </Typography>
+
+            <Button
+              onClick={() => handleNavigation('/get-started')}
+              sx={{
+                display: { xs: 'none', lg: 'flex' },
+                bgcolor: CR,
+                color: '#FFFFFF',
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                fontWeight: 700,
+                textTransform: 'none',
+                fontSize: '0.9rem',
+                boxShadow: 'none',
+                '&:hover': {
+                  bgcolor: '#B91C1C',
+                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.2)',
+                },
+              }}
+            >
+              Get Started
+            </Button>
+
+            <IconButton
+              onClick={() => setMobileOpen(true)}
+              sx={{
+                display: { xs: 'flex', lg: 'none' },
+                color: isDark ? '#FFFFFF' : '#0B0B0F',
+              }}
+            >
+              <MenuIcon />
             </IconButton>
           </Box>
-          <Divider sx={{ mb: 2 }} />
-          <List>
-            {navLinks.map((item) => (
-              <ListItem key={item.label} disablePadding sx={{ mb: 1 }}>
-                <ListItemButton
-                  onClick={() => {
-                    navigate(item.path);
-                    setMobileOpen(false);
+        </Box>
+      </Box>
+
+      {/* Mobile Drawer */}
+      <Drawer
+        anchor="right"
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        PaperProps={{
+          sx: {
+            width: '100%',
+            maxWidth: 360,
+            bgcolor: isDark ? '#08080C' : '#FDFCFB',
+            backgroundImage: 'none',
+          },
+        }}
+      >
+        <Box p={3} display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6" fontWeight={800} sx={{ fontFamily: 'Outfit', color: isDark ? '#FFFFFF' : '#0B0B0F' }}>
+            KAVACH
+          </Typography>
+          <IconButton onClick={() => setMobileOpen(false)} sx={{ color: isDark ? '#FFFFFF' : '#0B0B0F' }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Divider sx={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} />
+        <List sx={{ p: 2 }}>
+          {navLinks.map((link) => (
+            <ListItem key={link.label} disablePadding sx={{ mb: 1 }}>
+              <ListItemButton onClick={() => handleNavigation(link.path)} sx={{ borderRadius: 2 }}>
+                <ListItemText
+                  primary={link.label}
+                  primaryTypographyProps={{
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    color: isDark ? '#FFFFFF' : '#0B0B0F'
                   }}
-                  sx={{ borderRadius: 2 }}
-                >
-                  <ListItemText
-                    primary={item.label}
-                    primaryTypographyProps={{ fontWeight: 700, color: '#0F172A' }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-          <Box mt={3}>
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Box p={3} mt="auto">
+          <Stack spacing={2}>
+            <Button
+              fullWidth
+              onClick={() => handleNavigation('/login')}
+              sx={{
+                py: 1.5,
+                color: isDark ? '#FFFFFF' : '#0B0B0F',
+                border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                borderRadius: 2,
+                fontWeight: 600,
+              }}
+            >
+              Sign In
+            </Button>
             <Button
               fullWidth
               variant="contained"
-              onClick={() => { navigate('/login'); setMobileOpen(false); }}
+              onClick={() => handleNavigation('/get-started')}
               sx={{
-                bgcolor: '#DC2626',
+                py: 1.5,
+                bgcolor: CR,
                 color: '#FFFFFF',
-                fontWeight: 800,
-                py: 1.2,
-                borderRadius: 2.5,
-                mb: 1.5,
+                borderRadius: 2,
+                fontWeight: 700,
+                '&:hover': { bgcolor: '#B91C1C' }
               }}
             >
-              Sign In to KAVACH
+              Get Started
             </Button>
-          </Box>
-        </Drawer>
-
-        {/* Main Public Website Content */}
-        <Box component="main" sx={{ flexGrow: 1, width: '100%' }}>
-          <Outlet />
+          </Stack>
         </Box>
+      </Drawer>
 
-        {/* Clean Modern Light SaaS Footer */}
-        <Box
-          component="footer"
-          sx={{
-            bgcolor: '#FFFFFF',
-            borderTop: '1px solid #E2E8F0',
-            pt: 8,
-            pb: 4,
-            mt: 'auto',
-          }}
-        >
-          <Container maxWidth="xl">
-            <Box
-              display="flex"
-              flexDirection={{ xs: 'column', md: 'row' }}
-              justifyContent="space-between"
-              alignItems={{ xs: 'flex-start', md: 'center' }}
-              gap={4}
-              mb={6}
-            >
-              <Box maxWidth={460}>
-                <Box mb={2}>
-                  <KavachLogo size="lg" showSubtitle={false} />
-                </Box>
-                <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.7, mb: 2 }}>
-                  AI-driven autonomous threat deflection and endpoint security platform.
-                  Built for everyday simplicity, backed by the industrial manufacturing heritage of <strong>Swastik Chemical (India)</strong>.
-                </Typography>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#16A34A' }} />
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#16A34A' }}>
-                    Sentinel Engine v2.4 Active & Operational
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 3, sm: 6 }}>
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
-                    Platform
-                  </Typography>
-                  <Stack spacing={1}>
-                    {['Overview', 'Features', 'Protection', 'Devices'].map((item) => (
-                      <Typography
-                        key={item}
-                        variant="body2"
-                        onClick={() => navigate(`/#${item.toLowerCase()}`)}
-                        sx={{ color: '#64748B', cursor: 'pointer', '&:hover': { color: '#DC2626' } }}
-                      >
-                        {item}
-                      </Typography>
-                    ))}
-                  </Stack>
-                </Box>
-
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
-                    Access & Company
-                  </Typography>
-                  <Stack spacing={1}>
-                    <Typography
-                      variant="body2"
-                      onClick={() => navigate('/about')}
-                      sx={{ color: '#64748B', cursor: 'pointer', '&:hover': { color: '#DC2626' } }}
-                    >
-                      About Swastik Chemical
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      onClick={() => navigate('/login')}
-                      sx={{ color: '#64748B', cursor: 'pointer', '&:hover': { color: '#DC2626' } }}
-                    >
-                      Login Portal
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      onClick={() => navigate('/download')}
-                      sx={{ color: '#64748B', cursor: 'pointer', '&:hover': { color: '#DC2626' } }}
-                    >
-                      Download Agent
-                    </Typography>
-                  </Stack>
-                </Box>
-              </Stack>
-            </Box>
-
-            <Divider sx={{ mb: 3 }} />
-
-            <Box
-              display="flex"
-              flexDirection={{ xs: 'column', sm: 'row' }}
-              justifyContent="space-between"
-              alignItems="center"
-              gap={2}
-            >
-              <Typography variant="caption" sx={{ color: '#94A3B8' }}>
-                © {new Date().getFullYear()} <strong>KAVACH BY SWASTIK CHEMICAL (INDIA)</strong>. All Rights Reserved. Enterprise TLS Encrypted.
-              </Typography>
-
-              <IconButton
-                onClick={scrollToTop}
-                size="small"
-                sx={{
-                  bgcolor: '#F1F5F9',
-                  color: '#0F172A',
-                  '&:hover': { bgcolor: '#DC2626', color: '#FFFFFF' },
-                }}
-              >
-                <KeyboardArrowUp />
-              </IconButton>
-            </Box>
-          </Container>
-        </Box>
+      {/* Main Content */}
+      <Box component="main" sx={{ flexGrow: 1, position: 'relative', zIndex: 1 }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </Box>
-    </ThemeProvider>
+
+      {/* Footer */}
+      <Box sx={{ position: 'relative', zIndex: 2 }}>
+        <Footer isDark={isDark} />
+      </Box>
+    </Box>
   );
 };
-export default PublicLayout;

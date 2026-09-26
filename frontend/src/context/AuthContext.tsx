@@ -5,6 +5,39 @@ import { api } from '../api/client';
 
 export type { User } from './authContextDef';
 
+export const normalizeRole = (role?: string): string => {
+  if (!role) return 'user';
+  const r = role.toLowerCase().trim();
+  if (r === 'layman' || r === 'layman_user' || r === 'member' || r === 'student') return 'user';
+  return r;
+};
+
+export const getRoleDisplayName = (role?: string): string => {
+  const norm = normalizeRole(role);
+  if (norm === 'admin' || norm === 'super_admin' || norm === 'owner') return 'Administrator';
+  if (norm === 'soc_analyst' || norm === 'analyst' || norm === 'security_analyst') return 'SOC Analyst';
+  if (norm === 'incident_responder') return 'Incident Responder';
+  if (norm === 'security_manager') return 'Security Manager';
+  if (norm === 'auditor') return 'Auditor';
+  return 'User';
+};
+
+export const isAnalystRole = (role?: string): boolean => {
+  if (!role) return false;
+  const r = role.toLowerCase().trim();
+  return [
+    'soc_analyst',
+    'security_analyst',
+    'analyst',
+    'super_admin',
+    'admin',
+    'owner',
+    'incident_responder',
+    'security_manager',
+    'auditor',
+  ].includes(r);
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('kavach_token'));
@@ -18,7 +51,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (savedToken) {
         if (savedUser) {
           try {
-            setUser(JSON.parse(savedUser));
+            const parsed = JSON.parse(savedUser);
+            parsed.role = normalizeRole(parsed.role);
+            parsed.role_name = getRoleDisplayName(parsed.role);
+            setUser(parsed);
           } catch {
             // Ignore parse errors
           }
@@ -26,16 +62,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Validate and refresh with backend
         try {
           const profile = await api.auth.getMe();
+          const cleanRole = normalizeRole(profile.role);
           const mappedUser: User = {
             id: profile.id,
             email: profile.email,
             username: profile.username,
             full_name: profile.username,
-            role: profile.role,
-            role_name: profile.role,
+            role: cleanRole,
+            role_name: getRoleDisplayName(cleanRole),
             is_active: profile.is_active ?? true,
             permissions: profile.permissions || [],
-            department: profile.department || 'Security Operations',
+            department: profile.department || (cleanRole === 'user' ? 'Digital Defense' : 'Security Operations'),
             avatar_url: profile.avatar_url,
           };
           setUser(mappedUser);
@@ -59,16 +96,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const resp = await api.auth.login(identifier, password);
+      const cleanRole = normalizeRole(resp.role);
       const mappedUser: User = {
         id: resp.username,
         email: resp.email || `${resp.username}@kavach.local`,
         username: resp.username,
         full_name: resp.username,
-        role: resp.role,
-        role_name: resp.role,
+        role: cleanRole,
+        role_name: getRoleDisplayName(cleanRole),
         is_active: true,
         permissions: resp.permissions || [],
-        department: 'Security Operations',
+        department: cleanRole === 'user' ? 'Digital Defense' : 'Security Operations',
       };
 
       setUser(mappedUser);
@@ -88,16 +126,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const resp = await api.auth.verifyOtp(identifier, otpCode);
+      const cleanRole = normalizeRole(resp.role);
       const mappedUser: User = {
         id: resp.username,
         email: resp.email || `${resp.username}@kavach.local`,
         username: resp.username,
         full_name: resp.username,
-        role: resp.role,
-        role_name: resp.role,
+        role: cleanRole,
+        role_name: getRoleDisplayName(cleanRole),
         is_active: true,
         permissions: resp.permissions || [],
-        department: 'Security Operations',
+        department: cleanRole === 'user' ? 'Digital Defense' : 'Security Operations',
       };
 
       setUser(mappedUser);
@@ -117,18 +156,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     username: string,
     email: string,
     password: string,
-    role = 'member'
+    role = 'user'
   ): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const resp = await api.auth.register(username, email, password, role);
+      const cleanRole = normalizeRole(role);
+      const resp = await api.auth.register(username, email, password, cleanRole);
+      const userRole = normalizeRole(resp.role || cleanRole);
       const mappedUser: User = {
         id: resp.username,
         email: resp.email || email,
         username: resp.username,
         full_name: resp.username,
-        role: resp.role,
-        role_name: resp.role,
+        role: userRole,
+        role_name: getRoleDisplayName(userRole),
         is_active: true,
         permissions: resp.permissions || [],
       };

@@ -34,3 +34,11 @@ export const AppThemeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     </ThemeContext.Provider>
   );
 };
+
+export const useThemeMode = () => {
+  const context = React.useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useThemeMode must be used within an AppThemeProvider');
+  }
+  return context;
+};

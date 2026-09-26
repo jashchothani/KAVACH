@@ -50,7 +50,7 @@ class WindowsEventLogCollector(BaseCollector):
                 win32evtlog.CloseEventLog(hand)
             except Exception as exc:
                 logger.info("eventlog_read_unprivileged_fallback", log=log_name, reason=str(exc))
-                sim_events = await self._collect_simulated()
+                sim_events = []
                 events.extend(sim_events)
 
         return events

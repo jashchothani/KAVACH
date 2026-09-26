@@ -1,152 +1,281 @@
-:root {
-  font-family: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* ═══════════════════════════════════════════════════════════════════════════
+   KAVACH — GLOBAL STYLES
+   Next-gen cybersecurity platform. Cinematic. Premium. Intelligent.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-  color-scheme: light dark;
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+*, *::before, *::after {
+  box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 html {
   scroll-behavior: smooth;
+  font-size: 16px;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  background-color: #FDFCFB;
   overflow-x: hidden;
-  background-color: #F8FAFC;
-  color: #0F172A;
-  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 body.dark {
   background-color: #08080C;
-  color: #F8FAFC;
+  color: #F0EEF5;
 }
 
-body.light {
-  background-color: #F8FAFC;
-  color: #0F172A;
+/* ── Selection ─────────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(220, 38, 38, 0.18);
+  color: inherit;
 }
 
-/* Custom Scrollbar Styles */
+/* ── Custom Scrollbars ──────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 4px;
+  background: rgba(220, 38, 38, 0.3);
+  border-radius: 100px;
+  transition: background 0.2s;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #DC2626;
-}
-
-body.dark ::-webkit-scrollbar-track {
-  background: #0B0F19;
+  background: rgba(220, 38, 38, 0.55);
 }
 
 body.dark ::-webkit-scrollbar-thumb {
-  background: #1E293B;
+  background: rgba(255, 255, 255, 0.12);
 }
 
-body.dark ::-webkit-scrollbar-thumb:hover {
-  background: #DC2626;
+/* ── Glassmorphism Utilities ────────────────────────────────────────────── */
+.glass-light {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(11, 11, 15, 0.08);
 }
 
-/* Light & Dark Grid Patterns */
-.cyber-grid-bg {
+.glass-dark {
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  background: rgba(18, 18, 26, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-crimson {
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+}
+
+/* ── Grid Texture Overlays ──────────────────────────────────────────────── */
+.grid-dots {
+  background-image: radial-gradient(rgba(11, 11, 15, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.grid-dots-dark {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.grid-lines {
   background-image:
-    linear-gradient(to right, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(rgba(11, 11, 15, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 11, 15, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 
-body.dark .cyber-grid-bg {
+.grid-lines-dark {
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 
-/* Modern Typography Gradient Helpers */
-.brand-crimson-gradient {
-  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%);
+/* ── Typography Utilities ───────────────────────────────────────────────── */
+.text-gradient-crimson {
+  background: linear-gradient(135deg, #DC2626 0%, #F87171 60%, #DC2626 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.brand-dark-gradient {
-  background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+.text-gradient-dark {
+  background: linear-gradient(135deg, #FFFFFF 0%, rgba(255,255,255,0.7) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-body.dark .brand-dark-gradient {
-  background: linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.font-display {
+  font-family: 'Outfit', 'Inter', sans-serif;
 }
 
-/* Corporate Glass Card Styling */
-.commercial-card-light {
-  background: #FFFFFF;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 14px;
-  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-.commercial-card-light:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.03);
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.12); }
 }
 
-/* Live Operational Status Dot */
-.live-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #10B981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
-  display: inline-block;
-  animation: liveStatusPulse 2s ease-in-out infinite;
+@keyframes scan-line {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
 }
 
-@keyframes liveStatusPulse {
+@keyframes breathe {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.02); }
+}
 
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+@keyframes ticker-slide {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes border-trace {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes status-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+@keyframes soundwave {
+  0% { transform: scaleY(0.25); }
+  100% { transform: scaleY(1.2); }
+}
+
+.animate-pulse-glow  { animation: pulse-glow 2.5s ease infinite; }
+.animate-breathe     { animation: breathe 4s ease-in-out infinite; }
+.animate-float-y     { animation: float-y 5s ease-in-out infinite; }
+.animate-shimmer     { animation: shimmer 2.5s linear infinite; }
+.animate-status      { animation: status-blink 2s ease-in-out infinite; }
+.animate-fade-up     { animation: fade-up 0.6s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ── Shimmer Skeleton ────────────────────────────────────────────────────── */
+.shimmer-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(11,11,15,0.04) 0%,
+    rgba(11,11,15,0.08) 40%,
+    rgba(11,11,15,0.04) 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+body.dark .shimmer-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 0%,
+    rgba(255,255,255,0.07) 40%,
+    rgba(255,255,255,0.03) 80%
+  );
+  background-size: 200% 100%;
+}
+
+/* ── SOC Command Center Overrides ────────────────────────────────────────── */
+.soc-terminal {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  background: #08080C;
+  color: #4ADE80;
+  border-radius: 12px;
+  padding: 16px;
+  overflow: auto;
+}
+
+/* ── Ticker / Live Feed ──────────────────────────────────────────────────── */
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-slide 28s linear infinite;
+  will-change: transform;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* ── Interactive ─────────────────────────────────────────────────────────── */
+.interactive-card {
+  cursor: pointer;
+  transition: transform 0.28s cubic-bezier(0.16,1,0.3,1), box-shadow 0.28s;
+}
+.interactive-card:hover {
+  transform: translateY(-4px);
+}
+
+/* ── Threat Level Indicators ────────────────────────────────────────────── */
+.threat-critical {
+  color: #DC2626;
+  text-shadow: 0 0 12px rgba(220,38,38,0.5);
+}
+.threat-high {
+  color: #EF4444;
+}
+.threat-medium {
+  color: #F59E0B;
+}
+.threat-low {
+  color: #22C55E;
+}
+
+/* ── Score Ring ─────────────────────────────────────────────────────────── */
+@property --score-pct {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+/* ── Responsive Layout Utilities ─────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .mobile-scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
-
-  50% {
-    transform: scale(1.25);
-    opacity: 0.6;
-  }
 }
 
-/* Respect Accessibility Preferences */
-@media (prefers-reduced-motion: reduce) {
-
-  *,
-  ::before,
-  ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+/* ── Light/Dark adaptive ─────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  body:not(.light) {
+    background-color: #08080C;
   }
 }

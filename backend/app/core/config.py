@@ -139,6 +139,7 @@ class CollectorSettings(BaseSettings):
     )
     poll_interval: float = Field(default=5.0, description="Default collector polling interval in seconds")
     batch_size: int = Field(default=100, description="Collector event batch size")
+    collection_interval: int = Field(default=30, description="Collection interval in seconds")
 
 
 class Settings(BaseSettings):
@@ -148,8 +149,9 @@ class Settings(BaseSettings):
     # Application identity
     app_name: str = "KAVACH"
     app_version: str = "1.0.0"
-    debug: bool = False
+    debug: bool = Field(default=False, alias="DEBUG")
     api_v1_prefix: str = "/api/v1"
+    environment: str = Field(default="development", alias="ENVIRONMENT")
 
     # Server binding
     backend_host: str = Field(default="127.0.0.1", alias="KAVACH_BACKEND_HOST")

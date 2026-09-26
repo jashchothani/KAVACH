@@ -181,7 +181,8 @@ class UserRole(str, Enum):
     SOC_ANALYST = "soc_analyst"  # Alias for security_analyst
     MEMBER = "member"
     STUDENT = "student"
-    LAYMAN_USER = "layman_user"  # Alias for standard user
+    USER = "user"  # Standard user
+    LAYMAN_USER = "user"  # Backward-compatible alias for standard user
     VIEWER = "viewer"
 
 
@@ -260,7 +261,7 @@ ROLE_PERMISSIONS: dict[str, list[Permission]] = {
         Permission.VIEW_THREATS,
         Permission.RUN_SCANS,
     ],
-    UserRole.LAYMAN_USER.value: [
+    UserRole.USER.value: [
         Permission.VIEW_DASHBOARD,
         Permission.VIEW_DEVICES,
         Permission.VIEW_THREATS,

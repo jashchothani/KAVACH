@@ -63,7 +63,7 @@ web/API process separate from telemetry collection.
 | MITRE | `GET /api/v1/mitre/heatmap` | Detection heatmap |
 | Playbooks | `POST /api/v1/playbooks/execute` | Run playbook |
 | Chatbot | `POST /api/v1/chatbot/soc` | SOC AI assistant |
-| Chatbot | `POST /api/v1/chatbot/layman` | Simple AI assistant |
+| Chatbot | `POST /api/v1/chatbot/user` | Simple AI assistant |
 | Awareness | `GET /api/v1/awareness/tips` | Security tips |
 | System | `GET /api/v1/system/health` | Health check |
 | Reports | `GET /api/v1/reports/soc` | SOC report |
@@ -104,7 +104,7 @@ All playbooks support **dry-run mode** and **rollback**.
 | Role | Access |
 |------|--------|
 | SOC Analyst | Full access — investigate, respond, manage |
-| Layman User | View health, personal alerts, tips, awareness |
+| User | View health, personal alerts, tips, awareness |
 
 ## License
 

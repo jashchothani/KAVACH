@@ -84,7 +84,7 @@ class LoginCollector(BaseCollector):
             win32evtlog.CloseEventLog(hand)
         except Exception as exc:
             logger.info("login_collector_unprivileged_fallback", reason=str(exc))
-            events = await self._collect_simulated()
+            events = []
 
         return events
 

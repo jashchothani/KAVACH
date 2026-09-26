@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import {
   Box, Container, Typography, Grid, Paper, TextField, Button,
-  Chip, Stack, useTheme, Alert, MenuItem
+  Chip, Stack, Alert, MenuItem
 } from '@mui/material';
 import {
-  PhoneCallback, Email, LocationOn, Send, CheckCircle, Alarm
+  PhoneCallback, Email, LocationOn, Send, CheckCircle, Alarm, Shield
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import { useThemeMode } from '../../context/ThemeContext';
 
 export const Contact: React.FC = () => {
-  const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
+  const { mode } = useThemeMode();
+  const isDark = mode === 'dark';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -29,36 +30,71 @@ export const Contact: React.FC = () => {
   const offices = [
     {
       city: 'Swastik Chemical Headquarters',
-      address: 'Swastik Industrial Chemical Complex, Tech Zone, India',
+      address: 'Swastik Industrial Chemical Complex, Tech Zone, Mumbai, India',
       phone: '+91 (022) 4910-KAVACH',
       email: 'soc@swastikchemical.in',
-      tag: 'Global SOC HQ'
+      tag: 'Global SOC HQ & Sovereign Vault'
     },
     {
       city: 'Kavach Threat Research Labs',
-      address: 'Cyber Defense Towers, Sector 4, Tech City',
+      address: 'Cyber Defense Towers, Sector 4, Tech Corridor, India',
       phone: '+91 (022) 4910-LABS',
       email: 'threat-intel@kavach.io',
-      tag: 'AI R&D Center'
+      tag: 'Raksha AI R&D Center'
     }
   ];
 
   return (
-    <Box sx={{ py: { xs: 6, md: 10 } }}>
+    <Box
+      sx={{
+        py: { xs: 12, md: 16 },
+        bgcolor: 'transparent',
+        color: isDark ? '#FFFFFF' : '#0F172A',
+        minHeight: '100vh',
+        transition: 'background-color 0.3s ease, color 0.3s ease',
+      }}
+    >
       <Container maxWidth="xl">
         {/* Header */}
         <Box textAlign="center" mb={8}>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <Chip
-              icon={<PhoneCallback sx={{ color: '#C1121F !important' }} />}
-              label="24/7 THREAT RESPONSE & INQUIRY CENTER"
-              sx={{ bgcolor: 'rgba(193, 18, 31, 0.1)', color: '#C1121F', fontWeight: 800, mb: 2 }}
+              icon={<Shield sx={{ color: '#DC2626 !important' }} />}
+              label="24/7 SOVEREIGN THREAT RESPONSE & INQUIRY CENTER"
+              sx={{
+                bgcolor: 'rgba(220, 38, 38, 0.1)',
+                color: '#DC2626',
+                fontWeight: 800,
+                fontSize: '0.75rem',
+                letterSpacing: '0.08em',
+                mb: 2,
+              }}
             />
-            <Typography variant="h1" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 2 }}>
+            <Typography
+              variant="h1"
+              sx={{
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 900,
+                fontSize: { xs: '2.4rem', sm: '3.4rem', md: '4.2rem' },
+                lineHeight: 1.1,
+                letterSpacing: '-0.03em',
+                color: isDark ? '#FFFFFF' : '#0F172A',
+                mb: 2,
+              }}
+            >
               Get in Touch with Our Security Engineers
             </Typography>
-            <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 700, mx: 'auto', fontWeight: 400 }}>
-              Need assistance with an active threat incident, deployment inquiry, or enterprise demo? Our SOC engineers are standing by 24/7.
+            <Typography
+              variant="body1"
+              sx={{
+                color: isDark ? 'rgba(255, 255, 255, 0.65)' : '#475569',
+                fontSize: '1.15rem',
+                maxWidth: 720,
+                mx: 'auto',
+                lineHeight: 1.7,
+              }}
+            >
+              Need assistance with an active threat incident, industrial OT integration, or sovereign deployment? Our SOC engineers are on standby 24/7/365.
             </Typography>
           </motion.div>
         </Box>
@@ -66,14 +102,13 @@ export const Contact: React.FC = () => {
         {/* 24/7 SOC Emergency Banner */}
         <Paper
           elevation={0}
-          className="crimson-glow-card"
           sx={{
-            p: 4,
+            p: { xs: 3.5, md: 4.5 },
             borderRadius: 4,
-            background: 'linear-gradient(135deg, #C1121F 0%, #7A0000 100%)',
+            background: 'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)',
             color: '#FFFFFF',
             mb: 8,
-            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 12px 36px rgba(220, 38, 38, 0.35)',
           }}
         >
           <Grid container spacing={3} alignItems="center">
@@ -84,17 +119,17 @@ export const Contact: React.FC = () => {
                   ACTIVE THREAT EMERGENCY HOTLINE
                 </Typography>
               </Box>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Experiencing an active breach or ransomware execution? Call our emergency SOC hotline immediately for automated playbook deployment assistance.
+              <Typography variant="body2" sx={{ opacity: 0.95, lineHeight: 1.6 }}>
+                Experiencing an active breach, lateral movement, or ransomware execution? Call our emergency SOC hotline immediately for automated containment assistance.
               </Typography>
             </Grid>
 
             <Grid item xs={12} md={4} textAlign={{ xs: 'left', md: 'right' }}>
-              <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit', letterSpacing: 1 }}>
+              <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit', letterSpacing: '0.02em', mb: 0.5 }}>
                 +91 1800-KAVACH-SOC
               </Typography>
-              <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                Available 24 hours / 365 days
+              <Typography variant="caption" sx={{ opacity: 0.85, fontWeight: 700, letterSpacing: '0.05em' }}>
+                AVAILABLE 24 HOURS / 365 DAYS • IMMEDIATE TRIAGE
               </Typography>
             </Grid>
           </Grid>
@@ -107,27 +142,36 @@ export const Contact: React.FC = () => {
               elevation={0}
               sx={{
                 p: { xs: 4, md: 5 },
-                bgcolor: isDark ? '#0D0D14' : '#FFFFFF',
-                borderRadius: 4,
-                border: '1px solid rgba(193, 18, 31, 0.2)',
+                bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
+                borderRadius: 4.5,
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                boxShadow: isDark ? 'none' : '0 8px 30px rgba(15, 23, 42, 0.04)',
               }}
             >
-              <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 1 }}>
+              <Typography variant="h4" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 1, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                 Send an Inquiry
               </Typography>
-              <Typography variant="body2" color="text.secondary" mb={4}>
-                Fill out the form below and a Kavach Security Specialist will respond within 1 hour.
+              <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.6)' : '#64748B', mb: 4 }}>
+                Fill out the secure form below and a KAVACH Security Specialist will respond within 15 minutes.
               </Typography>
 
               {submitted ? (
                 <Alert
                   severity="success"
                   icon={<CheckCircle fontSize="inherit" />}
-                  sx={{ borderRadius: 3, p: 3 }}
+                  sx={{
+                    borderRadius: 3,
+                    p: 3,
+                    bgcolor: isDark ? 'rgba(34, 197, 94, 0.15)' : '#DCFCE7',
+                    border: '1px solid #86EFAC',
+                    color: isDark ? '#FFFFFF' : '#14532D',
+                  }}
                 >
-                  <Typography variant="subtitle1" fontWeight={800}>Inquiry Submitted Successfully!</Typography>
+                  <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 0.5 }}>
+                    Inquiry Submitted Successfully!
+                  </Typography>
                   <Typography variant="body2">
-                    Thank you, {formData.name}. Our security team has received your message regarding <strong>{formData.department}</strong> and will reach out to {formData.email} shortly.
+                    Thank you, {formData.name}. Our security team has received your message regarding <strong>{formData.department}</strong> and will reach out to <strong>{formData.email}</strong> shortly.
                   </Typography>
                 </Alert>
               ) : (
@@ -197,12 +241,15 @@ export const Contact: React.FC = () => {
                         size="large"
                         startIcon={<Send />}
                         sx={{
-                          background: 'linear-gradient(135deg, #C1121F 0%, #8B0000 100%)',
+                          bgcolor: '#DC2626',
+                          color: '#FFFFFF',
                           fontWeight: 800,
                           px: 4,
                           py: 1.5,
                           borderRadius: 2.5,
-                          boxShadow: '0 4px 15px rgba(193, 18, 31, 0.4)',
+                          textTransform: 'none',
+                          boxShadow: '0 4px 16px rgba(220, 38, 38, 0.4)',
+                          '&:hover': { bgcolor: '#B91C1C' },
                         }}
                       >
                         Submit Inquiry
@@ -223,28 +270,45 @@ export const Contact: React.FC = () => {
                   elevation={0}
                   sx={{
                     p: 4,
-                    bgcolor: isDark ? '#08080D' : '#F8FAFC',
-                    borderRadius: 4,
-                    border: '1px solid rgba(193, 18, 31, 0.2)',
+                    bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
+                    borderRadius: 4.5,
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                    boxShadow: isDark ? 'none' : '0 6px 24px rgba(15, 23, 42, 0.04)',
                   }}
                 >
-                  <Chip label={office.tag} size="small" sx={{ bgcolor: 'rgba(193, 18, 31, 0.15)', color: '#C1121F', fontWeight: 800, mb: 2 }} />
-                  <Typography variant="h5" fontWeight={800} sx={{ fontFamily: 'Outfit', mb: 2 }}>
+                  <Chip
+                    label={office.tag}
+                    size="small"
+                    sx={{
+                      bgcolor: 'rgba(220, 38, 38, 0.1)',
+                      color: '#DC2626',
+                      fontWeight: 800,
+                      fontSize: '0.68rem',
+                      mb: 2,
+                    }}
+                  />
+                  <Typography variant="h5" fontWeight={900} sx={{ fontFamily: 'Outfit', mb: 2, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                     {office.city}
                   </Typography>
 
-                  <Stack spacing={1.5}>
+                  <Stack spacing={1.6}>
                     <Box display="flex" alignItems="center" gap={1.5}>
-                      <LocationOn sx={{ color: '#C1121F' }} />
-                      <Typography variant="body2" color="text.secondary">{office.address}</Typography>
+                      <LocationOn sx={{ color: '#DC2626', fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.7)' : '#475569' }}>
+                        {office.address}
+                      </Typography>
                     </Box>
                     <Box display="flex" alignItems="center" gap={1.5}>
-                      <PhoneCallback sx={{ color: '#C1121F' }} />
-                      <Typography variant="body2" color="text.secondary">{office.phone}</Typography>
+                      <PhoneCallback sx={{ color: '#DC2626', fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.7)' : '#475569' }}>
+                        {office.phone}
+                      </Typography>
                     </Box>
                     <Box display="flex" alignItems="center" gap={1.5}>
-                      <Email sx={{ color: '#C1121F' }} />
-                      <Typography variant="body2" color="text.secondary">{office.email}</Typography>
+                      <Email sx={{ color: '#DC2626', fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.7)' : '#475569' }}>
+                        {office.email}
+                      </Typography>
                     </Box>
                   </Stack>
                 </Paper>
@@ -256,3 +320,5 @@ export const Contact: React.FC = () => {
     </Box>
   );
 };
+
+export default Contact;
