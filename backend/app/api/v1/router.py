@@ -105,6 +105,7 @@ from app.schemas.schemas import AlertExplanationResponse
 from app.api.v1.telemetry import router as telemetry_router
 from app.api.v1.attack_graph import router as attack_graph_router
 from app.api.v1.compliance import router as compliance_router
+from app.api.v1.raksha_flow import router as raksha_flow_router
 
 logger = get_logger(__name__)
 
@@ -112,6 +113,7 @@ api_v1_router = APIRouter(tags=["KAVACH API v1"])
 api_v1_router.include_router(telemetry_router, prefix="/telemetry", tags=["telemetry"])
 api_v1_router.include_router(attack_graph_router)
 api_v1_router.include_router(compliance_router)
+api_v1_router.include_router(raksha_flow_router)
 
 
 # ---------------------------------------------------------------------------

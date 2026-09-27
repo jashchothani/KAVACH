@@ -298,6 +298,56 @@ export interface AuditVaultStatus {
   latest_record_timestamp: string;
 }
 
+export interface FlowNode {
+  id: string;
+  title: string;
+  category: 'trigger' | 'condition' | 'action' | 'ai';
+  action_type: string;
+  status: 'idle' | 'running' | 'success' | 'failed';
+  x: number;
+  y: number;
+  config: Record<string, any>;
+}
+
+export interface FlowEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+  condition_value?: boolean;
+}
+
+export interface FlowWorkflow {
+  id: string;
+  name: string;
+  description: string;
+  category: 'ransomware' | 'phishing' | 'usb_defense' | 'identity' | 'custom';
+  active: boolean;
+  trigger_count: number;
+  created_at: string;
+  updated_at: string;
+  nodes: FlowNode[];
+  edges: FlowEdge[];
+}
+
+export interface StepExecutionResult {
+  node_id: string;
+  node_title: string;
+  category: string;
+  status: 'success' | 'skipped' | 'failed';
+  duration_ms: number;
+  output_message: string;
+}
+
+export interface SimulationResponse {
+  workflow_id: string;
+  success: boolean;
+  total_duration_ms: number;
+  steps_executed: StepExecutionResult[];
+  containment_achieved: boolean;
+  summary: string;
+}
+
 export const api = {
   // Authentication
   auth: {
@@ -591,6 +641,30 @@ export const api = {
     },
     markReported: async (incidentId: string): Promise<any> => {
       const resp = await apiClient.post(`/compliance/cert-in/mark-reported/${incidentId}`);
+      return resp.data;
+    },
+  },
+
+  // Raksha Flow — Visual Drag-and-Drop SOAR Studio
+  rakshaFlow: {
+    getWorkflows: async (): Promise<any[]> => {
+      const resp = await apiClient.get<any[]>('/raksha-flow/workflows');
+      return resp.data;
+    },
+    getWorkflow: async (workflowId: string): Promise<FlowWorkflow> => {
+      const resp = await apiClient.get<FlowWorkflow>(`/raksha-flow/workflows/${workflowId}`);
+      return resp.data;
+    },
+    saveWorkflow: async (workflow: FlowWorkflow): Promise<FlowWorkflow> => {
+      const resp = await apiClient.post<FlowWorkflow>('/raksha-flow/workflows', workflow);
+      return resp.data;
+    },
+    simulate: async (workflowId: string, sampleEvent: Record<string, any> = {}): Promise<SimulationResponse> => {
+      const resp = await apiClient.post<SimulationResponse>('/raksha-flow/simulate', { workflow_id: workflowId, sample_event: sampleEvent });
+      return resp.data;
+    },
+    generateWithAi: async (prompt: string): Promise<FlowWorkflow> => {
+      const resp = await apiClient.post<FlowWorkflow>('/raksha-flow/generate-ai', { prompt });
       return resp.data;
     },
   },

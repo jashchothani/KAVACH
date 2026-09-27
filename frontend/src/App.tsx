@@ -45,6 +45,7 @@ import { MonitoringView } from './pages/MonitoringView';
 import { ReportsView } from './pages/ReportsView';
 import { AttackGraphView } from './pages/AttackGraphView';
 import { CertInComplianceView } from './pages/CertInComplianceView';
+import { RakshaFlowStudio } from './pages/RakshaFlowStudio';
 
 // User Dashboard (Bento-Box Consumer UI)
 import { UserDashboardLayout } from './layouts/UserDashboardLayout';
@@ -188,6 +189,7 @@ const App: React.FC = () => {
               {/* Additional SOC Modules */}
               <Route path="/mitre" element={<MitreAttack />} />
               <Route path="/soar" element={<SoarCenter />} />
+              <Route path="/raksha-flow" element={<RakshaFlowStudio />} />
               <Route path="/attack-graph" element={<AttackGraphView />} />
               <Route path="/cert-in-compliance" element={<CertInComplianceView />} />
               <Route path="/ai-security" element={<AiSecurity />} />

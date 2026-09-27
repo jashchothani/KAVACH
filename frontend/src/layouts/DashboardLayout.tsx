@@ -9,7 +9,7 @@ import {
   Menu as MenuIcon, Dashboard, BugReport, Notifications, Assignment,
   Computer, Memory, Router, AccessTime, Language, Shield, AutoGraph,
   Psychology, Assessment, Settings, ExitToApp, Brightness4, Brightness7,
-  FiberManualRecord, BarChart, Security, Hub, Gavel,
+  FiberManualRecord, BarChart, Security, Hub, Gavel, AutoAwesome,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/useAuth';
@@ -68,6 +68,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'AI ASSISTANT',
     items: [
       { text: 'Raksha AI', icon: <Psychology />, path: '/raksha-ai' },
+      { text: 'Raksha Flow', icon: <AutoAwesome />, path: '/raksha-flow' },
     ],
   },
   {
