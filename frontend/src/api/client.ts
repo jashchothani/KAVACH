@@ -354,7 +354,7 @@ export interface DecoyItem {
   decoy_type: 'honey_file' | 'honey_credential' | 'ghost_socket' | 'registry_trap';
   target_asset: string;
   location_or_port: string;
-  status: 'active_monitoring' | 'tripped' | 'quarantined';
+  status: 'active_monitoring' | 'tripped' | 'quarantined' | 'dormant';
   created_at: string;
   tripped_count: number;
   threat_description: string;
@@ -657,6 +657,14 @@ export const api = {
       const resp = await apiClient.post('/graph/remediate-node', { node_id: nodeId, action, reason });
       return resp.data;
     },
+    containBlastRadius: async (scenarioId: string, isolationMode = 'full_quarantine'): Promise<any> => {
+      const resp = await apiClient.post('/graph/contain-blast-radius', { scenario_id: scenarioId, isolation_mode: isolationMode });
+      return resp.data;
+    },
+    resetScenario: async (scenarioId: string): Promise<any> => {
+      const resp = await apiClient.post(`/graph/reset-scenario/${scenarioId}`);
+      return resp.data;
+    },
   },
 
   // Sovereign Indian CERT-In Compliance Suite
@@ -680,6 +688,13 @@ export const api = {
     markReported: async (incidentId: string): Promise<any> => {
       const resp = await apiClient.post(`/compliance/cert-in/mark-reported/${incidentId}`);
       return resp.data;
+    },
+    searchVault: async (query: string, daysBack = 180): Promise<any> => {
+      const resp = await apiClient.post('/compliance/cert-in/search-vault', { query, days_back: daysBack });
+      return resp.data;
+    },
+    getDownloadAnnexureUrl: (incidentId: string): string => {
+      return `/api/v1/compliance/cert-in/download-annexure/${incidentId}`;
     },
   },
 
@@ -728,6 +743,13 @@ export const api = {
     simulateTrip: async (): Promise<TripwireEvent> => {
       const resp = await apiClient.post<TripwireEvent>('/deception/simulate-trip');
       return resp.data;
+    },
+    decommissionDecoy: async (decoyId: string): Promise<any> => {
+      const resp = await apiClient.delete(`/deception/decoys/${decoyId}`);
+      return resp.data;
+    },
+    getDownloadCanaryUrl: (decoyId: string): string => {
+      return `/api/v1/deception/download-canary/${decoyId}`;
     },
   },
 };

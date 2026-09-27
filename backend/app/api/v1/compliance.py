@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone, timedelta
 from typing import Any, Literal
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from app.core.logging import get_logger
@@ -313,6 +313,17 @@ by KAVACH AI-Driven SOAR-XDR Platform in strict adherence to CERT-In guidelines.
     )
 
 
+@router.get("/download-annexure/{incident_id}")
+async def download_cert_in_annexure(incident_id: str):
+    """Download official raw text Notice of Cyber Incident formatted for CERT-In submission."""
+    report = await generate_cert_in_report(incident_id)
+    return Response(
+        content=report.official_formatted_declaration,
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="CERT-IN-ANNEXURE-{incident_id}.txt"'}
+    )
+
+
 @router.get("/advisories", response_model=list[CertInAdvisory])
 async def get_cert_in_advisories() -> list[CertInAdvisory]:
     """Return active CERT-In threat advisories relevant to Indian infrastructure."""
@@ -348,3 +359,78 @@ async def mark_incident_reported(incident_id: str) -> dict[str, Any]:
             logger.info("cert_in_incident_marked_reported", incident_id=incident_id)
             return {"status": "success", "incident_id": incident_id, "reported": True}
     return {"status": "error", "message": "Incident not found"}
+
+
+@router.get("/download-annexure/{incident_id}")
+async def download_annexure_text(incident_id: str):
+    """Download official Annexure-I declaration notice as a clean text file."""
+    for inc in INCIDENTS_DB:
+        if inc["incident_id"] == incident_id:
+            report = await generate_cert_in_report(incident_id)
+            filename = f"CERT-IN-ANNEXURE-I-{incident_id}.txt"
+            return Response(
+                content=report.official_formatted_declaration,
+                media_type="text/plain; charset=utf-8",
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+            )
+    raise HTTPException(status_code=404, detail="Incident not found")
+
+
+class VaultSearchQuery(BaseModel):
+    query: str = ""
+    host: str | None = None
+    days_back: int = 180
+
+
+@router.post("/search-vault")
+async def search_audit_vault(req: VaultSearchQuery) -> dict[str, Any]:
+    """Search within the 180-Day Secure Immutable Log Vault with Merkle hash proofs."""
+    # Synthetic immutable audit entries with cryptographic chain
+    sample_records = [
+        {
+            "block_id": "BLK-2026-0927-0104",
+            "timestamp": "2026-09-27T10:14:22Z",
+            "host": "SWSTK-LPT-0492",
+            "collector": "powershell",
+            "event_summary": "powershell.exe -enc JABzAD0ATgBlAHcALQBPAGIAagBlAGMAdAA...",
+            "merkle_leaf_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "signature_status": "VALID_CRYPTOGRAPHIC_SEAL",
+            "retention_guaranteed_until": "2027-03-26T10:14:22Z"
+        },
+        {
+            "block_id": "BLK-2026-0927-0098",
+            "timestamp": "2026-09-27T08:30:15Z",
+            "host": "SWSTK-WEB-DMZ01",
+            "collector": "network",
+            "event_summary": "Inbound TCP SYN flood to Port 443 from 185.220.101.4",
+            "merkle_leaf_hash": "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+            "signature_status": "VALID_CRYPTOGRAPHIC_SEAL",
+            "retention_guaranteed_until": "2027-03-26T08:30:15Z"
+        },
+        {
+            "block_id": "BLK-2026-0926-8941",
+            "timestamp": "2026-09-26T19:42:01Z",
+            "host": "SWSTK-DC01",
+            "collector": "login",
+            "event_summary": "Kerberos TGS request for krbtgt ticket from 192.168.1.104",
+            "merkle_leaf_hash": "88d4266fd4e6338d13b845fcf289579d209c897823b9217da3e161936f031589",
+            "signature_status": "VALID_CRYPTOGRAPHIC_SEAL",
+            "retention_guaranteed_until": "2027-03-25T19:42:01Z"
+        }
+    ]
+
+    filtered = sample_records
+    if req.query:
+        q = req.query.lower()
+        filtered = [r for r in filtered if q in r["event_summary"].lower() or q in r["host"].lower() or q in r["block_id"].lower()]
+
+    return {
+        "status": "success",
+        "query": req.query,
+        "vault_retention_days": req.days_back,
+        "records_matched": len(filtered),
+        "results": filtered,
+        "merkle_root_hash": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "ntp_synchronization_offset_ms": 0.42,
+        "jurisdiction_compliance": "Indian IT Act Section 70B & CERT-In Directions 2022"
+    }

@@ -8,7 +8,8 @@ import {
 import {
   VisibilityOff, Shield, Warning, CheckCircle, Add,
   PlayArrow, Refresh, Computer, InsertDriveFile, Language,
-  AppRegistration, VpnKey, Bolt, Memory, Speed, Close
+  AppRegistration, VpnKey, Bolt, Memory, Speed, Close,
+  FileDownload, DeleteOutlined,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -121,6 +122,27 @@ export const MayajaalDeceptionView: React.FC = () => {
     } finally {
       setDeploying(false);
     }
+  };
+
+  // Decommission Decoy
+  const handleDecommission = async (decoyId: string) => {
+    try {
+      await api.deception.decommissionDecoy(decoyId);
+      setDecoys(prev => prev.map(d => (d.id === decoyId ? { ...d, status: 'dormant' } : d)));
+      setTripAlertMsg(`Decoy asset '${decoyId}' successfully decommissioned.`);
+      setTimeout(() => setTripAlertMsg(null), 4000);
+    } catch (err) {
+      console.error('Failed to decommission decoy:', err);
+    }
+  };
+
+  // Download Canary Token
+  const handleDownloadCanary = (decoy: DecoyItem) => {
+    const canaryUrl = api.deception.getDownloadCanaryUrl(decoy.id);
+    const a = document.createElement('a');
+    a.href = canaryUrl;
+    a.download = `canary_aws_credentials_${decoy.id}.env`;
+    a.click();
   };
 
   return (
@@ -333,12 +355,14 @@ export const MayajaalDeceptionView: React.FC = () => {
                 <TableCell sx={{ fontWeight: 800, color: 'text.secondary' }}>LOCATION / PORT</TableCell>
                 <TableCell sx={{ fontWeight: 800, color: 'text.secondary' }}>STATUS</TableCell>
                 <TableCell sx={{ fontWeight: 800, color: 'text.secondary' }}>TRIPPED</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: 'text.secondary', textAlign: 'right' }}>ACTIONS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {decoys.map((d) => {
                 const catColor = getDecoyTypeColor(d.decoy_type);
                 const isTripped = d.status === 'tripped';
+                const isDormant = d.status === 'dormant';
 
                 return (
                   <TableRow key={d.id} hover>
@@ -370,18 +394,32 @@ export const MayajaalDeceptionView: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={isTripped ? 'TRIPPED & CONTAINED' : 'ARMED & MONITORING'}
+                        label={isTripped ? 'TRIPPED & CONTAINED' : (isDormant ? 'DECOMMISSIONED' : 'ARMED & MONITORING')}
                         size="small"
                         sx={{
-                          fontWeight: 800,
+                          fontWeight: 900,
                           fontSize: '0.65rem',
-                          bgcolor: isTripped ? 'rgba(220,38,38,0.15)' : 'rgba(34,197,94,0.15)',
-                          color: isTripped ? CR : SAFE,
+                          bgcolor: isTripped ? 'rgba(220,38,38,0.15)' : (isDormant ? 'rgba(255,255,255,0.06)' : 'rgba(34,197,94,0.15)'),
+                          color: isTripped ? CR : (isDormant ? 'text.secondary' : SAFE),
                         }}
                       />
                     </TableCell>
                     <TableCell sx={{ fontFamily: 'JetBrains Mono', fontWeight: 800, color: isTripped ? CR : 'text.secondary' }}>
                       {d.tripped_count}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                        <Tooltip title="Download Canary Bait File (.env)">
+                          <IconButton size="small" onClick={() => handleDownloadCanary(d)} sx={{ color: CYAN }}>
+                            <FileDownload sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Decommission Decoy Asset">
+                          <IconButton size="small" onClick={() => handleDecommission(d.id)} sx={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>
+                            <DeleteOutlined sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 );

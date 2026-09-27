@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Button, Chip, Stack, Paper, IconButton,
   Tooltip, CircularProgress, Alert, Dialog, DialogTitle,
-  DialogContent, DialogActions, Divider, Tabs, Tab
+  DialogContent, DialogActions, Divider, Tabs, Tab,
+  TextField, InputAdornment,
 } from '@mui/material';
 import {
   Gavel, VerifiedUser, AccessTime, Warning, CheckCircle,
   FileDownload, ContentCopy, Email, Security, Storage,
-  InfoOutlined, Launch, ArrowForward, Close, Dns, Refresh
+  InfoOutlined, Launch, ArrowForward, Close, Dns, Refresh,
+  Search, Fingerprint, Lock,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -37,6 +39,11 @@ export const CertInComplianceView: React.FC = () => {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+
+  // Vault Query State
+  const [vaultQuery, setVaultQuery] = useState('');
+  const [vaultResults, setVaultResults] = useState<any | null>(null);
+  const [vaultSearching, setVaultSearching] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -101,6 +108,29 @@ export const CertInComplianceView: React.FC = () => {
     a.download = `${selectedReport.report_reference_id}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadTextNotice = () => {
+    if (!selectedReport) return;
+    const blob = new Blob([selectedReport.official_formatted_declaration], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CERT-IN-ANNEXURE-I-${selectedReport.incident_id}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSearchVault = async () => {
+    setVaultSearching(true);
+    try {
+      const res = await api.compliance.searchVault(vaultQuery);
+      setVaultResults(res);
+    } catch (err) {
+      console.error('Vault query failed:', err);
+    } finally {
+      setVaultSearching(false);
+    }
   };
 
   return (
@@ -282,6 +312,7 @@ export const CertInComplianceView: React.FC = () => {
         >
           <Tab label={`Active Reportable Incidents (${incidents.length})`} />
           <Tab label={`CERT-In Threat Advisories (${advisories.length})`} />
+          <Tab label="180-Day Immutable Audit Vault (Section 70B)" />
         </Tabs>
       </Box>
 
@@ -479,6 +510,152 @@ export const CertInComplianceView: React.FC = () => {
         </Stack>
       )}
 
+      {/* TAB 2: 180-DAY IMMUTABLE AUDIT VAULT SEARCH & MERKLE PROOF */}
+      {activeTab === 2 && (
+        <Stack spacing={3}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 3.5,
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'}`,
+              bgcolor: isDark ? '#0A0C13' : '#FFFFFF',
+            }}
+          >
+            <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2} mb={2.5}>
+              <Box display="flex" alignItems="center" gap={1.5}>
+                <Box
+                  sx={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 2.5,
+                    bgcolor: 'rgba(6, 182, 212, 0.12)',
+                    color: CYAN,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Fingerprint sx={{ fontSize: 22 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 800 }}>
+                    180-Day Secure Immutable Log Vault Query
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    Section 70B & CERT-In Directions 2022 Mandate: Local Sovereign Storage with Merkle Hash Integrity Proofs
+                  </Typography>
+                </Box>
+              </Box>
+
+              {vaultResults && (
+                <Chip
+                  icon={<VerifiedUser sx={{ fontSize: 16, color: `${SAFE} !important` }} />}
+                  label={`Merkle Root: ${vaultResults.merkle_root_hash?.slice(0, 16)}...`}
+                  sx={{ bgcolor: 'rgba(34,197,94,0.12)', color: SAFE, fontFamily: 'JetBrains Mono', fontWeight: 800 }}
+                />
+              )}
+            </Box>
+
+            <Box display="flex" gap={1.5} mb={3}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search vault by Hostname (SWSTK-LPT-0492), SHA-256 Hash, or keyword (powershell, mimikatz)..."
+                value={vaultQuery}
+                onChange={(e) => setVaultQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchVault()}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2.5,
+                    bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                  }
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={handleSearchVault}
+                disabled={vaultSearching}
+                sx={{
+                  bgcolor: CYAN,
+                  color: '#000',
+                  fontWeight: 800,
+                  borderRadius: 2.5,
+                  px: 3,
+                  textTransform: 'none',
+                  '&:hover': { bgcolor: '#0891B2' },
+                }}
+              >
+                {vaultSearching ? <CircularProgress size={18} color="inherit" /> : 'Query Vault'}
+              </Button>
+            </Box>
+
+            {/* Vault Records Table / Cards */}
+            {vaultResults && vaultResults.results && (
+              <Stack spacing={1.5}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, letterSpacing: '0.04em' }}>
+                  MATCHED CRYPTOGRAPHICALLY SEALED AUDIT BLOCKS ({vaultResults.records_matched})
+                </Typography>
+                {vaultResults.results.map((r: any) => (
+                  <Paper
+                    key={r.block_id}
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2.5,
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+                      bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC',
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} mb={0.8}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Chip
+                          label={r.block_id}
+                          size="small"
+                          sx={{ fontFamily: 'JetBrains Mono', fontWeight: 800, fontSize: '0.7rem' }}
+                        />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                          {r.host}
+                        </Typography>
+                        <Chip
+                          label={r.collector.toUpperCase()}
+                          size="small"
+                          sx={{ fontSize: '0.65rem', bgcolor: 'rgba(59,130,246,0.1)', color: BLUE, fontWeight: 700 }}
+                        />
+                      </Box>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Chip
+                          icon={<CheckCircle sx={{ fontSize: 14, color: `${SAFE} !important` }} />}
+                          label="SHA-256 SEAL VALID"
+                          size="small"
+                          sx={{ bgcolor: 'rgba(34,197,94,0.12)', color: SAFE, fontWeight: 800, fontSize: '0.65rem' }}
+                        />
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'JetBrains Mono' }}>
+                          {r.timestamp}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Typography variant="body2" sx={{ fontFamily: 'JetBrains Mono', color: 'text.secondary', fontSize: '0.78rem', mb: 1 }}>
+                      {r.event_summary}
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontFamily: 'JetBrains Mono', color: isDark ? 'rgba(255,255,255,0.4)' : '#64748B', fontSize: '0.7rem' }}>
+                      Leaf Hash: {r.merkle_leaf_hash} • Retention Guaranteed to: {r.retention_guaranteed_until}
+                    </Typography>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+          </Paper>
+        </Stack>
+      )}
+
       {/* ── OFFICIAL CERT-IN ANNEXURE-I REPORT MODAL ──────────────────────── */}
       <Dialog
         open={reportModalOpen}
@@ -556,6 +733,15 @@ export const CertInComplianceView: React.FC = () => {
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
           >
             Download JSON
+          </Button>
+
+          <Button
+            variant="outlined"
+            onClick={handleDownloadTextNotice}
+            startIcon={<FileDownload />}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+          >
+            Download Notice (.txt)
           </Button>
 
           <Button

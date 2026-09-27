@@ -14,7 +14,7 @@ import time
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Any, Literal
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from app.core.logging import get_logger
@@ -34,7 +34,7 @@ class DecoyItem(BaseModel):
     decoy_type: Literal["honey_file", "honey_credential", "ghost_socket", "registry_trap"]
     target_asset: str
     location_or_port: str
-    status: Literal["active_monitoring", "tripped", "quarantined"]
+    status: Literal["active_monitoring", "tripped", "quarantined", "dormant"]
     created_at: str
     tripped_count: int
     threat_description: str
@@ -246,3 +246,46 @@ async def simulate_decoy_trip() -> TripwireEvent:
     TRIPWIRE_LOGS.insert(0, event)
     logger.warning("mayajaal_tripwire_triggered", decoy_name=decoy["name"], latency_ms=21.6)
     return TripwireEvent(**event)
+
+
+@router.delete("/decoys/{decoy_id}")
+async def decommission_decoy(decoy_id: str) -> dict[str, Any]:
+    """Decommission and dismantle an active deception asset."""
+    global DECOYS_DB
+    found = False
+    for d in DECOYS_DB:
+        if d["id"] == decoy_id:
+            found = True
+            d["status"] = "dormant"
+            break
+    if not found:
+        raise HTTPException(status_code=404, detail="Decoy not found")
+    logger.info("mayajaal_decoy_decommissioned", decoy_id=decoy_id)
+    return {"status": "success", "decoy_id": decoy_id, "message": "Decoy asset decommissioned."}
+
+
+@router.get("/download-canary/{decoy_id}")
+async def download_canary_bait(decoy_id: str):
+    """Generate and stream a genuine Canary bait document with tracking webhooks."""
+    target_decoy = next((d for d in DECOYS_DB if d["id"] == decoy_id), None)
+    if not target_decoy:
+        raise HTTPException(status_code=404, detail="Decoy not found")
+
+    canary_id = f"cnry-{uuid.uuid4().hex[:8]}"
+    content = (
+        f"# KAVACH SOVEREIGN DECEPTION CANARY TOKEN: {canary_id}\n"
+        f"# WARNING: ACCESS TO THIS FILE TRIGGERS DEFCON-1 AUTOMATED FORENSIC CONTAINMENT\n"
+        f"CANARY_TOKEN_ID={canary_id}\n"
+        f"DEPLOYED_ASSET={target_decoy['target_asset']}\n"
+        f"ALERT_CALLBACK=http://127.0.0.1:8000/api/v1/deception/simulate-trip\n"
+        f"AWS_ACCESS_KEY_ID=AKIAIOSFODNN7{uuid.uuid4().hex[:7].upper()}\n"
+        f"AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCY{uuid.uuid4().hex[:14]}\n"
+        f"DEFAULT_REGION=ap-south-1\n"
+    )
+    filename = f"canary_aws_credentials_{canary_id}.env"
+
+    return Response(
+        content=content,
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )

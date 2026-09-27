@@ -7,7 +7,8 @@ import {
 import {
   PlayArrow, AutoAwesome, Add, Save, Refresh, Tune,
   Bolt, FilterAlt, Security, Psychology, CheckCircle,
-  Speed, DeleteOutlined, Layers, Close, Code, ArrowForward
+  Speed, DeleteOutlined, Layers, Close, Code, ArrowForward,
+  Download,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -159,6 +160,32 @@ export const RakshaFlowStudio: React.FC = () => {
     setNewNodeTitle('');
   };
 
+  // Delete Selected Node
+  const handleDeleteNode = (nodeId: string) => {
+    if (!activeWorkflow) return;
+    setActiveWorkflow(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        nodes: prev.nodes.filter(n => n.id !== nodeId),
+        edges: prev.edges.filter(e => e.source !== nodeId && e.target !== nodeId),
+      };
+    });
+    setSelectedNode(null);
+  };
+
+  // Export Playbook JSON
+  const handleExportPlaybook = () => {
+    if (!activeWorkflow) return;
+    const blob = new Blob([JSON.stringify(activeWorkflow, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RAKSHA-PLAYBOOK-${activeWorkflow.id}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1600, mx: 'auto' }}>
       {/* ── TOP ACTION & TITLE BAR ──────────────────────────────────────── */}
@@ -244,6 +271,22 @@ export const RakshaFlowStudio: React.FC = () => {
             }}
           >
             Add Node
+          </Button>
+
+          {/* Export JSON Button */}
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={handleExportPlaybook}
+            startIcon={<Download />}
+            sx={{
+              borderRadius: 2,
+              fontWeight: 700,
+              textTransform: 'none',
+              borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+            }}
+          >
+            Export JSON
           </Button>
 
           {/* Run Simulation */}
@@ -377,6 +420,16 @@ export const RakshaFlowStudio: React.FC = () => {
                   >
                     <polygon points="0 0, 8 3, 0 6" fill={isDark ? 'rgba(255,255,255,0.3)' : '#94A3B8'} />
                   </marker>
+                  <marker
+                    id="flow-arrow-active"
+                    markerWidth="8"
+                    markerHeight="6"
+                    refX="7"
+                    refY="3"
+                    orient="auto"
+                  >
+                    <polygon points="0 0, 8 3, 0 6" fill={CYAN} />
+                  </marker>
                 </defs>
 
                 {activeWorkflow.edges.map((edge) => {
@@ -393,16 +446,23 @@ export const RakshaFlowStudio: React.FC = () => {
                   const c1Y = sY;
                   const c2X = sX + (tX - sX) * 0.5;
                   const c2Y = tY;
+                  const pathData = `M ${sX} ${sY} C ${c1X} ${c1Y}, ${c2X} ${c2Y}, ${tX} ${tY}`;
 
                   return (
                     <g key={edge.id}>
                       <path
-                        d={`M ${sX} ${sY} C ${c1X} ${c1Y}, ${c2X} ${c2Y}, ${tX} ${tY}`}
+                        d={pathData}
                         fill="none"
-                        stroke={isDark ? 'rgba(255,255,255,0.25)' : '#94A3B8'}
-                        strokeWidth="2"
-                        markerEnd="url(#flow-arrow)"
+                        stroke={simulating ? CYAN : isDark ? 'rgba(255,255,255,0.25)' : '#94A3B8'}
+                        strokeWidth={simulating ? '2.5' : '2'}
+                        strokeDasharray={simulating ? '6 4' : undefined}
+                        markerEnd={simulating ? 'url(#flow-arrow-active)' : 'url(#flow-arrow)'}
                       />
+                      {simulating && (
+                        <circle r="4" fill={CYAN} filter="drop-shadow(0 0 6px #06B6D4)">
+                          <animateMotion dur="1.8s" repeatCount="indefinite" path={pathData} />
+                        </circle>
+                      )}
                       {edge.label && (
                         <text
                           x={(sX + tX) / 2}
@@ -623,6 +683,27 @@ export const RakshaFlowStudio: React.FC = () => {
                     {JSON.stringify(selectedNode.config, null, 2)}
                   </Box>
                 </Box>
+
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteOutlined />}
+                  onClick={() => handleDeleteNode(selectedNode.id)}
+                  sx={{
+                    borderRadius: 2,
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    mt: 2,
+                    borderColor: 'rgba(239, 68, 68, 0.3)',
+                    '&:hover': {
+                      borderColor: 'rgba(239, 68, 68, 0.7)',
+                      bgcolor: 'rgba(239, 68, 68, 0.08)',
+                    },
+                  }}
+                >
+                  Delete Node from Playbook
+                </Button>
               </Stack>
             </Box>
           ) : (

@@ -7,6 +7,7 @@ trees, lateral movements, C2 connections, and surgical containment actions.
 
 from __future__ import annotations
 
+import copy
 import time
 from datetime import datetime, timezone, timedelta
 from typing import Any, Literal
@@ -72,6 +73,13 @@ class RemediateNodeRequest(BaseModel):
     node_id: str
     action: Literal["kill_tree", "block_ip", "quarantine_file", "isolate_host", "revoke_session"]
     reason: str = "Analyst manual surgical containment from Chakra Graph"
+
+
+class ContainBlastRadiusRequest(BaseModel):
+    scenario_id: str
+    isolation_mode: Literal["full_quarantine", "process_kill_only", "network_isolate_only"] = "full_quarantine"
+    operator: str = "soc_admin"
+    reason: str = "SOC Emergency 1-Click Atomic Blast Radius Containment"
 
 
 # ---------------------------------------------------------------------------
@@ -363,8 +371,121 @@ SCENARIOS: dict[str, dict[str, Any]] = {
                 "timestamp": "2026-09-27T11:05:32Z"
             }
         ]
+    },
+    "fin7-lateral": {
+        "scenario_id": "fin7-lateral",
+        "scenario_title": "FIN7: Lateral Movement & Domain Controller Kerberoasting",
+        "mitre_tactic": "Lateral Movement / Credential Access",
+        "mitre_technique": "T1021.002 - Remote Services: SMB / WMI",
+        "patient_zero": "node-host-dmz",
+        "containment_status": "uncontained",
+        "nodes": [
+            {
+                "id": "node-host-dmz",
+                "label": "SWSTK-WEB-DMZ01 (Compromised Web Server)",
+                "type": "host",
+                "status": "compromised",
+                "risk_score": 92,
+                "is_patient_zero": True,
+                "details": {
+                    "hostname": "SWSTK-WEB-DMZ01",
+                    "ip": "172.16.10.5",
+                    "cve": "CVE-2024-3400 (Palo Alto GlobalProtect PAN-OS)",
+                    "exposure": "Internet Facing Perimeter"
+                }
+            },
+            {
+                "id": "node-proc-wmi",
+                "label": "wmic.exe process call create (PID: 4902)",
+                "type": "process",
+                "status": "compromised",
+                "risk_score": 95,
+                "is_patient_zero": False,
+                "details": {
+                    "pid": 4902,
+                    "target": "192.168.1.10 (DC-PRIMARY)",
+                    "auth": "Stolen NTLM Hash - Pass-The-Hash"
+                }
+            },
+            {
+                "id": "node-host-dc",
+                "label": "SWSTK-DC01.kavach.corp (Domain Controller)",
+                "type": "host",
+                "status": "compromised",
+                "risk_score": 100,
+                "is_patient_zero": False,
+                "details": {
+                    "hostname": "SWSTK-DC01",
+                    "ip": "192.168.1.10",
+                    "role": "Active Directory Domain Controller",
+                    "tier": "Tier-0 Critical Infrastructure"
+                }
+            },
+            {
+                "id": "node-user-krbtgt",
+                "label": "krbtgt / Golden Ticket Target",
+                "type": "user",
+                "status": "suspicious",
+                "risk_score": 88,
+                "is_patient_zero": False,
+                "details": {
+                    "account": "krbtgt",
+                    "domain": "KAVACH.CORP",
+                    "threat": "Imminent DCSync / Golden Ticket generation attempt"
+                }
+            },
+            {
+                "id": "node-ip-exfil",
+                "label": "91.240.118.52 (Encrypted Mega.nz Exfil)",
+                "type": "ip",
+                "status": "compromised",
+                "risk_score": 99,
+                "is_patient_zero": False,
+                "details": {
+                    "ip": "91.240.118.52",
+                    "protocol": "HTTPS (Port 443)",
+                    "payload": "Active NTDS.dit exfiltration staging"
+                }
+            }
+        ],
+        "edges": [
+            {
+                "id": "fn-1",
+                "source": "node-host-dmz",
+                "target": "node-proc-wmi",
+                "relationship": "spawned_by",
+                "label": "WMI Remote Process Invocation",
+                "timestamp": "2026-09-27T11:40:10Z"
+            },
+            {
+                "id": "fn-2",
+                "source": "node-proc-wmi",
+                "target": "node-host-dc",
+                "relationship": "connected_to",
+                "label": "Pass-The-Hash Lateral Pivot to Domain Controller",
+                "timestamp": "2026-09-27T11:40:15Z"
+            },
+            {
+                "id": "fn-3",
+                "source": "node-host-dc",
+                "target": "node-user-krbtgt",
+                "relationship": "injected_into",
+                "label": "LSASS Memory Dump for Golden Ticket",
+                "timestamp": "2026-09-27T11:40:22Z"
+            },
+            {
+                "id": "fn-4",
+                "source": "node-host-dc",
+                "target": "node-ip-exfil",
+                "relationship": "connected_to",
+                "label": "Encrypted C2 Channel for Staged Exfiltration",
+                "timestamp": "2026-09-27T11:40:35Z"
+            }
+        ]
     }
 }
+
+DEFAULT_SCENARIOS = copy.deepcopy(SCENARIOS)
 
 
 # ---------------------------------------------------------------------------
@@ -450,7 +571,7 @@ async def remediate_node(req: RemediateNodeRequest) -> dict[str, Any]:
                 break
         if found:
             # Check if all malicious nodes remediated
-            unresolved = [n for n in sc["nodes"] if n["status"] == "compromised"]
+            unresolved = [n for n in sc["nodes"] if n["status"] in ("compromised", "suspicious")]
             if not unresolved:
                 sc["containment_status"] = "remediated"
             else:
@@ -465,3 +586,47 @@ async def remediate_node(req: RemediateNodeRequest) -> dict[str, Any]:
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "containment_latency_ms": 14.2
     }
+
+
+@router.post("/contain-blast-radius")
+async def contain_blast_radius(req: ContainBlastRadiusRequest) -> dict[str, Any]:
+    """Execute atomic containment across ALL compromised and suspicious nodes in the attack graph."""
+    if req.scenario_id not in SCENARIOS:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+
+    sc = SCENARIOS[req.scenario_id]
+    remediated_nodes = []
+
+    for n in sc["nodes"]:
+        if n["status"] in ("compromised", "suspicious"):
+            n["status"] = "remediated"
+            remediated_nodes.append({
+                "id": n["id"],
+                "label": n["label"],
+                "type": n["type"],
+                "action": "isolate_host" if n["type"] == "host" else ("kill_tree" if n["type"] == "process" else "block_ip")
+            })
+
+    sc["containment_status"] = "remediated"
+    logger.info("chakra_blast_radius_fully_contained", scenario_id=req.scenario_id, total_contained=len(remediated_nodes))
+
+    return {
+        "status": "success",
+        "scenario_id": req.scenario_id,
+        "isolation_mode": req.isolation_mode,
+        "containment_status": "remediated",
+        "nodes_contained_count": len(remediated_nodes),
+        "contained_entities": remediated_nodes,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "total_latency_ms": 28.6,
+        "certificate_id": f"CERT-ISOLATE-{int(time.time())}"
+    }
+
+
+@router.post("/reset-scenario/{scenario_id}")
+async def reset_scenario(scenario_id: str) -> dict[str, Any]:
+    """Reset scenario to its initial uncontained attack state for re-testing."""
+    if scenario_id in DEFAULT_SCENARIOS:
+        SCENARIOS[scenario_id] = copy.deepcopy(DEFAULT_SCENARIOS[scenario_id])
+        return {"status": "success", "message": f"Scenario '{scenario_id}' reset to initial attack state."}
+    raise HTTPException(status_code=404, detail="Scenario not found")
