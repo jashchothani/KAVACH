@@ -9,7 +9,7 @@ import {
   Menu as MenuIcon, Dashboard, BugReport, Notifications, Assignment,
   Computer, Memory, Router, AccessTime, Language, Shield, AutoGraph,
   Psychology, Assessment, Settings, ExitToApp, Brightness4, Brightness7,
-  FiberManualRecord, BarChart, Security,
+  FiberManualRecord, BarChart, Security, Hub, Gavel,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/useAuth';
@@ -44,6 +44,7 @@ const NAV_SECTIONS: NavSection[] = [
       { text: 'Threats', icon: <BugReport />, path: '/threats' },
       { text: 'Alerts', icon: <Notifications />, path: '/alerts', badge: 3 },
       { text: 'Incidents', icon: <Assignment />, path: '/incidents' },
+      { text: 'Chakra Graph', icon: <Hub />, path: '/attack-graph' },
     ],
   },
   {
@@ -74,6 +75,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { text: 'Analytics', icon: <BarChart />, path: '/analytics' },
       { text: 'SOAR', icon: <Security />, path: '/soar' },
+      { text: 'CERT-In Hub', icon: <Gavel />, path: '/cert-in-compliance' },
       { text: 'Reports', icon: <Assessment />, path: '/reports' },
       { text: 'Settings', icon: <Settings />, path: '/settings' },
     ],

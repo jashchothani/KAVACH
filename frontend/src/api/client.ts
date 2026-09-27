@@ -202,6 +202,102 @@ export interface MitreHeatmapResponse {
   tactics: MitreTactic[];
 }
 
+export interface GraphNode {
+  id: string;
+  label: string;
+  type: 'host' | 'process' | 'file' | 'ip' | 'registry' | 'user';
+  status: 'compromised' | 'suspicious' | 'clean' | 'remediated';
+  risk_score: number;
+  details: Record<string, any>;
+  is_patient_zero: boolean;
+}
+
+export interface GraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  relationship: 'spawned_by' | 'wrote_to' | 'connected_to' | 'injected_into' | 'modified_reg' | 'authenticated_as';
+  label: string;
+  timestamp: string;
+}
+
+export interface BlastRadiusSummary {
+  total_nodes: number;
+  compromised_count: number;
+  affected_endpoints: number;
+  compromised_processes: number;
+  external_c2_ips: number;
+  affected_users: number;
+  containment_status: 'uncontained' | 'partially_contained' | 'isolated' | 'remediated';
+  patient_zero_id: string;
+  critical_path: string[];
+}
+
+export interface AttackGraphData {
+  scenario_id: string;
+  scenario_title: string;
+  mitre_tactic: string;
+  mitre_technique: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  blast_radius: BlastRadiusSummary;
+}
+
+export interface CertInIncident {
+  incident_id: string;
+  title: string;
+  severity: 'critical' | 'high' | 'medium';
+  regulatory_category: string;
+  detected_at_utc: string;
+  detected_at_ist: string;
+  deadline_utc: string;
+  deadline_ist: string;
+  time_remaining_minutes: number;
+  reported_to_certin: boolean;
+  affected_systems_count: number;
+  blast_radius: string;
+}
+
+export interface CertInReport {
+  incident_id: string;
+  report_reference_id: string;
+  generated_at_utc: string;
+  generated_at_ist: string;
+  regulatory_mandate: string;
+  submission_target_email: string;
+  reporting_entity: Record<string, any>;
+  incident_details: Record<string, any>;
+  technical_indicators: Record<string, any>;
+  impact_assessment: Record<string, any>;
+  remedial_actions_taken: string[];
+  official_formatted_declaration: string;
+}
+
+export interface CertInAdvisory {
+  id: string;
+  advisory_number: string;
+  title: string;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  published_date: string;
+  target_sector: string;
+  mitre_attack: string;
+  summary: string;
+  recommended_mitigation: string;
+}
+
+export interface AuditVaultStatus {
+  status: 'COMPLIANT' | 'WARNING' | 'NON_COMPLIANT';
+  retention_days_guaranteed: number;
+  mandatory_retention_days: number;
+  ntp_clock_synchronized: boolean;
+  merkle_hash_chain_active: boolean;
+  cold_storage_encryption: string;
+  jurisdiction: string;
+  total_events_archived: number;
+  earliest_record_timestamp: string;
+  latest_record_timestamp: string;
+}
+
 export const api = {
   // Authentication
   auth: {
@@ -455,6 +551,46 @@ export const api = {
     },
     train: async (): Promise<any> => {
       const resp = await apiClient.post('/ml/train');
+      return resp.data;
+    },
+  },
+
+  // Chakra Attack Graph & Blast Radius
+  graph: {
+    getOverview: async (): Promise<any[]> => {
+      const resp = await apiClient.get<any[]>('/graph/overview');
+      return resp.data;
+    },
+    getAttackTree: async (scenarioId = 'apt29-spearphish'): Promise<AttackGraphData> => {
+      const resp = await apiClient.get<AttackGraphData>(`/graph/attack-tree/${scenarioId}`);
+      return resp.data;
+    },
+    remediateNode: async (nodeId: string, action: string, reason?: string): Promise<any> => {
+      const resp = await apiClient.post('/graph/remediate-node', { node_id: nodeId, action, reason });
+      return resp.data;
+    },
+  },
+
+  // Sovereign Indian CERT-In Compliance Suite
+  compliance: {
+    getIncidents: async (): Promise<CertInIncident[]> => {
+      const resp = await apiClient.get<CertInIncident[]>('/compliance/cert-in/incidents');
+      return resp.data;
+    },
+    generateReport: async (incidentId: string): Promise<CertInReport> => {
+      const resp = await apiClient.post<CertInReport>(`/compliance/cert-in/generate-report/${incidentId}`);
+      return resp.data;
+    },
+    getAdvisories: async (): Promise<CertInAdvisory[]> => {
+      const resp = await apiClient.get<CertInAdvisory[]>('/compliance/cert-in/advisories');
+      return resp.data;
+    },
+    getAuditVaultStatus: async (): Promise<AuditVaultStatus> => {
+      const resp = await apiClient.get<AuditVaultStatus>('/compliance/cert-in/audit-vault-status');
+      return resp.data;
+    },
+    markReported: async (incidentId: string): Promise<any> => {
+      const resp = await apiClient.post(`/compliance/cert-in/mark-reported/${incidentId}`);
       return resp.data;
     },
   },

@@ -43,6 +43,8 @@ import { MlDetection } from './pages/MlDetection';
 import { RakshaAi } from './pages/RakshaAi';
 import { MonitoringView } from './pages/MonitoringView';
 import { ReportsView } from './pages/ReportsView';
+import { AttackGraphView } from './pages/AttackGraphView';
+import { CertInComplianceView } from './pages/CertInComplianceView';
 
 // User Dashboard (Bento-Box Consumer UI)
 import { UserDashboardLayout } from './layouts/UserDashboardLayout';
@@ -186,6 +188,8 @@ const App: React.FC = () => {
               {/* Additional SOC Modules */}
               <Route path="/mitre" element={<MitreAttack />} />
               <Route path="/soar" element={<SoarCenter />} />
+              <Route path="/attack-graph" element={<AttackGraphView />} />
+              <Route path="/cert-in-compliance" element={<CertInComplianceView />} />
               <Route path="/ai-security" element={<AiSecurity />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/audit" element={<AuditCenter />} />
