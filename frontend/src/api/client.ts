@@ -270,7 +270,7 @@ export const api = {
     },
   },
 
-  // Logs & Audit Trail
+  // Logs & Audit Trail & Telemetry Engine
   logs: {
     getLogs: async (stream?: string, limit = 100, level?: string): Promise<SystemLogEntry[]> => {
       const params: Record<string, any> = { limit };
@@ -288,6 +288,35 @@ export const api = {
         params: { format, stream },
         responseType: 'blob',
       });
+      return resp.data;
+    },
+    search: async (params: { collector?: string; severity?: string; query?: string; limit?: number } = {}): Promise<{ results: any[]; count: number }> => {
+      const resp = await apiClient.get('/logs/search', { params });
+      return resp.data;
+    },
+    getNormalLogs: async (params: { level?: string; query?: string; limit?: number } = {}): Promise<{ logs: { raw: string; timestamp?: string }[]; total: number; file_path: string }> => {
+      const resp = await apiClient.get('/logs/normal', { params });
+      return resp.data;
+    },
+    getProcessingEngineInfo: async (): Promise<{
+      engine_name: string;
+      version: string;
+      architecture_layers: {
+        stage: number;
+        name: string;
+        technologies: string[];
+        description: string;
+        status: string;
+      }[];
+      metrics: {
+        events_processed_today: number;
+        anomalies_detected: number;
+        active_rules: number;
+        cold_storage_format: string;
+        average_pipeline_latency_ms: number;
+      };
+    }> => {
+      const resp = await apiClient.get('/logs/processing-engine');
       return resp.data;
     },
   },
@@ -373,6 +402,16 @@ export const api = {
       return resp.data;
     },
   },
+  url: {
+    scan: async (url: string): Promise<ScannedURLResult> => {
+      const resp = await apiClient.post<ScannedURLResult>('/url/scan', { url });
+      return resp.data;
+    },
+    getHistory: async (limit = 20): Promise<ScannedURLResult[]> => {
+      const resp = await apiClient.get<ScannedURLResult[]>('/url/history', { params: { limit } });
+      return resp.data;
+    },
+  },
 
   // Raksha AI
   raksha: {
@@ -398,38 +437,7 @@ export const api = {
     },
   },
 
-  // Logs & Telemetry Engine
-  logs: {
-    search: async (params: { collector?: string; severity?: string; query?: string; limit?: number } = {}): Promise<{ results: any[]; count: number }> => {
-      const resp = await apiClient.get('/logs/search', { params });
-      return resp.data;
-    },
-    getNormalLogs: async (params: { level?: string; query?: string; limit?: number } = {}): Promise<{ logs: { raw: string; timestamp?: string }[]; total: number; file_path: string }> => {
-      const resp = await apiClient.get('/logs/normal', { params });
-      return resp.data;
-    },
-    getProcessingEngineInfo: async (): Promise<{
-      engine_name: string;
-      version: string;
-      architecture_layers: {
-        stage: number;
-        name: string;
-        technologies: string[];
-        description: string;
-        status: string;
-      }[];
-      metrics: {
-        events_processed_today: number;
-        anomalies_detected: number;
-        active_rules: number;
-        cold_storage_format: string;
-        average_pipeline_latency_ms: number;
-      };
-    }> => {
-      const resp = await apiClient.get('/logs/processing-engine');
-      return resp.data;
-    },
-  },
+
 
   // MITRE ATT&CK
   mitre: {

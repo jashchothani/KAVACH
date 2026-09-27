@@ -64,7 +64,7 @@ const DashboardMockup: React.FC<{ isDark: boolean }> = ({ isDark }) => {
             <Box sx={{ position: 'absolute', inset: 0, backgroundImage: isDark ? 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)' : 'linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px)', backgroundSize: '50px 50px' }} />
             
             {/* SVG Spline */}
-            <svg style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '80%', preserveAspectRatio: 'none' }} viewBox="0 0 1000 300">
+            <svg preserveAspectRatio="none" style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '80%' }} viewBox="0 0 1000 300">
               <path d="M0 250 C 200 250, 300 150, 500 200 C 700 250, 800 50, 1000 100 L 1000 300 L 0 300 Z" fill={isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'} />
               <path d="M0 250 C 200 250, 300 150, 500 200 C 700 250, 800 50, 1000 100" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'} strokeWidth="3" />
             </svg>

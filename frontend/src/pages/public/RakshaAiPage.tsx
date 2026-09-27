@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import {
   AutoAwesome, Shield, Psychology, Send, Security,
-  Lock, CheckCircle, Warning, HelpOutline, Code,
+  Lock, CheckCircle, Warning, HelpOutlined, Code,
   ArrowForward, VisibilityOff, Loop, Layers
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';

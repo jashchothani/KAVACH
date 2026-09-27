@@ -7,7 +7,7 @@ import {
 import {
   Shield, CheckCircle, Warning, AutoAwesome, Assessment,
   Refresh, Speed, Storage, Router, Memory, Computer,
-  Lock, LockOpen, OpenInNew, PlayArrow, CheckCircleOutline,
+  Lock, LockOpen, OpenInNew, PlayArrow, CheckCircleOutlined,
   Lan, Psychology, Search, VerifiedUser, BugReport,
   ArrowUpward, ArrowDownward, History
 } from '@mui/icons-material';

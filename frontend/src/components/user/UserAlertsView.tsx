@@ -4,8 +4,8 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Collapse, CircularProgress
 } from '@mui/material';
 import {
-  Warning, ErrorOutline, InfoOutlined, CheckCircle, Psychology,
-  Build, Visibility, Check, DeleteOutline, ExpandMore, ExpandLess, Close
+  Warning, ErrorOutlined, InfoOutlined, CheckCircle, Psychology,
+  Build, Visibility, Check, DeleteOutlined, ExpandMore, ExpandLess, Close
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../../api/client';

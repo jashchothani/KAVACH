@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   Search, CheckCircle, Warning, Shield, Security, Lock, Language,
-  OpenInNew, BugReport, ArrowForward, HelpOutline
+  OpenInNew, BugReport, ArrowForward, HelpOutlined
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api, type ScannedURLResult } from '../../api/client';

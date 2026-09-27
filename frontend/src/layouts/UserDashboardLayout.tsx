@@ -93,7 +93,7 @@ export const UserDashboardLayout: React.FC<{ children?: React.ReactNode }> = ({ 
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: sidebarBg, p: 2 }}>
       {/* Brand Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1.5, py: 1.5, mb: 1 }}>
-        <KavachLogo size={32} />
+        <KavachLogo size="sm" />
         <Box>
           <Typography sx={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: '1.2rem', lineHeight: 1, letterSpacing: '-0.02em', color: 'text.primary' }}>
             KAVACH

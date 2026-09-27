@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import {
   Sensors, FilterList, Psychology, Hub, Balance,
-  Bolt, AutoAwesome, ArrowForward, CheckCircle2, PlayArrow,
+  Bolt, AutoAwesome, ArrowForward, CheckCircle, PlayArrow,
   Refresh, Shield, Terminal, Storage, Lan
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';

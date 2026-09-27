@@ -226,7 +226,7 @@ export const LiveTelemetryViewer: React.FC<{ isDark: boolean }> = ({ isDark }) =
           ))}
         </AnimatePresence>
         {logs.length === 0 && (
-          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" gap={2} opacity={0.5}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 2, opacity: 0.5 }}>
             <Code sx={{ fontSize: 32, color: '#64748B' }} />
             <Typography sx={{ color: '#64748B', fontSize: '0.75rem', fontStyle: 'italic', textAlign: 'center' }}>
               Listening for kernel events on socket /api/v1/dashboard/live...

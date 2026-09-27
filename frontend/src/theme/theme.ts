@@ -200,7 +200,7 @@ export const lightThemeOptions: ThemeOptions = {
             transform: 'translateY(-1px)',
           },
         },
-        outlinedPrimary: {
+        outlined: {
           borderColor: K.crimsonBorder,
           color: K.crimson,
           '&:hover': { borderColor: K.crimson, backgroundColor: K.crimsonSoft },
@@ -322,7 +322,7 @@ export const darkThemeOptions: ThemeOptions = {
           transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
           '&:active': { transform: 'scale(0.97)' },
         },
-        containedPrimary: {
+        contained: {
           background: `linear-gradient(135deg, ${K.crimson} 0%, ${K.crimsonHover} 100%)`,
           boxShadow: `0 4px 16px ${K.crimsonGlow}`,
           '&:hover': {
@@ -331,7 +331,7 @@ export const darkThemeOptions: ThemeOptions = {
             transform: 'translateY(-1px)',
           },
         },
-        outlinedPrimary: {
+        outlined: {
           borderColor: 'rgba(220,38,38,0.4)',
           color: K.ember,
           '&:hover': { borderColor: K.ember, backgroundColor: 'rgba(220,38,38,0.1)' },

@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   Person, Security, CheckCircle, Warning, VpnKey, Devices,
-  ExitToApp, ErrorOutline, Shield
+  ExitToApp, ErrorOutlined, Shield
 } from '@mui/icons-material';
 
 const CR = '#DC2626';

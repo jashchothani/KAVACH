@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { useThemeMode } from '../../context/ThemeContext';
 
 const CR = '#DC2626';
-const smoothEase = [0.16, 1, 0.3, 1];
+const smoothEase: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 const containerVariants = {
   hidden: { opacity: 0 },

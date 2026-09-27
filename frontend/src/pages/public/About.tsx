@@ -17,7 +17,7 @@ import { useThemeMode } from '../../context/ThemeContext';
 const CR = '#DC2626';
 
 // Animation easing curve
-const smoothEase = [0.16, 1, 0.3, 1];
+const smoothEase: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 const containerVariants = {
   hidden: { opacity: 0 },

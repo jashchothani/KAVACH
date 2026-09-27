@@ -151,7 +151,7 @@ export const ExperienceModes: React.FC<{ isDark: boolean }> = ({ isDark }) => {
           </Box>
         </Box>
         
-        <Typography textAlign="center" sx={{ color: isDark ? 'rgba(255,255,255,0.6)' : '#64748B', minHeight: 24 }}>
+        <Typography align="center" sx={{ color: isDark ? 'rgba(255,255,255,0.6)' : '#64748B', minHeight: 24 }}>
           {modes.find(m => m.id === activeMode)?.desc}
         </Typography>
 
