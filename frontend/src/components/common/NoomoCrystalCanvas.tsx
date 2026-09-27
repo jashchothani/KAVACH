@@ -26,6 +26,7 @@ interface NoomoCrystalCanvasProps {
   onSelectProject: (index: number) => void;
   onClickCrystal?: (index: number) => void;
   isAudioMuted: boolean;
+  isDark?: boolean;
 }
 
 // Procedural Cyberpunk Environment Cube Texture for realistic crystal reflections
@@ -528,6 +529,7 @@ export const NoomoCrystalCanvas: React.FC<NoomoCrystalCanvasProps> = ({
   onSelectProject,
   onClickCrystal,
   isAudioMuted,
+  isDark = true,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -548,23 +550,23 @@ export const NoomoCrystalCanvas: React.FC<NoomoCrystalCanvasProps> = ({
 
   // Raycasting & Interaction State
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
-  const mouseNormRef = useRef<THREE.Vector2>(new THREE.Vector2(0, 0));
-  const isHoveredRef = useRef(false);
-  const hoverProgressRef = useRef(0);
-  const isZoomingRef = useRef(false);
-
-  // Pre-cached textures for 0ms instantaneous project switching
-  const artworkTexturesRef = useRef<Map<string, THREE.CanvasTexture>>(new Map());
-  const badgeTexturesRef = useRef<Map<string, THREE.CanvasTexture>>(new Map());
-
-  // Mouse physics & rotation
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2(999, 999));
+  const mouseNormRef = useRef<THREE.Vector2>(new THREE.Vector2(999, 999));
   const mouseScreenRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
   const isDraggingRef = useRef(false);
   const prevMouseRef = useRef({ x: 0, y: 0 });
-  const rotationVelocityRef = useRef({ x: 0.001, y: 0.002 });
+  const rotationVelocityRef = useRef({ x: 0, y: 0 });
+  const isHoveredRef = useRef(false);
+  const isZoomingRef = useRef(false);
+  const hoverProgressRef = useRef(0);
+  const hoveredIndexRef = useRef<number | null>(null);
   const animFrameIdRef = useRef<number>(0);
 
-  // Stable references for event handlers
+  // Texture Cache
+  const artworkTexturesRef = useRef<Map<string, THREE.CanvasTexture>>(new Map());
+  const badgeTexturesRef = useRef<Map<string, THREE.CanvasTexture>>(new Map());
+
+  // State mirrors for continuous requestAnimationFrame loop
   const activeIndexRef = useRef(activeIndex);
   activeIndexRef.current = activeIndex;
 
@@ -595,9 +597,9 @@ export const NoomoCrystalCanvas: React.FC<NoomoCrystalCanvasProps> = ({
       }
     });
 
-    // 1. Scene & Atmosphere
+    // 1. Scene & Atmosphere (Theme-adaptive fog)
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x04050e, 0.018);
+    scene.fog = new THREE.FogExp2(isDark ? 0x04050e : 0xf1f5f9, 0.018);
     sceneRef.current = scene;
 
     // Environment reflection map
@@ -622,16 +624,16 @@ export const NoomoCrystalCanvas: React.FC<NoomoCrystalCanvasProps> = ({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.35;
+    renderer.toneMappingExposure = isDark ? 1.35 : 1.25;
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // 4. Lighting System
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
+    const ambientLight = new THREE.AmbientLight(0xffffff, isDark ? 1.4 : 2.4);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
+    const keyLight = new THREE.DirectionalLight(0xffffff, isDark ? 3.2 : 3.8);
     keyLight.position.set(12, 16, 14);
     scene.add(keyLight);
 
@@ -1174,6 +1176,16 @@ export const NoomoCrystalCanvas: React.FC<NoomoCrystalCanvasProps> = ({
       rimLightRef.current.color.set(project.secondaryColor || project.color);
     }
   }, [activeIndex, projects]);
+
+  // 3. Dynamic Theme Mode Adaptation (Fog & Tone Mapping)
+  useEffect(() => {
+    if (sceneRef.current) {
+      sceneRef.current.fog = new THREE.FogExp2(isDark ? 0x04050e : 0xf1f5f9, 0.018);
+    }
+    if (rendererRef.current) {
+      rendererRef.current.toneMappingExposure = isDark ? 1.35 : 1.25;
+    }
+  }, [isDark]);
 
   return (
     <div

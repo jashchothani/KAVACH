@@ -126,8 +126,10 @@ Approve and run the containment playbook immediately."""
     async def chat_soc(self, message: str, context: str = "") -> str:
         return "Local Offline SOC Assistant: Running in local backup mode. Configure your API credentials to talk to the online Gemini model."
 
-    async def chat_layman(self, message: str) -> str:
-        return "Hey there! I am your offline Security Buddy. AntiGravity is protecting your computer. Everything looks safe and sound! Keep scanning for USB insertions and file modifications."
+    async def chat_user(self, message: str) -> str:
+        return "Hey there! I am your offline Security Buddy. KAVACH is protecting your computer. Everything looks safe and sound! Keep scanning for USB insertions and file modifications."
+
+    chat_layman = chat_user
 
     async def generate_spoken_phrase(self, alert_data: dict[str, Any]) -> str:
         title = alert_data.get("title", "Security Anomaly")
@@ -206,8 +208,10 @@ class OllamaProvider:
         prompt = f"Context: {context}\nQuestion: {message}"
         return await self.generate(prompt, "You are KAVACH SOC Assistant — a technical SOC expert.")
 
-    async def chat_layman(self, message: str) -> str:
-        return await self.generate(message, "You are a friendly, non-technical cybersecurity assistant.")
+    async def chat_user(self, message: str) -> str:
+        return await self.generate(message, "You are a friendly cybersecurity assistant.")
+
+    chat_layman = chat_user
 
     async def generate_spoken_phrase(self, alert_data: dict[str, Any]) -> str:
         title = alert_data.get("title", "Security Anomaly")
@@ -316,9 +320,11 @@ class GeminiProvider:
         system = "You are KAVACH SOC Assistant — a technical SOC expert."
         return await self.generate(prompt, system)
 
-    async def chat_layman(self, message: str) -> str:
-        system = "You are KAVACH Security Buddy — a friendly, non-technical cybersecurity assistant."
+    async def chat_user(self, message: str) -> str:
+        system = "You are KAVACH Security Buddy — a friendly, cybersecurity assistant."
         return await self.generate(message, system)
+
+    chat_layman = chat_user
 
     async def generate_spoken_phrase(self, alert_data: dict[str, Any]) -> str:
         title = alert_data.get("title", "Security Anomaly")

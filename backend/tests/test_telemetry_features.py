@@ -66,7 +66,7 @@ async def test_guardian_authorize_usb(async_client: AsyncClient):
         "username": uname,
         "email": email,
         "password": "sec_password123",
-        "role": "layman_user"
+        "role": "user"
     })
     token = reg_resp.json()["access_token"]
     

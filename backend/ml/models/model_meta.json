@@ -1,0 +1,20 @@
+{
+  "model_id": "isoforest-1789715407",
+  "version": "v1.1789715407",
+  "trained_at": "2026-09-18T07:10:07.199004+00:00",
+  "sample_count": 98383,
+  "contamination": 0.05,
+  "feature_schema": [
+    "risk_score_norm",
+    "severity_weight",
+    "is_lolbin",
+    "has_suspicious_ext",
+    "has_mitre_mapping",
+    "is_nonstandard_port",
+    "destination_port_norm",
+    "dns_query_length",
+    "encoded_cmd_flag",
+    "collector_weight"
+  ],
+  "validation_status": "ACTIVE"
+}

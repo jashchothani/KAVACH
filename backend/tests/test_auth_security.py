@@ -40,7 +40,7 @@ async def test_email_verification_flow(async_client: AsyncClient):
         "username": uname,
         "email": email,
         "password": password,
-        "role": "layman_user"
+        "role": "user"
     })
     assert reg_resp.status_code == 200
 
@@ -81,7 +81,7 @@ async def test_login_lockout_mechanism(async_client: AsyncClient):
         "username": uname,
         "email": email,
         "password": password,
-        "role": "layman_user"
+        "role": "user"
     })
     assert reg_resp.status_code == 200
 
@@ -130,7 +130,7 @@ async def test_totp_2fa_setup_and_verify(async_client: AsyncClient):
         "username": uname,
         "email": email,
         "password": password,
-        "role": "layman_user"
+        "role": "user"
     })
     assert reg_resp.status_code == 200
     token = reg_resp.json()["access_token"]
@@ -198,7 +198,7 @@ async def test_forgot_and_reset_password(async_client: AsyncClient):
         "username": uname,
         "email": email,
         "password": password,
-        "role": "layman_user"
+        "role": "user"
     })
     assert reg_resp.status_code == 200
 

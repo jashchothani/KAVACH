@@ -65,33 +65,37 @@ export interface TokenResponse {
 }
 
 export interface DashboardSummary {
-  kavach_score: number;
-  status: 'PROTECTED' | 'ATTENTION' | 'CRITICAL';
-  status_headline: string;
-  status_explanation: string;
-  metrics: {
-    total_events: number;
+  security_score: number;
+  score_category: string;
+  status_banner: string;
+  status_color: string;
+  last_scan_mins_ago: number;
+  stats: {
+    monitored_devices: number;
     active_threats: number;
-    active_incidents: number;
-    connected_devices: number;
-    active_collectors: number;
-    avg_risk_score: number;
+    open_incidents: number;
+    total_alerts: number;
+    url_scans_performed: number;
+    collectors_running: number;
   };
-  recent_activity: Array<{
+  score_breakdown: {
+    network: number;
+    device: number;
+    threats: number;
+    applications: number;
+    accounts: number;
+  };
+  recent_threats: Array<{
     id: string;
-    action: string;
-    actor: string;
-    details: any;
-    timestamp: string;
+    name: string;
+    severity: string;
+    risk_score: number;
+    status: string;
+    what_happened: string;
+    why_it_matters: string;
+    recommended_action: string;
+    created_at: string;
   }>;
-  collectors_summary: {
-    running: number;
-    degraded: number;
-    stopped: number;
-    error: number;
-  };
-  threat_distribution: Record<string, number>;
-  timestamp: string;
 }
 
 export interface SystemLogEntry {
@@ -153,12 +157,58 @@ export interface ScannedURLResult {
   scanned_at: string;
 }
 
+export interface SystemResources {
+  cpu: {
+    percent: number;
+    cores: number[];
+    count: number;
+  };
+  ram: {
+    total_gb: number;
+    used_gb: number;
+    available_gb: number;
+    percent: number;
+  };
+  disk: {
+    total_gb: number;
+    used_gb: number;
+    percent: number;
+  };
+  network_io: {
+    bytes_sent: number;
+    bytes_recv: number;
+    packets_sent: number;
+    packets_recv: number;
+  };
+  hostname: string;
+}
+
+export interface MitreTechnique {
+  id: string;
+  name: string;
+  count: number;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+}
+
+export interface MitreTactic {
+  id: string;
+  name: string;
+  count: number;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  techniques: MitreTechnique[];
+}
+
+export interface MitreHeatmapResponse {
+  tactics: MitreTactic[];
+}
+
 export const api = {
   // Authentication
   auth: {
     login: async (identifier: string, password: string): Promise<TokenResponse> => {
       const resp = await apiClient.post<TokenResponse>('/auth/login', {
         username_or_email: identifier,
+        username: identifier,
         password,
       });
       return resp.data;
@@ -244,6 +294,10 @@ export const api = {
 
   // Telemetry & Collectors
   monitoring: {
+    getResources: async (): Promise<SystemResources> => {
+      const resp = await apiClient.get<SystemResources>('/monitoring/system-resources');
+      return resp.data;
+    },
     getProcesses: async (limit = 25): Promise<ProcessItem[]> => {
       const resp = await apiClient.get<ProcessItem[]>('/monitoring/processes', { params: { limit } });
       return resp.data;
@@ -343,4 +397,58 @@ export const api = {
       return resp.data;
     },
   },
+
+  // Logs & Telemetry Engine
+  logs: {
+    search: async (params: { collector?: string; severity?: string; query?: string; limit?: number } = {}): Promise<{ results: any[]; count: number }> => {
+      const resp = await apiClient.get('/logs/search', { params });
+      return resp.data;
+    },
+    getNormalLogs: async (params: { level?: string; query?: string; limit?: number } = {}): Promise<{ logs: { raw: string; timestamp?: string }[]; total: number; file_path: string }> => {
+      const resp = await apiClient.get('/logs/normal', { params });
+      return resp.data;
+    },
+    getProcessingEngineInfo: async (): Promise<{
+      engine_name: string;
+      version: string;
+      architecture_layers: {
+        stage: number;
+        name: string;
+        technologies: string[];
+        description: string;
+        status: string;
+      }[];
+      metrics: {
+        events_processed_today: number;
+        anomalies_detected: number;
+        active_rules: number;
+        cold_storage_format: string;
+        average_pipeline_latency_ms: number;
+      };
+    }> => {
+      const resp = await apiClient.get('/logs/processing-engine');
+      return resp.data;
+    },
+  },
+
+  // MITRE ATT&CK
+  mitre: {
+    getHeatmap: async (): Promise<MitreHeatmapResponse> => {
+      const resp = await apiClient.get<MitreHeatmapResponse>('/mitre/heatmap');
+      return resp.data;
+    },
+  },
+
+  // Machine Learning
+  ml: {
+    getStatus: async (): Promise<any> => {
+      const resp = await apiClient.get('/ml/status');
+      return resp.data;
+    },
+    train: async (): Promise<any> => {
+      const resp = await apiClient.post('/ml/train');
+      return resp.data;
+    },
+  },
 };
+

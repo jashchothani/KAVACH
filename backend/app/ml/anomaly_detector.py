@@ -36,8 +36,13 @@ class TelemetryAnomalyDetector:
     def __init__(self) -> None:
         self._settings = get_settings()
         self._extractor = FeatureExtractor()
-        self._model_path = Path(self._settings.ml.model_path)
-        self._meta_path = Path(self._settings.ml.meta_path)
+        raw_model_path = Path(self._settings.ml.model_path)
+        if raw_model_path.is_dir() or raw_model_path.suffix == "":
+            self._model_path = raw_model_path / "isolation_forest.joblib"
+            self._meta_path = raw_model_path / "model_meta.json"
+        else:
+            self._model_path = raw_model_path
+            self._meta_path = Path(self._settings.ml.meta_path)
         self._model: IsolationForest | None = None
         self._metadata: dict[str, Any] = {
             "model_id": "none",
@@ -52,7 +57,7 @@ class TelemetryAnomalyDetector:
 
     def load_model(self) -> bool:
         """Load trained Isolation Forest model and metadata from disk."""
-        if self._model_path.exists() and self._meta_path.exists():
+        if self._model_path.is_file() and self._meta_path.is_file():
             try:
                 self._model = joblib.load(str(self._model_path))
                 with open(self._meta_path, "r", encoding="utf-8") as f:

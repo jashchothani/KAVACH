@@ -62,7 +62,7 @@ class InMemoryMessageBus(MessageBus):
     Provides backpressure and dropped-event monitoring.
     """
 
-    def __init__(self, max_queue_size: int = 10_000) -> None:
+    def __init__(self, max_queue_size: int = 50_000) -> None:
         self._max_queue_size = max_queue_size
         self._queues: dict[str, asyncio.Queue[dict[str, Any]]] = defaultdict(
             lambda: asyncio.Queue(maxsize=self._max_queue_size)
@@ -166,18 +166,17 @@ class InMemoryMessageBus(MessageBus):
         return self.get_stats()
 
 
-_bus_instance: MessageBus | None = None
+_global_bus: InMemoryMessageBus | None = None
 
 
 def get_event_bus() -> MessageBus:
-    """Get the singleton message bus instance."""
-    global _bus_instance
-    if _bus_instance is None:
-        _bus_instance = InMemoryMessageBus(max_queue_size=10_000)
-    return _bus_instance
+    """Get or create the global InMemoryMessageBus singleton."""
+    global _global_bus
+    if _global_bus is None:
+        _global_bus = InMemoryMessageBus()
+    return _global_bus
 
 
 def set_event_bus(bus: MessageBus) -> None:
     """Override the global event bus (for testing)."""
-    global _bus_instance
     _bus_instance = bus

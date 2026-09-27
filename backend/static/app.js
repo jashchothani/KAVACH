@@ -1270,7 +1270,7 @@ async function sendChat() {
     }
 
     if (!answer) {
-        const endpoint = currentUser?.role === 'soc_analyst' ? '/chatbot/soc' : '/chatbot/layman';
+        const endpoint = currentUser?.role === 'soc_analyst' ? '/chatbot/soc' : '/chatbot/user';
         const resp = await apiFetch(endpoint, { method: 'POST', body: JSON.stringify({ message: msg }) });
         if (resp && resp.ok) {
             const data = await resp.json();

@@ -49,6 +49,13 @@ DEMO_USERS = {
         "is_active": True, "mfa_enabled": False, "department": "Compliance",
         "avatar_url": None, "created_at": "2024-01-01T00:00:00Z"
     },
+    "user@kavach.io": {
+        "id": 6, "email": "user@kavach.io", "username": "user",
+        "full_name": "Standard User", "role": "user", "role_id": 6,
+        "password_hash": get_password_hash("user123"),
+        "is_active": True, "mfa_enabled": False, "department": "Operations",
+        "avatar_url": None, "created_at": "2024-01-01T00:00:00Z"
+    },
 }
 
 

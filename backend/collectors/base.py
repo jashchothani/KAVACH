@@ -181,7 +181,7 @@ class BaseCollector(abc.ABC):
             if self._is_windows and not self._simulation_mode:
                 events = await self._collect_real()
             else:
-                events = await self._collect_simulated()
+                events = []
 
             now = datetime.now(timezone.utc)
             self._event_count += len(events)

@@ -2,13 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Button, IconButton,
-  Modal, Backdrop, Fade, Paper, Chip
+  Modal, Backdrop, Fade, Paper, Chip,
+  Drawer, List, ListItem, ListItemButton, ListItemText
 } from '@mui/material';
 import {
   VolumeUp, VolumeOff, ArrowForward,
-  Close, Terminal, Hub, Security, ChevronLeft, ChevronRight
+  Close, Terminal, Hub, Security, ChevronLeft, ChevronRight,
+  Brightness4, Brightness7, Lock, Menu as MenuIcon, Close as CloseIcon
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useThemeMode } from '../../context/ThemeContext';
 import { NoomoCrystalCanvas, ShowcaseProject } from '../../components/common/NoomoCrystalCanvas';
 
 const SHOWCASE_PROJECTS: ShowcaseProject[] = [
@@ -210,11 +213,14 @@ const CATEGORIES = ['All Projects', 'AI Defense', 'SOAR & Auto', 'Threat Intel',
 
 export const Showcase: React.FC = () => {
   const navigate = useNavigate();
+  const { mode, toggleTheme } = useThemeMode();
+  const isDark = mode === 'dark';
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('All Projects');
   const [isAudioMuted, setIsAudioMuted] = useState(true);
   const [isCaseStudyOpen, setIsCaseStudyOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Current active project
   const currentProject = SHOWCASE_PROJECTS[activeIndex] || SHOWCASE_PROJECTS[0];
@@ -259,10 +265,11 @@ export const Showcase: React.FC = () => {
         width: '100vw',
         height: '100vh',
         overflow: 'hidden',
-        backgroundColor: '#04050e',
-        color: '#FFFFFF',
+        bgcolor: isDark ? '#04050E' : '#F1F5F9',
+        color: isDark ? '#FFFFFF' : '#0F172A',
         fontFamily: '"Space Grotesk", "Outfit", sans-serif',
         userSelect: 'none',
+        transition: 'background-color 0.3s ease, color 0.3s ease',
       }}
     >
       {/* 1. 3D WebGL Crystal Hero Canvas */}
@@ -272,175 +279,276 @@ export const Showcase: React.FC = () => {
         onSelectProject={setActiveIndex}
         onClickCrystal={() => setIsCaseStudyOpen(true)}
         isAudioMuted={isAudioMuted}
+        isDark={isDark}
       />
 
-      {/* 2. Top Header Bar */}
+      {/* 2. Unified Floating Intelligent Capsule Navigation Bar (Navbar parity across all pages) */}
       <Box
+        component={motion.header}
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         sx={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1.5,
-          px: { xs: 2, md: 5 },
-          pt: { xs: 2, md: 3 },
-          pb: 1,
+          zIndex: 1100,
+          pt: { xs: 1.5, md: 2 },
+          px: { xs: 2, md: 3 },
           pointerEvents: 'none',
         }}
       >
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
+            maxWidth: 1080,
+            mx: 'auto',
+            pointerEvents: 'auto',
+            backdropFilter: 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+            bgcolor: isDark ? 'rgba(11, 11, 15, 0.82)' : 'rgba(255, 255, 255, 0.88)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(11, 11, 15, 0.1)',
+            borderRadius: '100px',
+            boxShadow: isDark
+              ? '0 12px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.04)'
+              : '0 12px 32px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.04)',
+            px: { xs: 2, sm: 2.5, md: 3 },
+            py: 0.75,
           }}
         >
-          {/* Brand Logo with Signature Script */}
           <Box
-            onClick={() => navigate('/')}
             sx={{
-              pointerEvents: 'auto',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: 0.8,
+              display: 'flex !important',
+              flexDirection: 'row !important',
+              alignItems: 'center !important',
+              justifyContent: 'space-between !important',
+              flexWrap: 'nowrap !important',
+              width: '100%',
+              minHeight: 40,
             }}
           >
-            <Typography
+            {/* Left: Official KAVACH Logo + Live Pulse */}
+            <Box
+              onClick={() => navigate('/')}
               sx={{
-                fontFamily: '"Outfit", "Syne", sans-serif',
-                fontWeight: 800,
-                fontSize: { xs: '1.3rem', md: '1.65rem' },
-                letterSpacing: '-0.03em',
-                color: '#FFFFFF',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+                userSelect: 'none',
+                mr: 2,
               }}
             >
-              kavach.
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"Caveat", cursive',
-                fontSize: { xs: '1.35rem', md: '1.8rem' },
-                fontWeight: 700,
-                color: '#93C5FD',
-                transform: 'rotate(-4deg)',
-              }}
-            >
-              Showcase
-            </Typography>
-          </Box>
+              <Box
+                component="img"
+                src="/kavach-logo-transparent.png"
+                alt="KAVACH"
+                onError={(e: any) => { e.currentTarget.src = '/kavach-logo.png'; }}
+                sx={{ height: 28, width: 'auto', filter: 'drop-shadow(0 0 8px rgba(220,38,38,0.5))' }}
+              />
+              <Typography
+                variant="h6"
+                sx={{
+                  ml: 1.2,
+                  fontWeight: 900,
+                  fontFamily: 'Outfit, sans-serif',
+                  color: isDark ? '#FFFFFF' : '#0B0B0F',
+                  letterSpacing: '0.06em',
+                  fontSize: '1.05rem',
+                  lineHeight: 1,
+                }}
+              >
+                KAVACH
+              </Typography>
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  bgcolor: '#22C55E',
+                  boxShadow: '0 0 8px #22C55E',
+                  ml: 1.2,
+                  display: { xs: 'none', sm: 'block' },
+                }}
+              />
+            </Box>
 
-          {/* Desktop Category Filter Tabs */}
-          <Box
-            sx={{
-              pointerEvents: 'auto',
-              display: { xs: 'none', lg: 'flex' },
-              alignItems: 'center',
-              gap: 3.5,
-            }}
-          >
-            {CATEGORIES.map((cat) => {
-              const isSelected = selectedCategory === cat;
-              return (
-                <Typography
-                  key={cat}
-                  onClick={() => handleCategorySelect(cat)}
+            {/* Center Navigation Links (Desktop only) */}
+            <Box
+              sx={{
+                display: { xs: 'none', md: 'flex' },
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexGrow: 1,
+                flexShrink: 0,
+                gap: 0.5,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {[
+                { label: 'Protection', path: '/#protection' },
+                { label: 'Intelligence', path: '/#intelligence' },
+                { label: 'Raksha AI', path: '/#raksha-ai' },
+                { label: 'Platform', path: '/#platform' },
+                { label: 'About', path: '/about' },
+              ].map((link) => (
+                <Button
+                  key={link.label}
+                  onClick={() => navigate(link.path)}
+                  disableRipple
                   sx={{
-                    fontFamily: '"Space Grotesk", sans-serif',
-                    fontSize: '0.9rem',
-                    fontWeight: isSelected ? 600 : 400,
-                    color: isSelected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.55)',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    transition: 'all 0.25s ease',
+                    color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(11, 11, 15, 0.7)',
+                    fontWeight: 500,
+                    fontSize: '0.82rem',
+                    px: { md: 1.4, lg: 1.8 },
+                    py: 0.5,
+                    borderRadius: '100px',
                     '&:hover': {
-                      color: '#FFFFFF',
+                      bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(11, 11, 15, 0.05)',
+                      color: isDark ? '#FFFFFF' : '#0B0B0F',
                     },
-                    '&::after': isSelected
-                      ? {
-                          content: '""',
-                          position: 'absolute',
-                          bottom: -4,
-                          left: 0,
-                          right: 0,
-                          height: '2px',
-                          backgroundColor: '#3B82F6',
-                          borderRadius: '2px',
-                        }
-                      : {},
+                    textTransform: 'none',
+                    transition: 'all 0.18s ease',
+                    whiteSpace: 'nowrap',
+                    minWidth: 'auto',
                   }}
                 >
-                  {cat}
-                </Typography>
-              );
-            })}
-          </Box>
+                  {link.label}
+                </Button>
+              ))}
 
-          {/* Top Right Controls (Sound & CTA) */}
-          <Box sx={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            {/* Audio Toggle Button */}
-            <IconButton
-              onClick={() => setIsAudioMuted(!isAudioMuted)}
-              aria-label="Toggle sound"
+              {/* Showcase Active Status Badge */}
+              <Chip
+                label="3D Showcase"
+                size="small"
+                sx={{
+                  bgcolor: isDark ? 'rgba(220, 38, 38, 0.2)' : 'rgba(220, 38, 38, 0.1)',
+                  color: '#DC2626',
+                  fontWeight: 800,
+                  fontSize: '0.75rem',
+                  border: '1px solid rgba(220, 38, 38, 0.4)',
+                  height: 24,
+                  ml: 0.5,
+                }}
+              />
+            </Box>
+
+            {/* Right: Sound Toggle + Light/Dark Mode + Login Button */}
+            <Box
               sx={{
-                backgroundColor: 'rgba(30, 58, 138, 0.85)',
-                color: '#FFFFFF',
-                width: 36,
-                height: 36,
-                borderRadius: '8px',
-                border: '1px solid rgba(59, 130, 246, 0.5)',
-                backdropFilter: 'blur(8px)',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  backgroundColor: '#2563EB',
-                  transform: 'scale(1.05)',
-                },
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+                gap: 1,
               }}
             >
-              {isAudioMuted ? <VolumeOff sx={{ fontSize: 17 }} /> : <VolumeUp sx={{ fontSize: 17 }} />}
-            </IconButton>
+              {/* Sound Synthesizer Toggle */}
+              <IconButton
+                onClick={() => setIsAudioMuted(!isAudioMuted)}
+                size="small"
+                aria-label="Toggle sound synth"
+                sx={{
+                  color: isDark ? '#FFFFFF' : '#0B0B0F',
+                  bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(11,11,15,0.04)',
+                  p: 0.7,
+                  borderRadius: '50%',
+                  '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(11,11,15,0.08)' },
+                }}
+              >
+                {isAudioMuted ? <VolumeOff sx={{ fontSize: 18 }} /> : <VolumeUp sx={{ fontSize: 18, color: '#38BDF8' }} />}
+              </IconButton>
 
-            {/* Launch Platform Button */}
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/login')}
-              endIcon={<ArrowForward sx={{ fontSize: 15 }} />}
-              sx={{
-                color: '#FFFFFF',
-                borderColor: 'rgba(255, 255, 255, 0.3)',
-                borderRadius: '8px',
-                px: { xs: 1.6, md: 2.2 },
-                py: 0.7,
-                fontSize: { xs: '0.78rem', md: '0.85rem' },
-                fontWeight: 600,
-                textTransform: 'none',
-                backdropFilter: 'blur(8px)',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                transition: 'all 0.25s ease',
-                '&:hover': {
-                  borderColor: '#FFFFFF',
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                  transform: 'translateY(-1px)',
-                },
-              }}
-            >
-              Console
-            </Button>
+              {/* Light/Dark Toggle */}
+              <IconButton
+                onClick={toggleTheme}
+                size="small"
+                aria-label="toggle light/dark theme"
+                sx={{
+                  color: isDark ? '#FFFFFF' : '#0B0B0F',
+                  bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(11,11,15,0.04)',
+                  p: 0.7,
+                  borderRadius: '50%',
+                  '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(11,11,15,0.08)' },
+                }}
+              >
+                {isDark ? <Brightness7 sx={{ fontSize: 18, color: '#F59E0B' }} /> : <Brightness4 sx={{ fontSize: 18, color: '#3B82F6' }} />}
+              </IconButton>
+
+              {/* Login Button */}
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/login')}
+                startIcon={<Lock sx={{ fontSize: 14 }} />}
+                sx={{
+                  display: { xs: 'none', sm: 'inline-flex' },
+                  color: isDark ? '#FFFFFF' : '#0B0B0F',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(11, 11, 15, 0.2)',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  px: 1.6,
+                  py: 0.5,
+                  borderRadius: '100px',
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    borderColor: '#DC2626',
+                    bgcolor: isDark ? 'rgba(220, 38, 38, 0.1)' : 'rgba(220, 38, 38, 0.05)',
+                  },
+                  textTransform: 'none',
+                }}
+              >
+                Login
+              </Button>
+
+              {/* Mobile Drawer Toggle */}
+              <IconButton
+                onClick={() => setMobileOpen(true)}
+                sx={{
+                  display: { md: 'none' },
+                  color: isDark ? '#FFFFFF' : '#0B0B0F',
+                  p: 0.8,
+                  bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(11,11,15,0.05)',
+                  borderRadius: '50%',
+                }}
+              >
+                <MenuIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+            </Box>
           </Box>
         </Box>
+      </Box>
 
-        {/* Mobile & Tablet Category Filter Chip Carousel */}
+      {/* Category Filter Selector Sub-Bar */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: { xs: 68, md: 78 },
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          display: 'flex',
+          justifyContent: 'center',
+          px: 2,
+          pointerEvents: 'none',
+        }}
+      >
         <Box
           sx={{
             pointerEvents: 'auto',
-            display: { xs: 'flex', lg: 'none' },
-            overflowX: 'auto',
+            display: 'flex',
+            alignItems: 'center',
             gap: 1,
-            py: 0.5,
+            p: 0.6,
+            borderRadius: '100px',
+            bgcolor: isDark ? 'rgba(15, 17, 28, 0.75)' : 'rgba(255, 255, 255, 0.88)',
+            backdropFilter: 'blur(16px)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(15, 23, 42, 0.1)',
+            boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.4)' : '0 6px 20px rgba(15, 23, 42, 0.06)',
+            overflowX: 'auto',
+            maxWidth: '100%',
             scrollbarWidth: 'none',
             '&::-webkit-scrollbar': { display: 'none' },
           }}
@@ -454,16 +562,17 @@ export const Showcase: React.FC = () => {
                 size="small"
                 onClick={() => handleCategorySelect(cat)}
                 sx={{
-                  backgroundColor: isSelected ? '#2563EB' : 'rgba(255, 255, 255, 0.06)',
-                  color: isSelected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
-                  border: isSelected ? '1px solid #60A5FA' : '1px solid rgba(255, 255, 255, 0.12)',
-                  fontSize: '0.75rem',
-                  fontWeight: isSelected ? 700 : 500,
-                  backdropFilter: 'blur(6px)',
                   cursor: 'pointer',
-                  flexShrink: 0,
+                  fontWeight: isSelected ? 800 : 500,
+                  fontSize: '0.78rem',
+                  px: 0.8,
+                  borderRadius: '100px',
+                  bgcolor: isSelected ? '#DC2626' : 'transparent',
+                  color: isSelected ? '#FFFFFF' : (isDark ? 'rgba(255, 255, 255, 0.75)' : '#475569'),
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    backgroundColor: isSelected ? '#1D4ED8' : 'rgba(255, 255, 255, 0.12)',
+                    bgcolor: isSelected ? '#B91C1C' : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(15, 23, 42, 0.06)'),
+                    color: isDark ? '#FFFFFF' : '#0F172A',
                   },
                 }}
               />
@@ -489,7 +598,9 @@ export const Showcase: React.FC = () => {
           gap: { xs: 2, md: 0 },
           pointerEvents: 'none',
           background: {
-            xs: 'linear-gradient(to top, rgba(4, 5, 14, 0.95) 0%, rgba(4, 5, 14, 0.75) 70%, transparent 100%)',
+            xs: isDark
+              ? 'linear-gradient(to top, rgba(4, 5, 14, 0.95) 0%, rgba(4, 5, 14, 0.75) 70%, transparent 100%)'
+              : 'linear-gradient(to top, rgba(241, 245, 249, 0.98) 0%, rgba(241, 245, 249, 0.82) 70%, transparent 100%)',
             md: 'none',
           },
           pt: { xs: 4, md: 0 },
@@ -502,8 +613,9 @@ export const Showcase: React.FC = () => {
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.8rem',
-                color: 'rgba(255, 255, 255, 0.65)',
+                color: isDark ? 'rgba(255, 255, 255, 0.65)' : '#64748B',
                 letterSpacing: '0.04em',
+                fontWeight: 600,
               }}
             >
               Project {currentProject.id}
@@ -512,9 +624,9 @@ export const Showcase: React.FC = () => {
               label={currentProject.category}
               size="small"
               sx={{
-                backgroundColor: `${currentProject.color}22`,
+                backgroundColor: `${currentProject.color}${isDark ? '22' : '15'}`,
                 color: currentProject.color,
-                border: `1px solid ${currentProject.color}50`,
+                border: `1px solid ${currentProject.color}${isDark ? '50' : '40'}`,
                 fontSize: '0.68rem',
                 fontWeight: 700,
                 height: 20,
@@ -537,7 +649,7 @@ export const Showcase: React.FC = () => {
                   fontSize: { xs: '1.45rem', sm: '1.85rem', md: '2.4rem' },
                   letterSpacing: '-0.02em',
                   lineHeight: 1.15,
-                  color: '#FFFFFF',
+                  color: isDark ? '#FFFFFF' : '#0F172A',
                   mb: { xs: 1.5, md: 2 },
                 }}
               >
@@ -546,7 +658,7 @@ export const Showcase: React.FC = () => {
             </motion.div>
           </AnimatePresence>
 
-          {/* Electric Blue VIEW CASE STUDY Button */}
+          {/* Electric Project Color VIEW CASE STUDY Button */}
           <Button
             variant="contained"
             onClick={() => setIsCaseStudyOpen(true)}
@@ -558,14 +670,14 @@ export const Showcase: React.FC = () => {
               letterSpacing: '0.06em',
               px: { xs: 2.5, md: 3.2 },
               py: { xs: 0.9, md: 1.1 },
-              borderRadius: '4px',
+              borderRadius: '6px',
               textTransform: 'uppercase',
-              boxShadow: `0 0 24px ${currentProject.color}60`,
+              boxShadow: `0 4px 20px ${currentProject.color}50`,
               transition: 'all 0.25s ease',
               '&:hover': {
                 backgroundColor: currentProject.secondaryColor,
-                boxShadow: `0 0 35px ${currentProject.color}90`,
-                transform: 'scale(1.02)',
+                boxShadow: `0 6px 28px ${currentProject.color}80`,
+                transform: 'translateY(-1px)',
               },
             }}
           >
@@ -589,19 +701,19 @@ export const Showcase: React.FC = () => {
             onClick={handlePrev}
             aria-label="Previous project"
             sx={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: isDark ? '#FFFFFF' : '#0F172A',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(15, 23, 42, 0.15)',
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.9)',
               backdropFilter: 'blur(8px)',
               borderRadius: '50%',
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
+              boxShadow: isDark ? 'none' : '0 2px 8px rgba(15, 23, 42, 0.08)',
               transition: 'all 0.2s ease',
               '&:hover': {
-                color: '#FFFFFF',
-                borderColor: '#FFFFFF',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                transform: 'scale(1.05)',
+                color: isDark ? '#FFFFFF' : '#DC2626',
+                borderColor: '#DC2626',
+                transform: 'scale(1.06)',
               },
             }}
           >
@@ -612,8 +724,8 @@ export const Showcase: React.FC = () => {
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
-              fontWeight: 600,
-              color: 'rgba(255, 255, 255, 0.85)',
+              fontWeight: 700,
+              color: isDark ? 'rgba(255, 255, 255, 0.85)' : '#0F172A',
             }}
           >
             {currentProject.id} / 0{SHOWCASE_PROJECTS.length}
@@ -623,19 +735,19 @@ export const Showcase: React.FC = () => {
             onClick={handleNext}
             aria-label="Next project"
             sx={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: isDark ? '#FFFFFF' : '#0F172A',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(15, 23, 42, 0.15)',
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.9)',
               backdropFilter: 'blur(8px)',
               borderRadius: '50%',
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
+              boxShadow: isDark ? 'none' : '0 2px 8px rgba(15, 23, 42, 0.08)',
               transition: 'all 0.2s ease',
               '&:hover': {
-                color: '#FFFFFF',
-                borderColor: '#FFFFFF',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                transform: 'scale(1.05)',
+                color: isDark ? '#FFFFFF' : '#DC2626',
+                borderColor: '#DC2626',
+                transform: 'scale(1.06)',
               },
             }}
           >
@@ -643,7 +755,7 @@ export const Showcase: React.FC = () => {
           </IconButton>
         </Box>
 
-        {/* Bottom Right: Info Header, Summary & Tag Badges (Collapsible on very small screens) */}
+        {/* Bottom Right: Info Header, Summary & Tag Badges */}
         <Box
           sx={{
             pointerEvents: 'auto',
@@ -655,9 +767,10 @@ export const Showcase: React.FC = () => {
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
-              color: 'rgba(255, 255, 255, 0.65)',
+              color: isDark ? 'rgba(255, 255, 255, 0.65)' : '#64748B',
               mb: 0.6,
               letterSpacing: '0.04em',
+              fontWeight: 600,
             }}
           >
             System Telemetry Overview
@@ -675,7 +788,7 @@ export const Showcase: React.FC = () => {
                 sx={{
                   fontFamily: '"Space Grotesk", "Inter", sans-serif',
                   fontSize: { xs: '0.82rem', md: '0.92rem' },
-                  color: 'rgba(255, 255, 255, 0.85)',
+                  color: isDark ? 'rgba(255, 255, 255, 0.85)' : '#334155',
                   lineHeight: 1.55,
                   mb: 1.5,
                 }}
@@ -691,16 +804,17 @@ export const Showcase: React.FC = () => {
                     label={tag}
                     size="small"
                     sx={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                      color: '#FFFFFF',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.9)',
+                      color: isDark ? '#FFFFFF' : '#1E293B',
                       borderRadius: '16px',
-                      border: '1px solid rgba(255, 255, 255, 0.18)',
+                      border: isDark ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid rgba(15, 23, 42, 0.12)',
                       fontSize: '0.72rem',
                       fontFamily: '"Space Grotesk", sans-serif',
-                      fontWeight: 500,
+                      fontWeight: 600,
                       backdropFilter: 'blur(8px)',
+                      boxShadow: isDark ? 'none' : '0 1px 4px rgba(15, 23, 42, 0.04)',
                       '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.18)' : '#F1F5F9',
                       },
                     }}
                   />
@@ -720,7 +834,10 @@ export const Showcase: React.FC = () => {
         slotProps={{
           backdrop: {
             timeout: 300,
-            sx: { backgroundColor: 'rgba(4, 5, 14, 0.88)', backdropFilter: 'blur(16px)' },
+            sx: {
+              backgroundColor: isDark ? 'rgba(4, 5, 14, 0.88)' : 'rgba(15, 23, 42, 0.5)',
+              backdropFilter: 'blur(16px)',
+            },
           },
         }}
       >
@@ -734,12 +851,14 @@ export const Showcase: React.FC = () => {
               width: { xs: '94vw', sm: '88vw', md: '75vw', lg: '65vw' },
               maxHeight: '90vh',
               overflowY: 'auto',
-              backgroundColor: '#0a0d1d',
-              border: `1px solid ${currentProject.color}50`,
-              boxShadow: `0 0 50px ${currentProject.color}35`,
+              backgroundColor: isDark ? '#0a0d1d' : '#FFFFFF',
+              border: `1px solid ${currentProject.color}${isDark ? '50' : '40'}`,
+              boxShadow: isDark
+                ? `0 0 50px ${currentProject.color}35`
+                : `0 20px 60px rgba(15, 23, 42, 0.18), 0 0 40px ${currentProject.color}25`,
               borderRadius: 3,
               p: { xs: 2.5, sm: 3.5, md: 5 },
-              color: '#FFFFFF',
+              color: isDark ? '#FFFFFF' : '#0F172A',
               outline: 'none',
             }}
           >
@@ -749,17 +868,17 @@ export const Showcase: React.FC = () => {
                 <Chip
                   label={currentProject.badge}
                   sx={{
-                    backgroundColor: `${currentProject.color}25`,
+                    backgroundColor: `${currentProject.color}${isDark ? '25' : '15'}`,
                     color: currentProject.color,
                     border: `1px solid ${currentProject.color}60`,
                     fontWeight: 700,
                     mb: 1.5,
                   }}
                 />
-                <Typography variant="h3" sx={{ fontWeight: 800, fontSize: { xs: '1.6rem', sm: '2rem', md: '2.4rem' } }}>
+                <Typography variant="h3" sx={{ fontWeight: 800, fontSize: { xs: '1.6rem', sm: '2rem', md: '2.4rem' }, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                   {currentProject.title}
                 </Typography>
-                <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)', mt: 0.5, fontSize: { xs: '0.88rem', md: '1rem' } }}>
+                <Typography sx={{ color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#64748B', mt: 0.5, fontSize: { xs: '0.88rem', md: '1rem' } }}>
                   {currentProject.subtitle}
                 </Typography>
               </Box>
@@ -768,12 +887,12 @@ export const Showcase: React.FC = () => {
                 onClick={() => setIsCaseStudyOpen(false)}
                 aria-label="Close modal"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.15)', color: '#FFFFFF' },
+                  color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#64748B',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.05)',
+                  '&:hover': { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(15, 23, 42, 0.1)', color: isDark ? '#FFFFFF' : '#0F172A' },
                 }}
               >
-                <Close />
+                <CloseIcon />
               </IconButton>
             </Box>
 
@@ -791,15 +910,15 @@ export const Showcase: React.FC = () => {
                   key={m.label}
                   sx={{
                     p: 2.5,
-                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                     borderRadius: 2,
                   }}
                 >
-                  <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.55)' }}>
+                  <Typography variant="caption" sx={{ color: isDark ? 'rgba(255, 255, 255, 0.55)' : '#64748B', fontWeight: 600 }}>
                     {m.label}
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: currentProject.color, mt: 0.5 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 800, color: currentProject.color, mt: 0.5 }}>
                     {m.val}
                   </Typography>
                 </Paper>
@@ -808,12 +927,12 @@ export const Showcase: React.FC = () => {
 
             {/* Architecture Highlights */}
             <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                 <Hub sx={{ color: currentProject.color }} /> System Architecture & Execution Flow
               </Typography>
               <Box sx={{ pl: 2, borderLeft: `2px solid ${currentProject.color}40` }}>
                 {currentProject.caseStudy.architecture.map((item, idx) => (
-                  <Typography key={idx} sx={{ color: 'rgba(255, 255, 255, 0.85)', mb: 1, fontSize: '0.95rem' }}>
+                  <Typography key={idx} sx={{ color: isDark ? 'rgba(255, 255, 255, 0.85)' : '#334155', mb: 1, fontSize: '0.95rem' }}>
                     • {item}
                   </Typography>
                 ))}
@@ -822,7 +941,7 @@ export const Showcase: React.FC = () => {
 
             {/* Threat Vectors Mitigated */}
             <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                 <Security sx={{ color: currentProject.color }} /> Neutralized Attack Vectors
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -831,9 +950,10 @@ export const Showcase: React.FC = () => {
                     key={v}
                     label={v}
                     sx={{
-                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                      color: '#F87171',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)',
+                      color: '#DC2626',
+                      border: '1px solid rgba(239, 68, 68, 0.25)',
+                      fontWeight: 600,
                     }}
                   />
                 ))}
@@ -842,13 +962,13 @@ export const Showcase: React.FC = () => {
 
             {/* Live Telemetry Log Trace */}
             <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                 <Terminal sx={{ color: currentProject.color }} /> Real-time Kernel & Audit Telemetry Log
               </Typography>
               <Box
                 sx={{
                   backgroundColor: '#05070e',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #334155',
                   borderRadius: 2,
                   p: 2,
                   fontFamily: '"JetBrains Mono", monospace',
@@ -865,11 +985,11 @@ export const Showcase: React.FC = () => {
             </Box>
 
             {/* Footer Action */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
               <Button
                 variant="outlined"
                 onClick={() => setIsCaseStudyOpen(false)}
-                sx={{ color: '#FFFFFF', borderColor: 'rgba(255, 255, 255, 0.3)' }}
+                sx={{ color: isDark ? '#FFFFFF' : '#0F172A', borderColor: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(15, 23, 42, 0.25)' }}
               >
                 Close Case Study
               </Button>
@@ -891,6 +1011,89 @@ export const Showcase: React.FC = () => {
           </Paper>
         </Fade>
       </Modal>
+
+      {/* 5. Mobile Navigation Drawer (Parity with PublicLayout) */}
+      <Drawer
+        anchor="right"
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        PaperProps={{
+          sx: {
+            width: '100%',
+            maxWidth: 320,
+            bgcolor: isDark ? '#0B0B0F' : '#FFFFFF',
+            color: isDark ? '#FFFFFF' : '#0B0B0F',
+            p: 3,
+          },
+        }}
+      >
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+          <Box display="flex" alignItems="center">
+            <Box
+              component="img"
+              src="/kavach-logo-transparent.png"
+              alt="KAVACH"
+              onError={(e: any) => { e.currentTarget.src = '/kavach-logo.png'; }}
+              sx={{ height: 28, width: 'auto' }}
+            />
+            <Typography variant="h6" sx={{ ml: 1.5, fontWeight: 900, fontFamily: 'Outfit, sans-serif' }}>
+              KAVACH
+            </Typography>
+          </Box>
+          <IconButton onClick={() => setMobileOpen(false)} sx={{ color: isDark ? '#FFFFFF' : '#0B0B0F' }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        <List sx={{ flexGrow: 1 }}>
+          {[
+            { label: 'Home', path: '/' },
+            { label: 'Protection', path: '/#protection' },
+            { label: 'Intelligence', path: '/#intelligence' },
+            { label: 'Raksha AI', path: '/#raksha-ai' },
+            { label: 'Platform', path: '/#platform' },
+            { label: 'About', path: '/about' },
+            { label: 'Contact', path: '/contact' },
+            { label: 'Privacy Policy', path: '/privacy' },
+            { label: 'Terms of Service', path: '/terms' },
+          ].map((link) => (
+            <ListItem key={link.label} disablePadding sx={{ mb: 1 }}>
+              <ListItemButton
+                onClick={() => { setMobileOpen(false); navigate(link.path); }}
+                sx={{
+                  borderRadius: 2,
+                  py: 1.2,
+                  '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(11,11,15,0.05)' },
+                }}
+              >
+                <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', fontFamily: 'Outfit, sans-serif' }}>
+                  {link.label}
+                </Typography>
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+
+        <Box sx={{ mt: 'auto', pt: 2 }}>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={() => { setMobileOpen(false); navigate('/login'); }}
+            sx={{
+              bgcolor: '#DC2626',
+              color: '#FFFFFF',
+              fontWeight: 800,
+              py: 1.5,
+              borderRadius: 3,
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#B91C1C' },
+            }}
+          >
+            Open SOC Console
+          </Button>
+        </Box>
+      </Drawer>
     </Box>
   );
 };
+export default Showcase;

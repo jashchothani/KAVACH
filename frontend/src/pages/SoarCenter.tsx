@@ -1,46 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Grid, Typography, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, LinearProgress, Paper,
-  Divider, useTheme
+  Divider, useTheme, CircularProgress
 } from '@mui/material';
 import { PlayArrow, RotateLeft, History } from '@mui/icons-material';
 import { GlassCard } from '../components/common/GlassCard';
-
-const initialPlaybooks = [
-  { id: 1, name: 'Host Isolation', type: 'containment', desc: 'Isolates the compromised asset from network traffic by applying null router policies.', last_executed: '3 hours ago', runs: 24, status: 'idle', approval: true },
-  { id: 2, name: 'Process Termination', type: 'remediation', desc: 'Terminates parent/child execution chains matching malicious signatures.', last_executed: '12 mins ago', runs: 104, status: 'idle', approval: false },
-  { id: 3, name: 'Account Lockdown', type: 'containment', desc: 'Locks active AD profiles, resets credentials and suspends VPN tokens.', last_executed: '1 day ago', runs: 12, status: 'idle', approval: true },
-  { id: 4, name: 'File Quarantine', type: 'remediation', desc: 'Safely transfers suspicious local binaries to sandbox quarantine stores.', last_executed: '2 hours ago', runs: 45, status: 'idle', approval: false },
-  { id: 5, name: 'Phishing Response', type: 'investigation', desc: 'Extracts message links, parses reputation metrics, and purges mailboxes.', last_executed: '5 hours ago', runs: 32, status: 'idle', approval: true },
-  { id: 6, name: 'Deepfake Response', type: 'investigation', desc: 'Initiates AI models to process media channels, flags manipulation confidence.', last_executed: '4 hours ago', runs: 8, status: 'idle', approval: true },
-  { id: 7, name: 'Vishing Response', type: 'investigation', desc: 'Evaluates call metadata, flags synthetic voice patterns, and blocks numbers.', last_executed: 'Yesterday', runs: 5, status: 'idle', approval: true },
-];
+import { api } from '../api/client';
 
 export const SoarCenter: React.FC = () => {
-  const [playbooks, setPlaybooks] = useState(initialPlaybooks);
-  const [executingId, setExecutingId] = useState<number | null>(null);
+  const [playbooks, setPlaybooks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [executingId, setExecutingId] = useState<string | null>(null);
   const [executionLog, setExecutionLog] = useState<string[]>([]);
   const theme = useTheme();
 
-  const handleExecute = (id: number) => {
-    setExecutingId(id);
-    setExecutionLog(['Initializing playbook triggers...', 'Verifying endpoint agent status...']);
-    
-    // Simulate orchestration step-by-step
-    setTimeout(() => {
-      setExecutionLog(prev => [...prev, 'Running heuristic process scanning...']);
-    }, 1000);
-    
-    setTimeout(() => {
-      setExecutionLog(prev => [...prev, 'Executing SOAR remediation actions...']);
-    }, 2000);
+  const fetchPlaybooks = async () => {
+    try {
+      const data = await api.playbooks.list();
+      setPlaybooks(data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setTimeout(() => {
-      setExecutionLog(prev => [...prev, 'Orchestration playbook completed. Remediation logs saved to Audit Store.']);
-      // Update runs counter
-      setPlaybooks(prev => prev.map(p => p.id === id ? { ...p, runs: p.runs + 1, last_executed: 'Just now' } : p));
-    }, 3500);
+  useEffect(() => {
+    fetchPlaybooks();
+  }, []);
+
+  const handleExecute = async (id: string) => {
+    setExecutingId(id);
+    setExecutionLog(['Initializing playbook triggers...', 'Connecting to KAVACH backend...']);
+    
+    try {
+      const res = await api.playbooks.execute(id);
+      setExecutionLog(prev => [
+        ...prev, 
+        `Playbook executed successfully.`,
+        `Status: ${res.status}`,
+        `Action: ${res.action_taken}`
+      ]);
+      await fetchPlaybooks(); // Refresh list to update any run counts if they were tracked
+    } catch (e: any) {
+      setExecutionLog(prev => [...prev, `Execution failed: ${e.message}`]);
+    }
   };
 
   return (
@@ -60,60 +65,69 @@ export const SoarCenter: React.FC = () => {
       </Box>
 
       {/* Grid of Playbooks */}
-      <Grid container spacing={3}>
-        {playbooks.map((playbook) => (
-          <Grid size={{ xs: 12, md: 6, lg: 4 }} key={playbook.id}>
-            <GlassCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <Box sx={{ p: 3, flexGrow: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                  <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
-                    {playbook.name}
+      {loading ? (
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <CircularProgress />
+        </Box>
+      ) : playbooks.length === 0 ? (
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Typography color="text.secondary">No playbooks found.</Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+          {playbooks.map(pb => (
+            <Grid size={{ xs: 12, md: 6, lg: 4 }} key={pb.id}>
+              <GlassCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <Box sx={{ p: 3, flexGrow: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                    <Typography variant="h6" sx={{ fontFamily: 'Outfit', fontWeight: 'bold' }}>
+                      {pb.name}
+                    </Typography>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        px: 1.5, py: 0.5, borderRadius: 1, fontSize: '0.7rem', fontWeight: 'bold',
+                        textTransform: 'uppercase', bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      {pb.type || pb.category || 'action'}
+                    </Paper>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {pb.description}
                   </Typography>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      px: 1.5, py: 0.5, borderRadius: 1, fontSize: '0.7rem', fontWeight: 'bold',
-                      textTransform: 'uppercase', bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
-                    }}
-                  >
-                    {playbook.type}
-                  </Paper>
+                  <Divider sx={{ my: 1.5 }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    Total Runs: {pb.runs || 0}
+                  </Typography>
                 </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {playbook.desc}
-                </Typography>
-                <Divider sx={{ my: 1.5 }} />
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  Last Executed: {playbook.last_executed}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  Total Runs: {playbook.runs}
-                </Typography>
-              </Box>
-
-              <Box sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)', borderTop: `1px solid ${theme.palette.divider}`, display: 'flex', gap: 1 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<PlayArrow />}
-                  onClick={() => handleExecute(playbook.id)}
-                  sx={{ flex: 1, fontWeight: 'bold' }}
-                >
-                  Execute
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  startIcon={<RotateLeft />}
-                  onClick={() => alert(`Initiating Rollback for: ${playbook.name}`)}
-                  sx={{ fontWeight: 'bold' }}
-                >
-                  Rollback
-                </Button>
-              </Box>
-            </GlassCard>
-          </Grid>
-        ))}
-      </Grid>
+  
+                <Box sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)', borderTop: `1px solid ${theme.palette.divider}`, display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={executingId === pb.id ? <CircularProgress size={16} color="inherit" /> : <PlayArrow />}
+                    onClick={() => handleExecute(pb.id)}
+                    disabled={executingId === pb.id}
+                    sx={{ flex: 1, fontWeight: 'bold' }}
+                  >
+                    {executingId === pb.id ? 'Running...' : 'Execute'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    startIcon={<RotateLeft />}
+                    onClick={() => alert(`Initiating Rollback for: ${pb.name}`)}
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    Rollback
+                  </Button>
+                </Box>
+              </GlassCard>
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       {/* Execution Progress Modal */}
       <Dialog

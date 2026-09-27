@@ -55,13 +55,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await pipeline.start()
     app.state.pipeline = pipeline
 
-    # 4. Initialize collectors if enabled
-    collector_registry = None
+    # 4. Telemetry Collectors Lifecycle (In-Process Auto-Start if enabled)
     if settings.collector.enabled:
-        from app.collectors.registry import create_default_registry
-        collector_registry = create_default_registry()
-        await collector_registry.start_all()
-    app.state.collector_registry = collector_registry
+        try:
+            from app.collectors.registry import create_default_registry
+            registry = create_default_registry()
+            await registry.start_all()
+            app.state.collector_registry = registry
+            logger.info("collectors_started", count=len(registry.all_collectors))
+        except Exception as exc:
+            logger.warning("collectors_autostart_failed", error=str(exc))
+            app.state.collector_registry = None
+    else:
+        app.state.collector_registry = None
 
     # 5. Start event bus consumers
     await bus.start()
@@ -72,8 +78,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Shutdown sequence
     logger.info("kavach_shutting_down")
-    if collector_registry:
-        await collector_registry.stop_all()
+    if getattr(app.state, "collector_registry", None):
+        try:
+            await app.state.collector_registry.stop_all()
+        except Exception:
+            pass
     await pipeline.stop()
     await bus.stop()
     await close_database()
@@ -229,17 +238,33 @@ def create_app() -> FastAPI:
     # Include Versioned API Routes
     app.include_router(api_v1_router, prefix=settings.api_v1_prefix)
 
-    # Root redirect / status
-    @app.get("/", tags=["System"])
-    async def root_status():
-        return {
-            "product": "KAVACH",
-            "version": settings.app_version,
-            "status": "operational",
-            "docs": f"http://{settings.backend_host}:{settings.backend_port}/docs",
-            "dashboard": f"http://{settings.frontend_host}:{settings.frontend_port}",
-            "assistant": "Raksha AI",
-        }
+    # Serve React Frontend (Single Unified Deployment)
+    import os
+    from fastapi.staticfiles import StaticFiles
+    from starlette.responses import FileResponse
+
+    frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/dist"))
+    if os.path.isdir(frontend_dist):
+        app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def serve_react_app(full_path: str):
+            if full_path.startswith("api/"):
+                raise StarletteHTTPException(status_code=404, detail="API route not found")
+            
+            target_path = os.path.join(frontend_dist, full_path)
+            if os.path.isfile(target_path):
+                return FileResponse(target_path)
+            return FileResponse(os.path.join(frontend_dist, "index.html"))
+    else:
+        @app.get("/", tags=["System"])
+        async def root_status():
+            return {
+                "product": "KAVACH",
+                "version": settings.app_version,
+                "status": "operational",
+                "frontend": "Not built. Run 'npm run build' in frontend directory.",
+            }
 
     return app
 
