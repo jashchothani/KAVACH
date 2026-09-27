@@ -46,6 +46,7 @@ import { ReportsView } from './pages/ReportsView';
 import { AttackGraphView } from './pages/AttackGraphView';
 import { CertInComplianceView } from './pages/CertInComplianceView';
 import { RakshaFlowStudio } from './pages/RakshaFlowStudio';
+import { MayajaalDeceptionView } from './pages/MayajaalDeceptionView';
 
 // User Dashboard (Bento-Box Consumer UI)
 import { UserDashboardLayout } from './layouts/UserDashboardLayout';
@@ -192,6 +193,7 @@ const App: React.FC = () => {
               <Route path="/raksha-flow" element={<RakshaFlowStudio />} />
               <Route path="/attack-graph" element={<AttackGraphView />} />
               <Route path="/cert-in-compliance" element={<CertInComplianceView />} />
+              <Route path="/mayajaal" element={<MayajaalDeceptionView />} />
               <Route path="/ai-security" element={<AiSecurity />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/audit" element={<AuditCenter />} />

@@ -348,6 +348,44 @@ export interface SimulationResponse {
   summary: string;
 }
 
+export interface DecoyItem {
+  id: string;
+  name: string;
+  decoy_type: 'honey_file' | 'honey_credential' | 'ghost_socket' | 'registry_trap';
+  target_asset: string;
+  location_or_port: string;
+  status: 'active_monitoring' | 'tripped' | 'quarantined';
+  created_at: string;
+  tripped_count: number;
+  threat_description: string;
+}
+
+export interface TripwireEvent {
+  id: string;
+  timestamp: string;
+  decoy_id: string;
+  decoy_name: string;
+  decoy_type: string;
+  host: string;
+  adversary_process: string;
+  pid: number;
+  user: string;
+  access_type: string;
+  action_taken: string;
+  containment_latency_ms: number;
+}
+
+export interface DeceptionOverview {
+  total_active_decoys: number;
+  honey_files_deployed: number;
+  memory_credential_traps: number;
+  ghost_listening_ports: number;
+  total_tripped_events: number;
+  containment_success_rate: string;
+  avg_neutralization_ms: number;
+  false_positive_rate: string;
+}
+
 export const api = {
   // Authentication
   auth: {
@@ -665,6 +703,30 @@ export const api = {
     },
     generateWithAi: async (prompt: string): Promise<FlowWorkflow> => {
       const resp = await apiClient.post<FlowWorkflow>('/raksha-flow/generate-ai', { prompt });
+      return resp.data;
+    },
+  },
+
+  // Mayajaal — Active Deception & Honey-Token Engine
+  deception: {
+    getOverview: async (): Promise<DeceptionOverview> => {
+      const resp = await apiClient.get<DeceptionOverview>('/deception/overview');
+      return resp.data;
+    },
+    getDecoys: async (): Promise<DecoyItem[]> => {
+      const resp = await apiClient.get<DecoyItem[]>('/deception/decoys');
+      return resp.data;
+    },
+    getTripwireLogs: async (): Promise<TripwireEvent[]> => {
+      const resp = await apiClient.get<TripwireEvent[]>('/deception/tripwire-logs');
+      return resp.data;
+    },
+    deployDecoy: async (decoy: { name: string; decoy_type: string; target_asset: string; location_or_port: string; threat_description: string }): Promise<DecoyItem> => {
+      const resp = await apiClient.post<DecoyItem>('/deception/deploy', decoy);
+      return resp.data;
+    },
+    simulateTrip: async (): Promise<TripwireEvent> => {
+      const resp = await apiClient.post<TripwireEvent>('/deception/simulate-trip');
       return resp.data;
     },
   },

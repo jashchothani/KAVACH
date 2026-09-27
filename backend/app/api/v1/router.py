@@ -106,6 +106,7 @@ from app.api.v1.telemetry import router as telemetry_router
 from app.api.v1.attack_graph import router as attack_graph_router
 from app.api.v1.compliance import router as compliance_router
 from app.api.v1.raksha_flow import router as raksha_flow_router
+from app.api.v1.mayajaal import router as mayajaal_router
 
 logger = get_logger(__name__)
 
@@ -114,6 +115,7 @@ api_v1_router.include_router(telemetry_router, prefix="/telemetry", tags=["telem
 api_v1_router.include_router(attack_graph_router)
 api_v1_router.include_router(compliance_router)
 api_v1_router.include_router(raksha_flow_router)
+api_v1_router.include_router(mayajaal_router)
 
 
 # ---------------------------------------------------------------------------

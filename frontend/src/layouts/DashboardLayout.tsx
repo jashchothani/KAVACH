@@ -9,7 +9,7 @@ import {
   Menu as MenuIcon, Dashboard, BugReport, Notifications, Assignment,
   Computer, Memory, Router, AccessTime, Language, Shield, AutoGraph,
   Psychology, Assessment, Settings, ExitToApp, Brightness4, Brightness7,
-  FiberManualRecord, BarChart, Security, Hub, Gavel, AutoAwesome,
+  FiberManualRecord, BarChart, Security, Hub, Gavel, AutoAwesome, VisibilityOff,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/useAuth';
@@ -45,6 +45,7 @@ const NAV_SECTIONS: NavSection[] = [
       { text: 'Alerts', icon: <Notifications />, path: '/alerts', badge: 3 },
       { text: 'Incidents', icon: <Assignment />, path: '/incidents' },
       { text: 'Chakra Graph', icon: <Hub />, path: '/attack-graph' },
+      { text: 'Mayajaal Decoys', icon: <VisibilityOff />, path: '/mayajaal' },
     ],
   },
   {
