@@ -21,7 +21,12 @@ from typing import Any, Sequence
 
 import joblib
 import numpy as np
-from sklearn.ensemble import IsolationForest
+try:
+    from sklearn.ensemble import IsolationForest
+    SKLEARN_AVAILABLE = True
+except Exception as _sk_err:
+    IsolationForest = Any
+    SKLEARN_AVAILABLE = False
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
