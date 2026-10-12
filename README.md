@@ -227,6 +227,66 @@ Protection against:
 
 </td>
 </tr>
+
+<tr>
+<td width="50%">
+
+### ⚔️ ATTACK GRAPH
+
+Visual threat topology:
+
+* Multi-stage attack path mapping
+* Real-time blast radius calculation
+* Atomic 1-click containment
+* APT29, Akira, FIN7 scenarios
+* Animated SVG threat particles
+
+</td>
+
+<td width="50%">
+
+### 🏛️ CERT-In COMPLIANCE
+
+Indian regulatory adherence:
+
+* 6-hour statutory reporting timer
+* Automated Annexure-I generation
+* 180-day immutable log vault
+* Merkle hash integrity proofs
+* National threat advisories
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+### 🕸️ MAYAJAAL DECEPTION
+
+Zero false-positive detection:
+
+* Honey files & credentials
+* Ghost socket listeners
+* Registry canary traps
+* Sub-22ms process kill
+* Canary bait deployment
+
+</td>
+
+<td>
+
+### ⚡ RAKSHA FLOW STUDIO
+
+Visual SOAR playbook builder:
+
+* Drag-and-drop node canvas
+* AI prompt-to-playbook synthesis
+* Dry-run simulation with animation
+* JSON playbook export
+* Real-time execution profiling
+
+</td>
+</tr>
 </table>
 
 ---
@@ -653,6 +713,185 @@ KAVACH's web SOC is designed around a modern security-operations aesthetic:
 
 ---
 
+# ⚔️ CHAKRA ATTACK GRAPH & BLAST RADIUS VISUALIZER
+
+<div align="center">
+
+```text
+            ADVERSARY ENTRY POINT
+                     │
+                     ▼
+        ┌────────────────────────┐
+        │  INITIAL COMPROMISE   │
+        │  Spear-Phish / USB    │
+        └───────────┬───────────┘
+                    │
+          ┌─────────┴─────────┐
+          ▼                   ▼
+   ┌──────────────┐   ┌──────────────┐
+   │  CREDENTIAL  │   │  LATERAL     │
+   │  DUMPING     │   │  MOVEMENT    │
+   │  (Mimikatz)  │   │  (SMB/RDP)   │
+   └──────┬───────┘   └──────┬───────┘
+          │                  │
+          └────────┬─────────┘
+                   ▼
+        ┌────────────────────┐
+        │   CROWN JEWELS     │
+        │  Domain Controller │
+        │  SCADA / PLC / OT  │
+        └────────┬───────────┘
+                 │
+                 ▼
+          🛡️ KAVACH CONTAINS
+          BLAST RADIUS (<50ms)
+```
+
+</div>
+
+The **Chakra Attack Graph** maps live adversary lateral movement across enterprise topology nodes, calculates the downstream blast radius of any compromised host, and enables **atomic 1-click containment** that simultaneously quarantines all endangered systems.
+
+### Capabilities
+
+* **Multi-stage attack path visualization** with SVG Bézier curves and animated threat particles
+* **Dynamic blast radius calculation** — identifies all reachable hosts from any infected node
+* **Atomic containment** — quarantine entire blast radius in a single API call (<50ms)
+* **Scenario reset** — restore graph state for re-analysis
+* **Forensic brief export** — download Markdown investigation reports
+* **Pre-loaded threat intelligence scenarios**: APT29 (Nobelium), Akira Ransomware, FIN7 POS Lateral Movement
+* **Interactive canvas zoom** — navigate complex multi-tier enterprise topologies
+
+---
+
+# 🏛️ SOVEREIGN INDIAN CERT-In COMPLIANCE SUITE
+
+<div align="center">
+
+```text
+         SECURITY INCIDENT DETECTED
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │   6-HOUR STATUTORY    │
+        │   COUNTDOWN TIMER     │
+        │  Section 70B IT Act   │
+        └───────────┬───────────┘
+                    │
+          ┌─────────┴─────────┐
+          ▼                   ▼
+   ┌──────────────┐   ┌──────────────┐
+   │  ANNEXURE-I  │   │  180-DAY     │
+   │  AUTO-FILL   │   │  IMMUTABLE   │
+   │  REPORT GEN  │   │  LOG VAULT   │
+   └──────┬───────┘   └──────┬───────┘
+          │                  │
+          ▼                  ▼
+   ┌──────────────┐   ┌──────────────┐
+   │   .TXT/.JSON │   │ MERKLE HASH  │
+   │   DOWNLOAD   │   │ INTEGRITY    │
+   └──────────────┘   └──────────────┘
+```
+
+</div>
+
+The **CERT-In Compliance Suite** ensures organizations meet mandatory Indian cybersecurity regulations under **Section 70B of the IT Act (2000)** and **CERT-In Directions 2022**.
+
+### Capabilities
+
+* **Statutory 6-hour countdown timer** — real-time urgency gauge for each detected incident
+* **Automated Annexure-I generation** — pre-filled official government reporting notice with organization details, IOCs, MITRE techniques, and remedial actions
+* **Dual-format export** — download as `.txt` plaintext notice or structured `.json` for `incident@cert-in.org.in`
+* **180-day immutable log vault** — cryptographic search interface with SHA-256 Merkle root integrity proofs per block
+* **National CERT-In advisories feed** — curated threat intelligence for Indian BFSI, manufacturing, and critical infrastructure
+
+---
+
+# 🕸️ MAYAJAAL DECEPTION TECHNOLOGY & HONEY-TOKEN FLEET
+
+<div align="center">
+
+```text
+         ENTERPRISE NETWORK
+                │
+    ┌───────────┼───────────┐
+    │           │           │
+    ▼           ▼           ▼
+ ┌────────┐ ┌────────┐ ┌────────┐
+ │ HONEY  │ │ GHOST  │ │ HONEY  │
+ │ FILE   │ │ SOCKET │ │ CRED   │
+ │ .xlsx  │ │ TCP445 │ │ LSASS  │
+ └───┬────┘ └───┬────┘ └───┬────┘
+     │          │          │
+     └──────────┼──────────┘
+                ▼
+     ┌─────────────────────┐
+     │  ATTACKER TOUCHES   │
+     │  ANY DECOY ASSET    │
+     └──────────┬──────────┘
+                ▼
+     ┌─────────────────────┐
+     │  INSTANT KILL <22ms │
+     │  0% FALSE POSITIVE  │
+     └─────────────────────┘
+```
+
+</div>
+
+**Mayajaal** (मायाजाल — *web of illusion*) deploys invisible tripwire assets across the enterprise. Because no legitimate user ever touches these decoys, any interaction is **100% confirmed malicious** with zero false positives.
+
+### Decoy Types
+
+| Decoy Type | Example | Detection Target |
+| :--- | :--- | :--- |
+| 📄 Honey File | `passwords_corporate_master.xlsx` | Ransomware, infostealers |
+| 🔑 Honey Credential | Fake Domain Admin in LSASS | Mimikatz credential dumping |
+| 🌐 Ghost Socket | TCP 445 SMB listener | Internal lateral scanning |
+| 🗂️ Registry Trap | `HKLM\...\CanaryPasswordStore` | Persistence enumeration scripts |
+
+### Capabilities
+
+* **Sub-22ms autonomous process neutralization** — kernel-level PID freeze and socket severance
+* **Live canary bait download** — deploy `.env` / `.xlsx` documents with embedded webhook triggers
+* **Decoy lifecycle management** — deploy, monitor, trip, and decommission decoys from the SOC console
+* **Fleet-wide overview dashboard** — total active decoys, trip counts, mean containment latency
+
+---
+
+# ⚡ RAKSHA FLOW: VISUAL SOAR PLAYBOOK STUDIO
+
+<div align="center">
+
+```text
+  ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+  │ TRIGGER  │────▶│CONDITION │────▶│  ACTION  │────▶│  ACTION  │
+  │ Entropy  │     │Score > 80│     │ Kill PID │     │ Isolate  │
+  └──────────┘     └──────────┘     └──────────┘     └──────────┘
+                         │
+                         ▼
+                   ┌──────────┐
+                   │ RAKSHA   │
+                   │ AI AUDIT │
+                   └──────────┘
+
+  [Add Node]  [Export JSON]  [▶ Simulate Playbook]
+```
+
+</div>
+
+**Raksha Flow** is a visual drag-and-drop SOAR (Security Orchestration, Automation & Response) playbook studio that enables analysts to build, simulate, and deploy automated incident response workflows without writing code.
+
+### Capabilities
+
+* **Visual DAG canvas** — drag-and-drop nodes (Triggers → Conditions → Actions → AI) connected by animated Bézier curves
+* **Prompt-to-playbook AI** — describe a scenario in plain English and Raksha AI synthesizes the complete multi-node workflow
+* **Dry-run simulation** — test playbooks against sample telemetry with animated traveling particles and per-step latency profiling
+* **Pre-built playbooks** — Ransomware Auto-Lock, Phishing URL Auto-Block, USB Air-Gap Shield
+* **JSON export** — 1-click download of the complete node-link DAG for version control and CI/CD deployment
+* **Node inspector** — inspect and calibrate individual node parameters, thresholds, and action types
+* **Node deletion** — prune unwanted nodes directly from the inspector panel
+
+---
+
 # 📱 CROSS-PLATFORM SECURITY
 
 ```text
@@ -999,6 +1238,36 @@ REPORTING
 
 SYSTEM
 └── GET /api/v1/system/health
+
+ATTACK GRAPH (Chakra)
+├── GET  /api/v1/graph/overview
+├── GET  /api/v1/graph/attack-tree/{scenario_id}
+├── POST /api/v1/graph/contain-blast-radius
+└── POST /api/v1/graph/reset-scenario/{scenario_id}
+
+CERT-In COMPLIANCE
+├── GET  /api/v1/compliance/cert-in/audit-vault-status
+├── GET  /api/v1/compliance/cert-in/advisories
+├── POST /api/v1/compliance/cert-in/generate-report/{incident_id}
+├── GET  /api/v1/compliance/cert-in/download-annexure/{incident_id}
+├── POST /api/v1/compliance/cert-in/search-vault
+└── POST /api/v1/compliance/cert-in/mark-reported/{incident_id}
+
+MAYAJAAL DECEPTION
+├── GET    /api/v1/deception/overview
+├── GET    /api/v1/deception/decoys
+├── POST   /api/v1/deception/deploy
+├── DELETE /api/v1/deception/decoys/{decoy_id}
+├── GET    /api/v1/deception/download-canary/{decoy_id}
+├── GET    /api/v1/deception/tripwire-logs
+└── POST   /api/v1/deception/tripwire/simulate
+
+RAKSHA FLOW STUDIO
+├── GET  /api/v1/raksha-flow/workflows
+├── GET  /api/v1/raksha-flow/workflows/{workflow_id}
+├── POST /api/v1/raksha-flow/workflows
+├── POST /api/v1/raksha-flow/simulate
+└── POST /api/v1/raksha-flow/generate-ai
 ```
 
 ---
@@ -1185,17 +1454,19 @@ Security Controls
 
 * [ ] Multi-host endpoint fleet
 * [ ] Distributed telemetry ingestion
-* [ ] Advanced incident graph
+* [x] Advanced incident graph — **Chakra Attack Graph & Blast Radius Visualizer**
 * [ ] Threat-hunting workspace
 * [ ] Cloud telemetry
 * [ ] Container telemetry
 * [ ] Expanded TI providers
 * [ ] Detection-rule builder
-* [ ] Visual SOAR workflow builder
+* [x] Visual SOAR workflow builder — **Raksha Flow Studio**
 * [ ] Enterprise PostgreSQL architecture
 * [ ] High-availability deployment
 * [ ] Expanded ATT&CK coverage
 * [ ] Advanced security analytics
+* [x] Indian regulatory compliance — **CERT-In Compliance Suite**
+* [x] Active deception technology — **Mayajaal Honey-Token Fleet**
 
 ---
 
