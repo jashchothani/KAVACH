@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/services/api_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/primary_button.dart';
@@ -18,7 +19,9 @@ class VerifyEmailScreen extends StatefulWidget {
 
 class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     with SingleTickerProviderStateMixin {
+  final _otpController = TextEditingController();
   bool _isResending = false;
+  bool _isVerifying = false;
 
   late final AnimationController _animController;
   late final Animation<double> _fadeAnimation;
@@ -55,27 +58,57 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
   @override
   void dispose() {
+    _otpController.dispose();
     _animController.dispose();
     super.dispose();
   }
 
-  void _handleOpenEmailApp() {
-    // Platform-specific email app launch integration point.
-    // Replace with url_launcher or platform intent.
+  Future<void> _handleVerifyOtp() async {
+    final code = _otpController.text.trim();
+    if (code.isEmpty || code.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter the 6-digit verification code.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isVerifying = true);
+
+    try {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final ident = args?['email'] ?? args?['username'] ?? 'user@kavach.io';
+      await ApiService.instance.verifyOtp(ident, code);
+      if (!mounted) return;
+      setState(() => _isVerifying = false);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.protectionDashboard,
+        (r) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isVerifying = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   void _handleResendEmail() {
     setState(() => _isResending = true);
 
-    // Authentication service integration point.
-    // Replace with actual resend email call.
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         setState(() => _isResending = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Verification email has been resent',
+              'A new verification code has been dispatched to your email.',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textOnPrimary,
               ),
@@ -170,7 +203,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
                                   ),
                                 ),
                                 child: const Icon(
-                                  Icons.email_outlined,
+                                  Icons.mark_email_read_outlined,
                                   color: AppColors.primary,
                                   size: 28,
                                 ),
@@ -194,10 +227,47 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
                               const SizedBox(height: AppDimensions.spacingLG),
 
-                              // ── Open Email App Button ─────────────────────
+                              // ── 6-Digit OTP Code Input Field ───────────────
+                              TextField(
+                                controller: _otpController,
+                                keyboardType: TextInputType.number,
+                                maxLength: 6,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 10,
+                                  color: AppColors.textPrimary,
+                                ),
+                                decoration: InputDecoration(
+                                  counterText: '',
+                                  hintText: '••••••',
+                                  hintStyle: TextStyle(
+                                    fontSize: 24,
+                                    letterSpacing: 10,
+                                    color: AppColors.textMuted.withValues(alpha: 0.5),
+                                  ),
+                                  filled: true,
+                                  fillColor: AppColors.inputFill,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: AppColors.inputBorder),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: AppDimensions.spacingLG),
+
+                              // ── Verify & Continue Button ──────────────────
                               PrimaryButton(
-                                text: AppStrings.openEmailApp,
-                                onPressed: _handleOpenEmailApp,
+                                text: 'Verify Code & Enter KAVACH',
+                                isLoading: _isVerifying,
+                                onPressed: _handleVerifyOtp,
                               ),
 
                               const SizedBox(height: AppDimensions.spacingMD),

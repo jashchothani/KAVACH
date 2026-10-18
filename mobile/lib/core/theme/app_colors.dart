@@ -9,6 +9,7 @@ class AppColors {
 
   // ── Brand Primary (Deep Crimson from KAVACH logo) ───────────────────────
   static const Color primary = Color(0xFF8B1A1A);
+  static const Color crimson = Color(0xFFDC2626);
   static const Color primaryLight = Color(0xFFB74C4C);
   static const Color primaryDark = Color(0xFF5C0E0E);
   static const Color primarySurface = Color(0xFFFDF2F2);
@@ -37,6 +38,7 @@ class AppColors {
   static const Color textPrimary = Color(0xFF1A202C);
   static const Color textSecondary = Color(0xFF4A5568);
   static const Color textTertiary = Color(0xFF9CA3AF);
+  static const Color textMuted = Color(0xFF9CA3AF);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
   // ── Border & Divider ────────────────────────────────────────────────────

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "mobile" "\0"
+            VALUE "CompanyName", "KAVACH Cybersecurity Technologies" "\0"
+            VALUE "FileDescription", "KAVACH Enterprise SOAR-XDR Threat Intelligence & Defense Companion" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "mobile" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "mobile.exe" "\0"
-            VALUE "ProductName", "mobile" "\0"
+            VALUE "InternalName", "kavach_companion" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 KAVACH Cybersecurity Technologies. All rights reserved." "\0"
+            VALUE "OriginalFilename", "kavach_companion.exe" "\0"
+            VALUE "ProductName", "KAVACH Cyber Defense" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

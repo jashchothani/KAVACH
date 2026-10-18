@@ -17,6 +17,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // plugins.
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
+  // Set current working directory to executable directory so bundled 'data' folder
+  // is resolved reliably regardless of launch context.
+  wchar_t exe_path[MAX_PATH];
+  if (::GetModuleFileNameW(nullptr, exe_path, MAX_PATH)) {
+    wchar_t *last_slash = wcsrchr(exe_path, L'\\');
+    if (last_slash) {
+      *last_slash = L'\0';
+      ::SetCurrentDirectoryW(exe_path);
+    }
+  }
+
   flutter::DartProject project(L"data");
 
   std::vector<std::string> command_line_arguments =
@@ -27,7 +38,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"mobile", origin, size)) {
+  if (!window.Create(L"KAVACH — Cyber Defense Companion", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

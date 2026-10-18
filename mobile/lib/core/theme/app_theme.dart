@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 import '../constants/app_dimensions.dart';
 
-/// Material 3 theme for KAVACH — Light theme only.
+/// Material 3 theme for KAVACH — Light theme with native Segoe UI / Inter typography.
 class AppTheme {
   AppTheme._();
+
+  static TextStyle _font({
+    required double fontSize,
+    required FontWeight fontWeight,
+    required Color color,
+  }) {
+    return TextStyle(
+      fontFamily: 'Segoe UI',
+      fontFamilyFallback: const ['Inter', 'Roboto', 'Arial', 'sans-serif'],
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+    );
+  }
 
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
@@ -25,29 +38,31 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      fontFamily: 'Segoe UI',
+      fontFamilyFallback: const ['Inter', 'Roboto', 'Arial', 'sans-serif'],
       scaffoldBackgroundColor: AppColors.scaffoldBackground,
-      textTheme: GoogleFonts.interTextTheme().copyWith(
-        displayLarge: GoogleFonts.inter(
+      textTheme: TextTheme(
+        displayLarge: _font(
           fontSize: 32,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
-        headlineMedium: GoogleFonts.inter(
+        headlineMedium: _font(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        bodyLarge: GoogleFonts.inter(
+        bodyLarge: _font(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           color: AppColors.textPrimary,
         ),
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: _font(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: AppColors.textSecondary,
         ),
-        labelLarge: GoogleFonts.inter(
+        labelLarge: _font(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: AppColors.textOnPrimary,
@@ -60,7 +75,7 @@ class AppTheme {
         scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimary,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: _font(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
@@ -77,9 +92,10 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: _font(
             fontSize: 16,
             fontWeight: FontWeight.w600,
+            color: AppColors.textOnPrimary,
           ),
         ),
       ),
@@ -94,9 +110,10 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: _font(
             fontSize: 16,
             fontWeight: FontWeight.w600,
+            color: AppColors.primary,
           ),
         ),
       ),
@@ -105,9 +122,10 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          textStyle: GoogleFonts.inter(
+          textStyle: _font(
             fontSize: 14,
             fontWeight: FontWeight.w600,
+            color: AppColors.primary,
           ),
         ),
       ),
@@ -120,17 +138,17 @@ class AppTheme {
           horizontal: AppDimensions.spacingMD,
           vertical: AppDimensions.spacingMD,
         ),
-        hintStyle: GoogleFonts.inter(
+        hintStyle: _font(
           fontSize: 15,
           fontWeight: FontWeight.w400,
           color: AppColors.inputHint,
         ),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: _font(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: AppColors.textSecondary,
         ),
-        errorStyle: GoogleFonts.inter(
+        errorStyle: _font(
           fontSize: 12,
           fontWeight: FontWeight.w400,
           color: AppColors.error,

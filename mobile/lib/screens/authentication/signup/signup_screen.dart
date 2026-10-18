@@ -4,6 +4,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/models/user_role.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/services/api_service.dart';
 import '../../../core/services/validation_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -77,7 +78,7 @@ class _SignUpScreenState extends State<SignUpScreen>
     super.dispose();
   }
 
-  void _handleSignUp() {
+  Future<void> _handleSignUp() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedRole == null) {
@@ -101,14 +102,31 @@ class _SignUpScreenState extends State<SignUpScreen>
 
     setState(() => _isLoading = true);
 
-    // Authentication service integration point.
-    // Replace with actual sign-up call.
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        Navigator.of(context).pushNamed(AppRoutes.verifyEmail);
-      }
-    });
+    try {
+      final username = _nameController.text.trim().replaceAll(' ', '_').toLowerCase();
+      final roleStr = _selectedRole!.apiValue;
+      await ApiService.instance.register(
+        username: username,
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        role: roleStr,
+      );
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      Navigator.of(context).pushNamed(
+        AppRoutes.verifyEmail,
+        arguments: {'email': _emailController.text.trim(), 'username': username},
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   @override
@@ -236,7 +254,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<UserRole>(
-                                value: _selectedRole,
+                                initialValue: _selectedRole,
                                 hint: Text(
                                   'Choose your role',
                                   style: AppTextStyles.inputHint,
@@ -248,6 +266,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                                   ),
                                 ),
                                 items: UserRole.values
+                                    .where((role) => role != UserRole.admin)
                                     .map(
                                       (role) => DropdownMenuItem<UserRole>(
                                         value: role,
@@ -283,13 +302,15 @@ class _SignUpScreenState extends State<SignUpScreen>
                           const SizedBox(height: AppDimensions.spacingLG),
 
                           // ── Already have account ──────────────────────────
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Text(
                                 AppStrings.alreadyHaveAccount,
                                 style: AppTextStyles.bodyMedium,
                               ),
+                              const SizedBox(width: 4),
                               GestureDetector(
                                 onTap: () {
                                   Navigator.of(context).pop();
