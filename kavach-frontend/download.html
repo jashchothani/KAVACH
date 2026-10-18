@@ -25,19 +25,36 @@
     <link rel="stylesheet" href="css/site.css">
     <link rel="stylesheet" href="css/extras.css">
     <style>
+        /* Mobile-First Layout & Containment */
+        html, body {
+            max-width: 100vw;
+            overflow-x: hidden !important;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-left: clamp(14px, 4vw, 28px);
+            padding-right: clamp(14px, 4vw, 28px);
+            box-sizing: border-box;
+        }
+
         .dl-hero-badge {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 9999px;
             background: rgba(200, 39, 45, 0.12);
             border: 1px solid rgba(255, 68, 77, 0.35);
             color: #ff525d;
-            font-size: 0.8rem;
+            font-size: clamp(0.72rem, 2.5vw, 0.8rem);
             font-weight: 600;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             letter-spacing: 0.04em;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .dl-hero-badge i {
@@ -47,6 +64,7 @@
             background: #ff444d;
             box-shadow: 0 0 10px #ff444d;
             display: inline-block;
+            flex-shrink: 0;
             animation: pulse-dot 2s infinite;
         }
 
@@ -55,121 +73,148 @@
             50% { opacity: 0.4; transform: scale(0.85); }
         }
 
+        .page-hero h1 {
+            font-size: clamp(1.85rem, 6vw, 3.2rem) !important;
+            line-height: 1.15;
+            word-break: break-word;
+        }
+
+        .page-hero p {
+            font-size: clamp(0.92rem, 3vw, 1.15rem) !important;
+            max-width: 680px;
+        }
+
+        /* Responsive Release Grid */
         .release-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-            margin-bottom: 50px;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 45px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 800px) {
+            .release-grid {
+                grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+                gap: 24px;
+            }
         }
 
         .rel-card {
-            background: rgba(18, 22, 34, 0.75);
+            background: rgba(18, 22, 34, 0.85);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 28px;
+            border-radius: 18px;
+            padding: clamp(18px, 4vw, 28px);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             position: relative;
             overflow: hidden;
+            box-sizing: border-box;
+            width: 100%;
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .rel-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-4px);
             border-color: rgba(255, 68, 77, 0.45);
             box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(200, 39, 45, 0.2);
         }
 
         .rel-card.featured {
             border-color: rgba(255, 68, 77, 0.5);
-            background: linear-gradient(180deg, rgba(30, 24, 32, 0.85) 0%, rgba(18, 22, 34, 0.8) 100%);
+            background: linear-gradient(180deg, rgba(30, 24, 32, 0.9) 0%, rgba(18, 22, 34, 0.85) 100%);
             box-shadow: 0 8px 32px rgba(200, 39, 45, 0.15);
         }
 
-        .rel-card.featured::before {
-            content: "FLAGSHIP WINDOWS SUITE";
-            position: absolute;
-            top: 14px;
-            right: 18px;
-            font-size: 0.65rem;
+        .rel-badge-top {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.68rem;
             font-weight: 700;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.08em;
             color: #ff525d;
             background: rgba(200, 39, 45, 0.15);
             border: 1px solid rgba(255, 68, 77, 0.35);
-            padding: 3px 9px;
+            padding: 4px 10px;
             border-radius: 9999px;
+            margin-bottom: 14px;
+            width: fit-content;
         }
 
         .rel-header {
             display: flex;
             align-items: center;
-            gap: 16px;
-            margin-bottom: 18px;
+            gap: 14px;
+            margin-bottom: 16px;
         }
 
         .rel-icon-wrap {
-            width: 52px;
-            height: 52px;
-            border-radius: 14px;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 26px;
+            font-size: 24px;
             flex-shrink: 0;
         }
 
         .rel-title {
-            font-size: 1.25rem;
+            font-size: clamp(1.1rem, 3.5vw, 1.25rem);
             font-weight: 700;
             color: var(--t1);
             margin: 0 0 4px 0;
+            line-height: 1.25;
+            word-break: break-word;
         }
 
         .rel-meta {
-            font-size: 0.82rem;
+            font-size: clamp(0.74rem, 2.4vw, 0.82rem);
             color: var(--t2);
             font-family: 'JetBrains Mono', monospace;
+            word-break: break-all;
         }
 
         .rel-desc {
-            font-size: 0.92rem;
+            font-size: clamp(0.85rem, 2.6vw, 0.92rem);
             color: var(--t2);
             line-height: 1.55;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .rel-features {
             list-style: none;
             padding: 0;
-            margin: 0 0 24px 0;
+            margin: 0 0 20px 0;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         .rel-features li {
-            font-size: 0.88rem;
+            font-size: clamp(0.8rem, 2.5vw, 0.88rem);
             color: var(--t1);
             display: flex;
             align-items: center;
             gap: 10px;
-            line-height: 1.4;
+            line-height: 1.35;
         }
 
         .rel-features li span.check {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
             background: rgba(16, 185, 129, 0.15);
             border: 1px solid rgba(16, 185, 129, 0.45);
             color: #10b981;
-            font-size: 11px;
+            font-size: 10px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -180,7 +225,8 @@
         .rel-actions {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
+            width: 100%;
         }
 
         .btn-download-primary {
@@ -191,12 +237,16 @@
             background: linear-gradient(135deg, #c8272d 0%, #ff444d 100%);
             color: #ffffff !important;
             font-weight: 600;
-            padding: 13px 24px;
+            padding: 13px 18px;
             border-radius: 12px;
             text-decoration: none;
-            font-size: 0.94rem;
+            font-size: clamp(0.86rem, 2.8vw, 0.94rem);
             box-shadow: 0 8px 24px rgba(200, 39, 45, 0.35);
             transition: all 0.25s ease;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            min-height: 48px;
         }
 
         .btn-download-primary:hover {
@@ -213,11 +263,15 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
             color: var(--t1) !important;
             font-weight: 600;
-            padding: 12px 20px;
+            padding: 12px 16px;
             border-radius: 12px;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: clamp(0.84rem, 2.6vw, 0.9rem);
             transition: all 0.25s ease;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            min-height: 46px;
         }
 
         .btn-download-secondary:hover {
@@ -226,22 +280,47 @@
             transform: translateY(-2px);
         }
 
-        .hash-bar {
-            background: rgba(10, 14, 22, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 8px;
-            padding: 8px 12px;
+        .mirror-links {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            font-size: 0.74rem;
+            color: var(--t3);
+            padding: 2px 4px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .mirror-links a {
+            color: var(--accent-2);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .mirror-links a:hover {
+            text-decoration: underline;
+        }
+
+        .hash-bar {
+            background: rgba(10, 14, 22, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.72rem;
             color: var(--t2);
-            word-break: break-all;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .hash-bar span.val {
-            max-width: 200px;
+            flex: 1;
+            min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -251,7 +330,7 @@
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.15);
             color: var(--t1);
-            padding: 4px 10px;
+            padding: 4px 8px;
             border-radius: 6px;
             font-size: 0.68rem;
             cursor: pointer;
@@ -266,46 +345,65 @@
             border-color: var(--accent);
         }
 
-        /* Requirements Table */
+        /* Requirements Table & Mobile Scroll Wrapper */
         .specs-container {
-            background: rgba(18, 22, 34, 0.7);
+            background: rgba(18, 22, 34, 0.75);
             backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 20px;
-            padding: 32px;
-            margin-bottom: 50px;
+            padding: clamp(16px, 4vw, 32px);
+            margin-bottom: 45px;
+            box-sizing: border-box;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .specs-scroll-hint {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.74rem;
+            color: var(--accent-2);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .specs-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+            border-radius: 8px;
         }
 
         .specs-table {
             width: 100%;
+            min-width: 520px;
             border-collapse: separate;
             border-spacing: 0;
-            font-size: 0.9rem;
+            font-size: clamp(0.78rem, 2.2vw, 0.9rem);
         }
 
         .specs-table th {
             text-align: left;
-            padding: 16px 20px;
+            padding: 14px 16px;
             border-bottom: 2px solid rgba(255, 255, 255, 0.1);
             color: var(--t1);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
         }
 
-        .specs-table th.col-min {
-            color: #fbbf24;
-        }
-
-        .specs-table th.col-rec {
-            color: #34d399;
-        }
+        .specs-table th.col-min { color: #fbbf24; }
+        .specs-table th.col-rec { color: #34d399; }
 
         .specs-table td {
-            padding: 16px 20px;
+            padding: 14px 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             color: var(--t2);
-            line-height: 1.5;
+            line-height: 1.45;
         }
 
         .specs-table td.aspect {
@@ -313,84 +411,89 @@
             color: var(--t1);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            white-space: nowrap;
         }
 
-        .specs-table tr:last-child td {
-            border-bottom: none;
-        }
+        .specs-table tr:last-child td { border-bottom: none; }
 
         .badge-pill-min {
             display: inline-block;
-            padding: 3px 9px;
+            padding: 3px 8px;
             border-radius: 9999px;
             background: rgba(245, 158, 11, 0.12);
             border: 1px solid rgba(245, 158, 11, 0.35);
             color: #fbbf24;
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             font-weight: 700;
         }
 
         .badge-pill-rec {
             display: inline-block;
-            padding: 3px 9px;
+            padding: 3px 8px;
             border-radius: 9999px;
             background: rgba(16, 185, 129, 0.12);
             border: 1px solid rgba(16, 185, 129, 0.35);
             color: #34d399;
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             font-weight: 700;
         }
 
-        /* Step-by-step guides */
+        /* Step-by-Step Guides */
         .guide-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 28px;
-            margin-bottom: 50px;
+            gap: 24px;
+            margin-bottom: 45px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .guide-block {
-            background: rgba(18, 22, 34, 0.7);
+            background: rgba(18, 22, 34, 0.75);
             backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 32px;
+            border-radius: 18px;
+            padding: clamp(18px, 4vw, 32px);
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .guide-title {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 1.3rem;
+            gap: 10px;
+            font-size: clamp(1.05rem, 3.5vw, 1.3rem);
             font-weight: 700;
             color: var(--t1);
-            margin: 0 0 20px 0;
-            padding-bottom: 14px;
+            margin: 0 0 16px 0;
+            padding-bottom: 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            line-height: 1.3;
         }
 
         .step-list {
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 16px;
         }
 
         .step-item {
             display: flex;
             align-items: flex-start;
-            gap: 16px;
+            gap: 12px;
         }
 
         .step-num {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             background: rgba(200, 39, 45, 0.15);
             border: 1px solid rgba(255, 68, 77, 0.4);
             color: #ff525d;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -400,14 +503,14 @@
 
         .step-body h4 {
             margin: 0 0 4px 0;
-            font-size: 1rem;
+            font-size: clamp(0.9rem, 2.6vw, 1rem);
             font-weight: 600;
             color: var(--t1);
         }
 
         .step-body p {
             margin: 0;
-            font-size: 0.88rem;
+            font-size: clamp(0.82rem, 2.4vw, 0.88rem);
             color: var(--t2);
             line-height: 1.5;
         }
@@ -415,40 +518,112 @@
         .smartscreen-alert {
             background: rgba(245, 158, 11, 0.1);
             border-left: 3px solid #f59e0b;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 0 8px 8px 0;
             margin-top: 8px;
-            font-size: 0.84rem;
+            font-size: 0.82rem;
             color: #fef3c7;
             line-height: 1.45;
         }
 
-        .smartscreen-alert strong {
-            color: #fbbf24;
-        }
+        .smartscreen-alert strong { color: #fbbf24; }
 
         .code-box {
             background: #090d16;
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            padding: 14px 18px;
+            padding: 12px 14px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
             color: #38bdf8;
             margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            box-sizing: border-box;
             overflow-x: auto;
         }
 
+        .code-box code {
+            word-break: break-all;
+            white-space: pre-wrap;
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Mobile Modal for Download Assistance */
+        .dl-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 8, 14, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .dl-modal-backdrop.active {
+            display: flex;
+        }
+
+        .dl-modal-content {
+            background: #0d121c;
+            border: 1px solid rgba(255, 68, 77, 0.4);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            position: relative;
+            box-sizing: border-box;
+            animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modal-pop {
+            from { opacity: 0; transform: scale(0.92); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .dl-modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--t1);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* Media Query Tweaks for Phones */
         @media (max-width: 768px) {
-            .specs-container, .guide-block {
-                padding: 20px;
+            .specs-scroll-hint { display: flex; }
+            .hero-btns { flex-direction: column !important; width: 100%; gap: 10px; }
+            .hero-btns .btn { width: 100% !important; text-align: center; }
+            .cta h2 { font-size: 1.5rem !important; }
+            .cta p { font-size: 0.88rem !important; }
+        }
+
+        @media (max-width: 480px) {
+            .code-box {
+                flex-direction: column;
+                align-items: stretch;
             }
-            .specs-table th, .specs-table td {
-                padding: 12px 10px;
-                font-size: 0.82rem;
+            .code-box .btn-copy-hash {
+                align-self: flex-start;
+                margin-top: 6px;
             }
         }
     </style>
@@ -532,13 +707,14 @@
                     <!-- 1. Windows Suite (Flagship) -->
                     <div class="rel-card featured reveal">
                         <div>
+                            <div class="rel-badge-top">★ FLAGSHIP WINDOWS SUITE</div>
                             <div class="rel-header">
                                 <div class="rel-icon-wrap" style="color: #00f0ff;">
-                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
                                 </div>
                                 <div>
                                     <h3 class="rel-title">KAVACH Windows Suite</h3>
-                                    <div class="rel-meta">KAVACH-Setup-2.1.0.exe • 257.2 MB</div>
+                                    <div class="rel-meta">KAVACH-Setup-2.1.0.exe • 190.7 MB</div>
                                 </div>
                             </div>
                             <p class="rel-desc">
@@ -552,10 +728,16 @@
                             </ul>
                         </div>
                         <div class="rel-actions">
-                            <a class="btn-download-primary" href="/releases/KAVACH-Setup-2.1.0.exe" download="KAVACH-Setup-2.1.0.exe">
+                            <a class="btn-download-primary js-dl-btn" data-target="windows" data-name="KAVACH-Setup-2.1.0.exe" href="https://github.com/jashchothani/KAVACH/releases/download/v2.1.0/KAVACH-Setup-2.1.0.exe" download="KAVACH-Setup-2.1.0.exe">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 Download for Windows (x64)
                             </a>
+                            <div class="mirror-links">
+                                <span>Fast Mirrors:</span>
+                                <a href="https://github.com/jashchothani/KAVACH/releases/download/v2.1.0/KAVACH-Setup-2.1.0.exe" target="_blank" rel="noopener">GitHub Mirror</a>
+                                <span>•</span>
+                                <a href="https://api.kavachcybertech.in/releases/KAVACH-Setup-2.1.0.exe" target="_blank" rel="noopener">AWS Mirror</a>
+                            </div>
                             <div class="hash-bar">
                                 <span class="val" id="hashWin" title="48af794a159624f7440a8f50d5afb52b429d5aad0bb1c9fe3ada4e88c898f0b5">SHA256: 48af794a159624...f0b5</span>
                                 <button class="btn-copy-hash" data-copy="48af794a159624f7440a8f50d5afb52b429d5aad0bb1c9fe3ada4e88c898f0b5">Copy Hash</button>
@@ -568,11 +750,11 @@
                         <div>
                             <div class="rel-header">
                                 <div class="rel-icon-wrap" style="color: #10b981;">
-                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="12" cy="18" r="1"/><path d="M9 5h6"/></svg>
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="12" cy="18" r="1"/><path d="M9 5h6"/></svg>
                                 </div>
                                 <div>
                                     <h3 class="rel-title">KAVACH Android Companion</h3>
-                                    <div class="rel-meta">kavach-mobile-release.apk • 77.34 MB</div>
+                                    <div class="rel-meta">kavach-mobile-release.apk • 81.1 MB</div>
                                 </div>
                             </div>
                             <p class="rel-desc">
@@ -586,10 +768,16 @@
                             </ul>
                         </div>
                         <div class="rel-actions">
-                            <a class="btn-download-secondary" href="/releases/kavach-mobile-release.apk" download="kavach-mobile-release.apk">
+                            <a class="btn-download-secondary js-dl-btn" data-target="android" data-name="kavach-mobile-release.apk" href="https://github.com/jashchothani/KAVACH/releases/download/v2.1.0/kavach-mobile-release.apk" download="kavach-mobile-release.apk">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 Download Android APK (v1.4.0)
                             </a>
+                            <div class="mirror-links">
+                                <span>Fast Mirrors:</span>
+                                <a href="https://github.com/jashchothani/KAVACH/releases/download/v2.1.0/kavach-mobile-release.apk" target="_blank" rel="noopener">GitHub Mirror</a>
+                                <span>•</span>
+                                <a href="https://api.kavachcybertech.in/releases/kavach-mobile-release.apk" target="_blank" rel="noopener">AWS Mirror</a>
+                            </div>
                             <div class="hash-bar">
                                 <span class="val" id="hashApk" title="d8aeadbd04c30d1a4fd7ea4f90c400065729d09cebf3fb8b6417b75be0cdc709">SHA256: d8aeadbd04c30d...c709</span>
                                 <button class="btn-copy-hash" data-copy="d8aeadbd04c30d1a4fd7ea4f90c400065729d09cebf3fb8b6417b75be0cdc709">Copy Hash</button>
@@ -602,11 +790,11 @@
                         <div>
                             <div class="rel-header">
                                 <div class="rel-icon-wrap" style="color: #ff525d;">
-                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                                 </div>
                                 <div>
                                     <h3 class="rel-title">Browser Threat Sentinel</h3>
-                                    <div class="rel-meta">kavach-extension.zip • 128.8 KB</div>
+                                    <div class="rel-meta">kavach-extension.zip • 131.9 KB</div>
                                 </div>
                             </div>
                             <p class="rel-desc">
@@ -620,16 +808,23 @@
                             </ul>
                         </div>
                         <div class="rel-actions">
-                            <a class="btn-download-secondary" href="/releases/kavach-extension.zip" download="kavach-extension.zip">
+                            <a class="btn-download-secondary js-dl-btn" data-target="extension" data-name="kavach-extension.zip" href="/releases/kavach-extension.zip" download="kavach-extension.zip">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 Download Extension Package
                             </a>
+                            <div class="mirror-links">
+                                <span>Fast Mirrors:</span>
+                                <a href="/releases/kavach-extension.zip" download>Direct Download</a>
+                                <span>•</span>
+                                <a href="https://github.com/jashchothani/KAVACH/releases/download/v2.1.0/kavach-extension.zip" target="_blank" rel="noopener">GitHub Mirror</a>
+                            </div>
                             <div class="hash-bar">
                                 <span class="val" id="hashExt" title="9fbf1ee8b4670e1e4ea59f223100cecf4dc2987b6bc83c26e820924517c0b08f">SHA256: 9fbf1ee8b4670e...b08f</span>
                                 <button class="btn-copy-hash" data-copy="9fbf1ee8b4670e1e4ea59f223100cecf4dc2987b6bc83c26e820924517c0b08f">Copy Hash</button>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </section>
@@ -644,47 +839,53 @@
                 </div>
 
                 <div class="specs-container reveal">
-                    <table class="specs-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 28%;">Requirement</th>
-                                <th class="col-min" style="width: 36%;"><span class="badge-pill-min">BARE MINIMUM</span></th>
-                                <th class="col-rec" style="width: 36%;"><span class="badge-pill-rec">RECOMMENDED</span></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="aspect"><span>🪟</span> Windows OS</td>
-                                <td>Windows 10 (64-bit)</td>
-                                <td><strong>Windows 11 (64-bit)</strong> / Server 2022</td>
-                            </tr>
-                            <tr>
-                                <td class="aspect"><span>⚡</span> Processor (CPU)</td>
-                                <td>Dual-Core 64-bit (1.8 GHz)</td>
-                                <td><strong>Quad-Core (2.4 GHz+)</strong></td>
-                            </tr>
-                            <tr>
-                                <td class="aspect"><span>🧠</span> Memory (RAM)</td>
-                                <td>4 GB <small style="color:#38bdf8">(Agent uses &lt;120 MB)</small></td>
-                                <td><strong>8 GB or more</strong></td>
-                            </tr>
-                            <tr>
-                                <td class="aspect"><span>💾</span> Storage</td>
-                                <td>500 MB Free Space</td>
-                                <td><strong>2 GB SSD</strong></td>
-                            </tr>
-                            <tr>
-                                <td class="aspect"><span>📐</span> Architecture</td>
-                                <td>64-bit (x64) Only</td>
-                                <td><strong>64-bit (x64)</strong></td>
-                            </tr>
-                            <tr>
-                                <td class="aspect"><span>🔒</span> Security</td>
-                                <td>Administrator Rights</td>
-                                <td><strong>TPM 2.0 &amp; Secure Boot</strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="specs-scroll-hint">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 16l-4-4m0 0l4-4m-4 4h18m-4 4l4-4m0 0l-4-4"/></svg>
+                        <span>Swipe horizontally to view full table on mobile</span>
+                    </div>
+                    <div class="specs-table-wrapper">
+                        <table class="specs-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 28%;">Requirement</th>
+                                    <th class="col-min" style="width: 36%;"><span class="badge-pill-min">BARE MINIMUM</span></th>
+                                    <th class="col-rec" style="width: 36%;"><span class="badge-pill-rec">RECOMMENDED</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="aspect"><span>🪟</span> Windows OS</td>
+                                    <td>Windows 10 (64-bit)</td>
+                                    <td><strong>Windows 11 (64-bit)</strong> / Server 2022</td>
+                                </tr>
+                                <tr>
+                                    <td class="aspect"><span>⚡</span> Processor (CPU)</td>
+                                    <td>Dual-Core 64-bit (1.8 GHz)</td>
+                                    <td><strong>Quad-Core (2.4 GHz+)</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="aspect"><span>🧠</span> Memory (RAM)</td>
+                                    <td>4 GB <small style="color:#38bdf8">(Agent uses &lt;120 MB)</small></td>
+                                    <td><strong>8 GB or more</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="aspect"><span>💾</span> Storage</td>
+                                    <td>500 MB Free Space</td>
+                                    <td><strong>2 GB SSD</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="aspect"><span>📐</span> Architecture</td>
+                                    <td>64-bit (x64) Only</td>
+                                    <td><strong>64-bit (x64)</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="aspect"><span>🔒</span> Security</td>
+                                    <td>Administrator Rights</td>
+                                    <td><strong>TPM 2.0 &amp; Secure Boot</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- PowerShell Hash Verification Box -->
@@ -845,8 +1046,7 @@
                 <div class="cta reveal zoom">
                     <h2 style="position:relative">Deploy Sovereign Security <span class="grad">Today</span></h2>
                     <p style="position:relative">Need custom enterprise deployment, Active Directory GPO MSI packaging, or cloud provisioning? Our dedicated engineering team is here to assist.</p>
-                    <div class="hero-btns" style="justify-content:center;position:relative">
-                        <a class="btn btn-primary" href="/releases/KAVACH-Setup-2.1.0.exe" download="KAVACH-Setup-2.1.0.exe">Download Windows Installer (102 MB)</a>
+                               <a class="btn btn-primary js-dl-btn" data-target="windows" data-name="KAVACH-Setup-2.1.0.exe" href="https://github.com/jashchothani/KAVACH/releases/download/v2.1.0/KAVACH-Setup-2.1.0.exe" download="KAVACH-Setup-2.1.0.exe">Download Windows Suite (190.7 MB)</a>
                         <a class="btn btn-ghost" href="/contact">Contact Enterprise Support</a>
                     </div>
                 </div>
@@ -905,6 +1105,29 @@
         </div>
     </footer>
 
+    <!-- Mobile Download Helper Modal -->
+    <div class="dl-modal-backdrop" id="dlModal">
+        <div class="dl-modal-content">
+            <button class="dl-modal-close" id="dlModalClose" aria-label="Close modal">&times;</button>
+            <div style="font-size: 32px; margin-bottom: 12px;">📱</div>
+            <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; color: #fff;">Mobile Device Detected</h3>
+            <p style="font-size: 0.88rem; color: var(--t2); line-height: 1.5; margin-bottom: 18px;">
+                You are currently viewing KAVACH on a mobile phone. The <strong>Windows Enterprise Suite (.exe)</strong> must be run on a <strong>Windows 10 or 11 PC</strong>.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-primary" id="btnCopyPcLink" style="width: 100%; justify-content: center; padding: 12px;">
+                    📋 Copy Download Link to Open on PC
+                </button>
+                <a class="btn btn-ghost" id="btnDownloadAnyway" href="#" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.84rem;">
+                    Download .EXE File Anyway (190 MB)
+                </a>
+                <a class="btn-download-secondary" href="https://github.com/jashchothani/KAVACH/releases/download/v2.1.0/kavach-mobile-release.apk" download style="margin-top: 6px;">
+                    Download Android Companion App Instead (APK)
+                </a>
+            </div>
+        </div>
+    </div>
+
     <section class="sign" id="sign">
         <div class="sign-glow"></div>
         <div class="sign-hearts"></div>
@@ -942,6 +1165,61 @@
                 }
             });
         });
+
+        // Mobile Device Detection & Download Flow
+        (function() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 680;
+            const modal = document.getElementById('dlModal');
+            const modalClose = document.getElementById('dlModalClose');
+            const btnCopy = document.getElementById('btnCopyPcLink');
+            const btnAnyway = document.getElementById('btnDownloadAnyway');
+            let pendingUrl = '';
+
+            function closeModal() {
+                modal.classList.remove('active');
+            }
+
+            if (modalClose) {
+                modalClose.addEventListener('click', closeModal);
+            }
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) closeModal();
+                });
+            }
+
+            document.querySelectorAll('.js-dl-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const target = btn.getAttribute('data-target');
+                    const url = btn.getAttribute('href');
+
+                    if (target === 'windows' && isMobile) {
+                        e.preventDefault();
+                        pendingUrl = url;
+                        btnAnyway.setAttribute('href', url);
+                        btnAnyway.setAttribute('download', btn.getAttribute('data-name') || 'KAVACH-Setup-2.1.0.exe');
+                        modal.classList.add('active');
+                        return;
+                    }
+                });
+            });
+
+            if (btnCopy) {
+                btnCopy.addEventListener('click', () => {
+                    const fullUrl = pendingUrl.startsWith('http') ? pendingUrl : window.location.origin + pendingUrl;
+                    navigator.clipboard.writeText(fullUrl).then(() => {
+                        const orig = btnCopy.textContent;
+                        btnCopy.textContent = '✓ Link Copied to Clipboard!';
+                        btnCopy.style.background = '#10b981';
+                        setTimeout(() => {
+                            btnCopy.textContent = orig;
+                            btnCopy.style.background = '';
+                            closeModal();
+                        }, 1800);
+                    });
+                });
+            }
+        })();
     </script>
 </body>
 

@@ -93,6 +93,7 @@ mobile/ios/Flutter/Flutter.podspec
 
 # Archives & Large media
 *.zip
+!kavach-frontend/releases/kavach-extension.zip
 *.tar.gz
 *.rar
 *.mp4
