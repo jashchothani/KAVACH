@@ -12,12 +12,17 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-DOMAIN="${1:-kavachcybertech.in}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+cd "${APP_DIR}"
+
+DOMAIN="${1:-api.kavachcybertech.in}"
 EMAIL="${2:-kavachcybertech@gmail.com}"
 
 echo "======================================================================"
 echo "  🔒 Setting up Let's Encrypt SSL for: ${DOMAIN}"
 echo "  📧 Administrative Email:             ${EMAIL}"
+echo "  📁 Application Directory:            ${APP_DIR}"
 echo "======================================================================"
 
 # 1. Install Certbot
@@ -29,21 +34,8 @@ apt-get install -y certbot
 echo "Temporarily pausing web container on port 80..."
 docker compose -f docker-compose.prod.yml stop frontend || true
 
-# 3. Obtain Certificate with subdomains if configured
-echo "Requesting SSL certificate from Let's Encrypt..."
-CERT_DOMAINS=("-d" "$DOMAIN")
-
-# Check if www and api resolve to this host before adding them
-if [ "$DOMAIN" = "kavachcybertech.in" ]; then
-    CERT_DOMAINS+=("-d" "www.${DOMAIN}" "-d" "api.${DOMAIN}")
-fi
-
-certbot certonly --standalone \
-    --preferred-challenges http \
-    "${CERT_DOMAINS[@]}" \
-    --email "$EMAIL" \
-    --agree-tos \
-    --non-interactive || \
+# 3. Obtain Certificate
+echo "Requesting SSL certificate from Let's Encrypt for ${DOMAIN}..."
 certbot certonly --standalone \
     --preferred-challenges http \
     -d "$DOMAIN" \
@@ -52,18 +44,18 @@ certbot certonly --standalone \
     --non-interactive
 
 # 4. Copy certificates into KAVACH SSL directory mounted by Nginx
-mkdir -p kavach-frontend/ssl
-cp -L "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" kavach-frontend/ssl/kavach.crt
-cp -L "/etc/letsencrypt/live/${DOMAIN}/privkey.pem" kavach-frontend/ssl/kavach.key
-chmod 644 kavach-frontend/ssl/kavach.crt
-chmod 600 kavach-frontend/ssl/kavach.key
+mkdir -p "${APP_DIR}/kavach-frontend/ssl"
+cp -L "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" "${APP_DIR}/kavach-frontend/ssl/kavach.crt"
+cp -L "/etc/letsencrypt/live/${DOMAIN}/privkey.pem" "${APP_DIR}/kavach-frontend/ssl/kavach.key"
+chmod 644 "${APP_DIR}/kavach-frontend/ssl/kavach.crt"
+chmod 600 "${APP_DIR}/kavach-frontend/ssl/kavach.key"
 
 # 5. Restart frontend container with new SSL certificates
 docker compose -f docker-compose.prod.yml up -d frontend
 
 # 6. Setup Automated Weekly Renewal Cron
-cat << 'CRON_EOF' > /etc/cron.d/certbot-kavach-renew
-0 3 * * 1 root certbot renew --quiet --pre-hook "docker compose -f /opt/kavach/docker-compose.prod.yml stop frontend" --post-hook "cp -L /etc/letsencrypt/live/*/fullchain.pem /opt/kavach/kavach-frontend/ssl/kavach.crt && cp -L /etc/letsencrypt/live/*/privkey.pem /opt/kavach/kavach-frontend/ssl/kavach.key && docker compose -f /opt/kavach/docker-compose.prod.yml up -d frontend"
+cat << CRON_EOF > /etc/cron.d/certbot-kavach-renew
+0 3 * * 1 root certbot renew --quiet --pre-hook "docker compose -f ${APP_DIR}/docker-compose.prod.yml stop frontend" --post-hook "cp -L /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ${APP_DIR}/kavach-frontend/ssl/kavach.crt && cp -L /etc/letsencrypt/live/${DOMAIN}/privkey.pem ${APP_DIR}/kavach-frontend/ssl/kavach.key && docker compose -f ${APP_DIR}/docker-compose.prod.yml up -d frontend"
 CRON_EOF
 
 echo ""
