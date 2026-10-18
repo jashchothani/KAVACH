@@ -70,7 +70,7 @@ AWS CloudFormation is an official AWS tool that reads an infrastructure file (`i
 ### Step 4: Specify Stack Details
 1. **Stack name:** Enter `kavach-production`
 2. **Parameters:**
-   - **InstanceType:** Choose `t2.micro` (Default — 100% Free Tier Eligible in all AWS regions). If your region prompts for t3, select `t3.micro`.
+   - **InstanceType:** Choose **`t3.micro`** (Default — 100% Free Tier Eligible for modern AWS accounts in ap-south-1 Mumbai & globally).
    - **KeyName:** *(Optional)* If you already created an EC2 Key Pair in AWS, select it. If not, **leave it blank** (you can connect right inside your web browser via EC2 Instance Connect!).
    - **NvidiaNimApiKey:** Keep the pre-filled working key:  
      `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`
