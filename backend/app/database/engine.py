@@ -45,31 +45,42 @@ def _set_sqlite_pragmas(dbapi_conn, connection_record):
     cursor.close()
 
 
+def _build_engine(url: str, settings) -> AsyncEngine:
+    """Build an AsyncEngine configured for SQLite or PostgreSQL."""
+    is_sqlite = "sqlite" in url
+    connect_args = {}
+    pool_kwargs = {}
+    if is_sqlite:
+        connect_args["check_same_thread"] = False
+        pool_kwargs["poolclass"] = StaticPool
+
+    engine = create_async_engine(
+        url,
+        echo=settings.database.echo,
+        pool_pre_ping=True,
+        connect_args=connect_args,
+        **pool_kwargs,
+    )
+    if is_sqlite:
+        sa_event.listen(engine.sync_engine, "connect", _set_sqlite_pragmas)
+    return engine
+
+
 def get_engine() -> AsyncEngine:
-    """Get or create the async SQLAlchemy engine."""
+    """Get or create the async SQLAlchemy engine with automatic fallback."""
     global _engine
     if _engine is None:
         settings = get_settings()
-        is_sqlite = "sqlite" in settings.database.url
+        target_url = settings.database.url
 
-        connect_args = {}
-        pool_kwargs = {}
-        if is_sqlite:
-            connect_args["check_same_thread"] = False
-            pool_kwargs["poolclass"] = StaticPool
-
-        _engine = create_async_engine(
-            settings.database.url,
-            echo=settings.database.echo,
-            pool_pre_ping=True,
-            connect_args=connect_args,
-            **pool_kwargs,
-        )
-
-        if is_sqlite:
-            sa_event.listen(_engine.sync_engine, "connect", _set_sqlite_pragmas)
-
-        logger.info("database_engine_created", url=settings.database.url.split("@")[-1])
+        try:
+            _engine = _build_engine(target_url, settings)
+            logger.info("database_engine_created", url=target_url.split("@")[-1])
+        except Exception as exc:
+            logger.warning("primary_database_failed_falling_back_to_sqlite", error=str(exc))
+            sqlite_url = f"sqlite+aiosqlite:///{settings.paths.data_dir / 'kavach.db'}"
+            _engine = _build_engine(sqlite_url, settings)
+            logger.info("sqlite_fallback_database_engine_created", url=sqlite_url)
     return _engine
 
 
@@ -99,15 +110,33 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_database() -> None:
-    """Create all tables and run safe migrations on application startup."""
+    """Create all tables and run safe migrations on application startup with fallback."""
     from app.database.models import Base
     from app.database.migration import run_safe_migrations
 
+    global _engine, _session_factory
     engine = get_engine()
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    await run_safe_migrations(engine)
-    logger.info("database_tables_initialized")
+
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        await run_safe_migrations(engine)
+        logger.info("database_tables_initialized")
+    except Exception as exc:
+        logger.warning("database_init_error_switching_to_sqlite_fallback", error=str(exc))
+        try:
+            await engine.dispose()
+        except Exception:
+            pass
+        settings = get_settings()
+        sqlite_url = f"sqlite+aiosqlite:///{settings.paths.data_dir / 'kavach.db'}"
+        _engine = _build_engine(sqlite_url, settings)
+        _session_factory = None
+
+        async with _engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        await run_safe_migrations(_engine)
+        logger.info("sqlite_fallback_tables_initialized")
 
 
 async def close_database() -> None:

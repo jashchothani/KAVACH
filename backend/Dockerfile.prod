@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libffi-dev \
     libssl-dev \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -26,10 +27,11 @@ WORKDIR /app
 RUN groupadd -g 10001 kavach && \
     useradd -u 10001 -g kavach -s /sbin/nologin -M kavach
 
-# Install runtime curl for healthchecks
+# Install runtime curl and libpq5 for healthchecks and PostgreSQL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
+    libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed python site-packages from builder
