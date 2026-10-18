@@ -1,0 +1,55 @@
+<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Admin Console — KAVACH</title><link rel="icon" type="image/png" href="assets/logo.png"><meta name="theme-color" content="#05080E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/user.css"><link rel="stylesheet" href="css/admin.css"></head><body>
+<canvas id="net"></canvas><div class="glow"></div>
+<div class="shell"><aside class="side" id="side"><a class="lg" href="/"><img class="logo-l" src="assets/logo.png" alt="KAVACH"><img class="logo-d" src="assets/logo-dark.png" alt=""></a>
+<div class="grp">Platform</div><button class="nv on" data-v="overview">📊 Overview</button><button class="nv" data-v="endpoints">🖥 Endpoints</button><button class="nv" data-v="accounts">👥 Accounts</button><button class="nv" data-v="policies">🛡 Policies</button>
+<div class="grp">Operations</div><button class="nv" data-v="collectors">📡 Collectors</button><button class="nv" data-v="soar">⚡ SOAR playbooks</button><button class="nv" data-v="sandbox">🧪 Sandbox</button><button class="nv" data-v="url">🔎 URL scanner</button>
+<div class="grp">Governance</div><button class="nv" data-v="audit">📜 Audit trail</button>
+<div class="me"><b id="uname">—</b><span id="urole"></span><button class="sb" style="width:100%;margin-top:12px" id="logout">Sign out</button></div></aside>
+<div class="cont"><div class="top"><div style="display:flex;gap:12px;align-items:center"><button class="ib menu" id="menu" aria-label="Menu">☰</button><div><h1 id="ttl">Overview</h1><p id="sub"></p></div></div>
+<div class="tools"><a href="/soc" class="btn" style="padding:6px 12px;font-size:0.75rem;text-decoration:none;background:rgba(229,72,77,0.18);border:1px solid rgba(229,72,77,0.45);color:#fff;border-radius:8px">🛡 SOC Command</a><a href="/dashboard" class="btn" style="padding:6px 12px;font-size:0.75rem;text-decoration:none;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:8px">🖥 My Workstation</a><span class="live"><i></i><span id="upd">Loading…</span></span><button class="ib" id="rf" title="Refresh">↻</button><button class="ib" id="theme" aria-label="Theme">◐</button></div></div>
+<div class="err" id="err"></div>
+<section class="view on" id="v-overview"><div class="kp" id="kp"></div><div class="gr"><div class="card c4"><h3>Fleet status</h3><div class="cap">Endpoints by state</div><div id="d-fleet"></div></div><div class="card c4"><h3>Accounts by role</h3><div class="cap">All platform users</div><div id="d-role"></div></div><div class="card c4"><h3>Account security</h3><div class="cap">MFA and status</div><div id="d-sec"></div></div></div>
+<div class="gr"><div class="card c6"><h3>Endpoint security scores</h3><div class="cap">Lowest scores first</div><div id="b-score"></div></div><div class="card c6"><h3>Operating systems</h3><div class="cap">Fleet composition</div><div id="b-os"></div></div></div>
+<div class="card"><h3>Latest audit events</h3><div class="cap">Tamper-evident activity log</div><div class="tw"><table><tbody id="t-recent"></tbody></table></div></div></section>
+<section class="view" id="v-endpoints"><div class="card"><div class="tw"><table><thead><tr><th>Host</th><th>IP</th><th>OS</th><th>Score</th><th>Status</th><th>Last seen</th><th></th></tr></thead><tbody id="t-end"></tbody></table></div></div></section>
+<section class="view" id="v-accounts">
+  <!-- 1. PENDING USER REGISTRATIONS QUEUE -->
+  <div class="card" style="margin-bottom:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div><h3>User Registration Queue</h3><div class="cap" style="margin:0">Dual-Gate Lifecycle: Step 1 of 2. Admin approval auto-assigns an eligible SOC Analyst.</div></div>
+      <span class="pill" id="cnt-pend-reqs" style="background:rgba(229,72,77,0.15);color:#ff6b6b;border:1px solid rgba(229,72,77,0.3)">0 Pending</span>
+    </div>
+    <div class="tw"><table><thead><tr><th>Candidate</th><th>Organization</th><th>Department</th><th>Justification</th><th>Submitted</th><th style="text-align:right">Actions</th></tr></thead><tbody id="t-reqs"></tbody></table></div>
+  </div>
+
+  <!-- 2. SOC ANALYSTS FLEET & WORKLOAD -->
+  <div class="card" style="margin-bottom:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div><h3>SOC Analysts Fleet &amp; Workload Distribution</h3><div class="cap" style="margin:0">Least-loaded algorithm balances activation reviews across active analysts.</div></div>
+      <button class="btn" id="btn-invite-analyst">+ Provision SOC Analyst</button>
+    </div>
+    <div class="tw"><table><thead><tr><th>Analyst</th><th>Department</th><th>Active Workload</th><th>MFA / 2FA</th><th>Status</th><th>Last Login</th></tr></thead><tbody id="t-analysts"></tbody></table></div>
+  </div>
+
+  <!-- 3. ALL ACCOUNTS & ACCESS CONTROLS -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div><h3>Platform Accounts Directory</h3><div class="cap" style="margin:0">Identity lifecycle, suspension, and credential revocation.</div></div>
+      <button class="btn" id="nu">+ New account</button>
+    </div>
+    <div class="tw"><table><thead><tr><th>User</th><th>Role</th><th>MFA</th><th>Score</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody id="t-acc"></tbody></table></div>
+  </div>
+</section>
+<section class="view" id="v-policies"><div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:14px"><div><h3>Security policies</h3><div class="cap" style="margin:0">Applied across the whole platform</div></div><button class="btn" id="sp">Save changes</button></div><div class="pol" id="pol"></div></div></section>
+<section class="view" id="v-collectors"><div class="card"><div class="tw"><table><thead><tr><th>Collector</th><th>Status</th><th>Events</th><th>Heartbeat</th><th></th></tr></thead><tbody id="t-col"></tbody></table></div></div></section>
+<section class="view" id="v-soar"><div class="card"><div class="tw"><table><thead><tr><th>Playbook</th><th>Category</th><th>Risk</th><th>Runs</th><th></th></tr></thead><tbody id="t-soar"></tbody></table></div></div></section>
+<section class="view" id="v-sandbox"><div class="card"><h3>Submit to sandbox</h3><div class="cap">Detonate a URL or file name in isolation</div><form class="inp" id="sf"><input id="st" placeholder="https://… or file name" required><button class="btn">Detonate</button></form></div><div class="card" style="margin-top:16px"><div class="tw"><table><thead><tr><th>Target</th><th>Verdict</th><th>Risk</th><th>By</th><th>When</th></tr></thead><tbody id="t-sb"></tbody></table></div></div></section>
+<section class="view" id="v-url"><div class="card"><h3>URL scanner</h3><div class="cap">Zero-trust link inspection</div><form class="inp" id="uf"><input id="ui" placeholder="https://example.com" required><button class="btn">Scan</button></form><div id="ur"></div></div></section>
+<section class="view" id="v-audit"><div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:14px"><div><h3>Audit trail</h3><div class="cap" style="margin:0">SHA-256 hash-chained records</div></div><button class="btn" id="vc">Verify chain</button></div><div class="tw"><table><thead><tr><th>Operator</th><th>Action</th><th>When</th><th>Hash</th></tr></thead><tbody id="t-aud"></tbody></table></div></div></section>
+</div></div>
+<div class="mb" id="mb"><div class="md" id="md"></div></div><div class="toast" id="toast"></div>
+<script src="js/api.js"></script><script src="js/admin.js"></script></body></html>

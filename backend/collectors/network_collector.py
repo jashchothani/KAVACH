@@ -49,31 +49,48 @@ class NetworkCollector(BaseCollector):
     def __init__(self) -> None:
         super().__init__()
         self._connection_history: Counter[str] = Counter()
+        self._seen_connections: set[tuple[str, int, str, int, str]] = set()
 
-    async def _collect_real(self) -> list[TelemetryEvent]:
-        """Collect real network connections via psutil."""
+    def _collect_connections_sync(self) -> list[TelemetryEvent]:
+        """Synchronous network socket monitor running in worker thread with pre-cached PIDs."""
         import psutil
 
         events: list[TelemetryEvent] = []
-        connections = psutil.net_connections(kind="all")
+
+        # Pre-cache PID to Process Name map (adopted from SOC module) to avoid slow lookups inside loop
+        pid_name_cache: dict[int, str] = {}
+        for proc in psutil.process_iter(["pid", "name"]):
+            try:
+                pid_name_cache[proc.info["pid"]] = proc.info["name"]
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+
+        try:
+            connections = psutil.net_connections(kind="inet")
+        except Exception as exc:
+            logger.debug("net_connections_read_failed", error=str(exc))
+            return []
+
+        current_seen: set[tuple[str, int, str, int, str]] = set()
 
         for conn in connections:
             try:
+                # Filter for active connections: established TCP or UDP with remote endpoints or listening
                 if conn.status == "NONE" and not conn.raddr:
                     continue
 
-                local_addr = f"{conn.laddr.ip}:{conn.laddr.port}" if conn.laddr else ""
-                remote_addr = ""
-                remote_ip = ""
-                remote_port = 0
-
-                if conn.raddr:
-                    remote_ip = conn.raddr.ip
-                    remote_port = conn.raddr.port
-                    remote_addr = f"{remote_ip}:{remote_port}"
-
+                local_ip = conn.laddr.ip if conn.laddr else ""
+                local_port = conn.laddr.port if conn.laddr else 0
+                remote_ip = conn.raddr.ip if conn.raddr else ""
+                remote_port = conn.raddr.port if conn.raddr else 0
                 protocol = "TCP" if conn.type == socket.SOCK_STREAM else "UDP"
                 direction = "outbound" if conn.raddr else "listening"
+
+                local_addr = f"{local_ip}:{local_port}" if local_ip else ""
+                remote_addr = f"{remote_ip}:{remote_port}" if remote_ip else ""
+
+                conn_key = (local_ip, local_port, remote_ip, remote_port, protocol)
+                current_seen.add(conn_key)
 
                 # Severity / risk assessment
                 severity = Severity.INFO
@@ -104,17 +121,14 @@ class NetworkCollector(BaseCollector):
                         risk = max(risk, 65.0)
                         tags.append("potential_beaconing")
 
-                port_service = WELL_KNOWN_PORTS.get(remote_port, "unknown")
+                # If connection has been seen before and is routine INFO, skip re-emitting
+                is_new = conn_key not in self._seen_connections
+                if not is_new and severity == Severity.INFO and risk == 0.0:
+                    continue
 
-                # Get process info
-                pid = conn.pid
-                proc_name = ""
-                if pid:
-                    try:
-                        proc = psutil.Process(pid)
-                        proc_name = proc.name()
-                    except (psutil.NoSuchProcess, psutil.AccessDenied):
-                        pass
+                port_service = WELL_KNOWN_PORTS.get(remote_port, "unknown")
+                pid = conn.pid or 0
+                proc_name = pid_name_cache.get(pid, "unknown")
 
                 event = self._create_event(
                     EventType.NETWORK_CONNECTION,
@@ -133,6 +147,7 @@ class NetworkCollector(BaseCollector):
                         "pid": pid,
                         "process_name": proc_name,
                         "connection_count": self._connection_history.get(remote_addr, 0),
+                        "is_new_connection": is_new,
                     },
                 )
                 events.append(event)
@@ -140,8 +155,13 @@ class NetworkCollector(BaseCollector):
             except Exception:
                 continue
 
-        logger.debug("network_connections_collected", count=len(events))
+        # Keep state cache updated
+        self._seen_connections = current_seen
         return events
+
+    async def _collect_real(self) -> list[TelemetryEvent]:
+        """Collect real network connections off-thread to ensure 100% responsive event loop."""
+        return await asyncio.to_thread(self._collect_connections_sync)
 
     async def _collect_simulated(self) -> list[TelemetryEvent]:
         """Generate simulated network connections."""

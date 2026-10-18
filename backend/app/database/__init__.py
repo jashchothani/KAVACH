@@ -11,6 +11,9 @@ from app.database.engine import (
 )
 from app.database.models import (
     Base,
+    KavachRole,
+    AccountStatus,
+    Organization,
     User,
     Device,
     SecurityEvent,
@@ -25,6 +28,11 @@ from app.database.models import (
     AuditLog,
     DashboardStats,
     SystemSetting,
+    AccountRequest,
+    AnalystAssignmentHistory,
+    EnrollmentChallenge,
+    DeviceCredential,
+    Policy,
 )
 from app.database.repositories import (
     BaseRepository,
@@ -42,6 +50,12 @@ from app.database.repositories import (
     StatsRepository,
     SystemSettingRepository,
     UserRepository,
+    OrganizationRepository,
+    AccountRequestRepository,
+    AnalystAssignmentHistoryRepository,
+    EnrollmentChallengeRepository,
+    DeviceCredentialRepository,
+    PolicyRepository,
 )
 
 __all__ = [

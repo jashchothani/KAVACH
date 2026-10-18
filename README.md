@@ -123,7 +123,38 @@ into one security operations ecosystem.
                            🛡️ PROTECTED
 ```
 
-</div>
+---
+
+# 🏛️ ENTERPRISE PLATFORM CORE ARCHITECTURE (v2.1.0)
+
+KAVACH has been engineered into a production-grade, multi-tenant cyber defense fabric:
+
+| Core Subsystem | Technology & Implementation | Documentation |
+|---|---|---|
+| **Dual-Gate Zero-Trust Account Lifecycle** | Multi-gate state machine (`REQUESTED` ➔ `ADMIN_APPROVED` ➔ `ANALYST_ASSIGNED` ➔ `ACTIVE`), least-loaded SOC analyst auto-assignment with randomized tie-breakers, zero self-activation, instant session revocation on suspension. | [Account Workflow Guide](docs/ACCOUNT_WORKFLOW.md) |
+| **Cryptographic Device Identity & DPAPI** | 2048-bit RSA keypair generated locally, private key protected by Windows DPAPI (`CryptProtectData`), 5-min single-use signed challenge nonces, `kavach_dev_...` tokens with SHA-256 server hashing. | [Device Enrollment Guide](docs/DEVICE_ENROLLMENT.md) |
+| **16 Real-Time Telemetry Sensors** | Sysmon, Windows EventLog, Process, PowerShell (Script Block 4104), Network, FIM, USB, Defender, Registry, DNS, Canary, Service, Scheduled Task, Software, and System Info. | [Telemetry Data Flow Guide](docs/TELEMETRY_DATA_FLOW.md) |
+| **Windows Companion & System Tray** | Native Windows System Tray Guardian (`tray_companion.py`), One-Click Shield host containment, live sensor health meters, and dark crimson desktop GUI (`companion.py`). | [Installer & Packaging Guide](docs/INSTALLER.md) |
+| **Non-Destructive Database Migrations** | Safe migration runner verified on 94.5MB SQLite production database (`kavach.db.bak`), supporting SQLite and PostgreSQL schema evolution with zero data loss. | [Database Migrations Guide](docs/DATABASE_MIGRATIONS.md) |
+| **Enterprise Cloud & AWS Deployment** | AWS ECS Fargate task definition, multi-stage hardened Dockerfiles (`Dockerfile.prod`), AWS Secrets Manager integration, CloudWatch structured logs, and Docker Compose stack. | [AWS Deployment Guide](docs/DEPLOYMENT.md) |
+| **Zero-Mocked Automated Test Suite** | 54 automated pytest tests covering RBAC, DPAPI roundtrips, replay attack prevention, offline spool priority, and SOAR containment with 100% pass rate. | [Testing & QA Guide](docs/TESTING.md) |
+
+---
+
+# 📚 DOCUMENTATION DIRECTORY
+
+- 🛡️ [System Architecture](docs/ARCHITECTURE.md)
+- 🔐 [Zero-Trust Account Governance](docs/ACCOUNT_WORKFLOW.md)
+- 🔑 [Cryptographic Device Enrollment](docs/DEVICE_ENROLLMENT.md)
+- 📡 [Telemetry Sensors & Pipeline Flow](docs/TELEMETRY_DATA_FLOW.md)
+- 💾 [Safe Database Migrations](docs/DATABASE_MIGRATIONS.md)
+- ☁️ [AWS Cloud & ECS Deployment](docs/DEPLOYMENT.md)
+- 📦 [Windows Inno Setup Installer](docs/INSTALLER.md)
+- 💻 [Local Development Guide](docs/LOCAL_DEVELOPMENT.md)
+- 🧪 [Automated Test Suite](docs/TESTING.md)
+- 🔒 [Security Review & Audits](docs/SECURITY_REVIEW.md)
+- 📋 [Implementation Master Plan](docs/IMPLEMENTATION_PLAN.md)
+- 🔍 [Repository Audit Report](docs/REPOSITORY_AUDIT.md)
 
 ---
 

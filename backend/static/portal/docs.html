@@ -1,0 +1,209 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+  <title>KAVACH ΓÇö Developer Documentation & API Reference</title>
+
+  <!-- Google Fonts: Outfit, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- KAVACH Pure CSS Stylesheet -->
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body class="site-body">
+  <!-- Atmospheric Glows -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Global Header -->
+  <header class="site-header">
+    <div class="site-nav-container">
+      <a href="./index.html" class="site-logo">
+        <div class="site-logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="site-logo-text">
+          <h1>KAVACH</h1>
+          <span>Documentation & API Hub</span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="site-nav-links">
+          <li><a href="./index.html" class="site-nav-link"><i class="fa-solid fa-house"></i> Home</a></li>
+          <li><a href="./dashboard.html" class="site-nav-link"><i class="fa-solid fa-chart-line"></i> SOC Dashboard</a></li>
+          <li><a href="./fleet.html" class="site-nav-link"><i class="fa-solid fa-network-wired"></i> Fleet & Agents</a></li>
+          <li><a href="./incidents.html" class="site-nav-link"><i class="fa-solid fa-shield-virus"></i> Incidents & SOAR</a></li>
+          <li><a href="./mitre.html" class="site-nav-link"><i class="fa-solid fa-cubes"></i> MITRE Matrix</a></li>
+          <li><a href="./raksha.html" class="site-nav-link"><i class="fa-solid fa-brain"></i> Raksha AI</a></li>
+          <li><a href="./docs.html" class="site-nav-link active"><i class="fa-solid fa-book"></i> Docs</a></li>
+        </ul>
+      </nav>
+
+      <div class="site-nav-cta">
+        <a href="http://localhost:8000/docs" target="_blank" class="btn btn-cyan" style="padding:8px 16px; font-size:0.8rem;">
+          <i class="fa-solid fa-square-arrow-up-right"></i> Swagger UI
+        </a>
+        <a href="./dashboard.html" class="btn btn-primary" style="padding:8px 16px; font-size:0.8rem;">
+          <i class="fa-solid fa-gauge"></i> Live SOC
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Docs Layout Container -->
+  <div class="docs-wrapper">
+    <!-- Sticky Sidebar -->
+    <aside class="docs-sidebar">
+      <div class="docs-nav-group">
+        <div class="docs-nav-group-title">GETTING STARTED</div>
+        <a href="#quickstart" class="docs-nav-item active">Platform Quickstart</a>
+        <a href="#architecture" class="docs-nav-item">System Architecture</a>
+        <a href="#deployment" class="docs-nav-item">Deployment Options</a>
+      </div>
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-group-title">TELEMETRY & SENSORS</div>
+        <a href="#sensors" class="docs-nav-item">16 Sensor Collectors</a>
+        <a href="#edge-classifier" class="docs-nav-item">5-Tier Edge Classifier</a>
+        <a href="#offline-spooling" class="docs-nav-item">Offline Ring Buffer</a>
+      </div>
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-group-title">DETECTION & SOAR</div>
+        <a href="#isolation-forest" class="docs-nav-item">Isolation Forest ML</a>
+        <a href="#mitre-mapping" class="docs-nav-item">MITRE ATT&CK Rules</a>
+        <a href="#playbooks" class="docs-nav-item">SOAR Playbooks</a>
+      </div>
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-group-title">API REFERENCE</div>
+        <a href="#rest-api" class="docs-nav-item">REST Endpoints</a>
+        <a href="#websocket-api" class="docs-nav-item">WebSocket Live Stream</a>
+        <a href="#agent-tokens" class="docs-nav-item">Agent Tokens</a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <article class="docs-content">
+      <h1 id="quickstart">KAVACH Platform Documentation</h1>
+      <p>
+        Welcome to the official developer and SecOps documentation for <strong>KAVACH</strong> ΓÇö the enterprise 
+        AI-driven Security Orchestration, Automation, and Response (SOAR) and Extended Detection and Response (XDR) platform.
+      </p>
+
+      <h2>1. Platform Quickstart</h2>
+      <p>
+        KAVACH is designed for zero-friction deployment. The cloud analysis engine and native SOC command center run together seamlessly on a single port.
+      </p>
+
+      <div class="docs-code-block">
+        <pre><code># 1. Start the Unified KAVACH Server (FastAPI + Native SOC Dashboard)
+start_kavach.bat
+
+# Or run via Python directly:
+cd backend
+python -m uvicorn app.main:create_app --host 0.0.0.0 --port 8000 --factory</code></pre>
+      </div>
+
+      <p>
+        The server automatically mounts the native HTML5/CSS3/JavaScript frontend and serves it directly at 
+        <code>http://localhost:8000/</code> with interactive Swagger documentation at <code>http://localhost:8000/docs</code>.
+      </p>
+
+      <h2 id="architecture">2. Distributed Pipeline Architecture</h2>
+      <p>
+        KAVACH separates telemetry collection from intensive correlation analysis:
+      </p>
+      <ul>
+        <li><strong>Endpoint Collectors:</strong> Lightweight agents run on Windows, Linux, and macOS endpoints, sampling 16 sensors and spooling locally into a high-speed SQLite ring buffer.</li>
+        <li><strong>5-Tier Priority Queue:</strong> Events are sorted into Critical, High, Medium, Low, and Statistical streams before shipment. Critical telemetry is guaranteed zero drop and sub-millisecond priority routing.</li>
+        <li><strong>Cloud Analysis Engine:</strong> A central pipeline applies rule heuristics and an unsupervised Isolation Forest ML model (scikit-learn) trained on 98,000+ behavior samples.</li>
+        <li><strong>Autonomous SOAR:</strong> Triggers network isolation, process termination, and canary tripwires.</li>
+      </ul>
+
+      <h2 id="sensors">3. The 16 Telemetry Sensors</h2>
+      <p>The endpoint collector agent houses 16 specialized modular sensors:</p>
+      <div style="background:#0b0e17; border:1px solid var(--border-color); border-radius:8px; padding:16px; margin: 16px 0;">
+        <ol style="padding-left: 20px; line-height: 1.8; color: #cbd5e1;">
+          <li><strong>Process Sensor:</strong> Monitors process creation, parent-child hierarchies, and command-line arguments.</li>
+          <li><strong>Network Sensor:</strong> Captures established TCP/UDP sockets, remote ports, and high-entropy destinations.</li>
+          <li><strong>FIM File Monitor:</strong> Real-time watchdog monitoring System32, SysWOW64, Temp, and startup locations.</li>
+          <li><strong>Login & Auth Sensor:</strong> Tracks Windows EventLog 4624 (logon) and 4625 (failed brute-force).</li>
+          <li><strong>PowerShell Sensor:</strong> Parses Event ID 4104 ScriptBlock logs for Base64 and AMSI bypasses.</li>
+          <li><strong>Service Sensor:</strong> Detects creation or modification of Windows system services.</li>
+          <li><strong>USB Removable Sensor:</strong> Intercepts USB mass storage insertion and serial fingerprints.</li>
+          <li><strong>Windows Defender:</strong> Polls antivirus signature updates, RTP status, and quarantined threats.</li>
+          <li><strong>DNS Query Sensor:</strong> Tracks domain resolutions for DGA (Domain Generation Algorithms) detection.</li>
+          <li><strong>Registry Sensor:</strong> Inspects Run, RunOnce, and Winlogon persistence registry keys.</li>
+          <li><strong>Scheduled Task Sensor:</strong> Captures cron and Windows Task Scheduler creations.</li>
+          <li><strong>Software Sensor:</strong> Audits installed packages and unexpected binary drops.</li>
+          <li><strong>System Info Sensor:</strong> Tracks CPU, memory usage, and hardware vitals heartbeat.</li>
+          <li><strong>Sysmon Sensor:</strong> Integrates Microsoft System Monitor deep kernel telemetry.</li>
+          <li><strong>Canary Sensor:</strong> Deploys decoy honeypot files to detect active ransomware encryption.</li>
+          <li><strong>Windows EventLog:</strong> Generic parser for Windows Security and Application channels.</li>
+        </ol>
+      </div>
+
+      <h2 id="rest-api">4. REST API Reference</h2>
+      <p>KAVACH provides fully versioned OpenAPI 3.0 REST endpoints:</p>
+
+      <h3>GET /api/v1/telemetry/hosts</h3>
+      <p>Returns the live status of all registered endpoint machines.</p>
+      <div class="docs-code-block">
+        <pre><code>curl -X GET http://localhost:8000/api/v1/telemetry/hosts \
+  -H "Accept: application/json"</code></pre>
+      </div>
+
+      <h3>POST /api/v1/telemetry/events</h3>
+      <p>Ingests a batch of telemetry events from an endpoint agent:</p>
+      <div class="docs-code-block">
+        <pre><code>curl -X POST http://localhost:8000/api/v1/telemetry/events \
+  -H "Content-Type: application/json" \
+  -H "X-Agent-Token: your_agent_token" \
+  -d '{
+    "host_id": "srv-dc01",
+    "timestamp": "2026-10-13T10:00:00Z",
+    "events": [
+      {
+        "collector": "powershell",
+        "edge_tier": "critical",
+        "command_line": "powershell.exe -enc SQBFAFgA...",
+        "risk_score": 95.0
+      }
+    ]
+  }'</code></pre>
+      </div>
+
+      <h3>POST /api/v1/url/scan</h3>
+      <p>Performs instant lexical and reputation scanning on target URLs.</p>
+      <div class="docs-code-block">
+        <pre><code>curl -X POST http://localhost:8000/api/v1/url/scan \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://suspicious-login-auth.net"}'</code></pre>
+      </div>
+
+      <h2 id="websocket-api">5. Live WebSocket Stream</h2>
+      <p>
+        Connect to the continuous live stream endpoint at <code>ws://localhost:8000/api/v1/dashboard/live</code> 
+        to receive real-time detection events and system metrics with zero polling overhead.
+      </p>
+
+      <div class="docs-code-block">
+        <pre><code>const socket = new WebSocket('ws://localhost:8000/api/v1/dashboard/live');
+
+socket.onmessage = (event) => {
+  const telemetry = JSON.parse(event.data);
+  console.log('Live Alert:', telemetry);
+};</code></pre>
+      </div>
+    </article>
+  </div>
+</body>
+</html>

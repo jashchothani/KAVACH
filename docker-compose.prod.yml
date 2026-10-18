@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kavach_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-KavachSecurePass2026!}
+      POSTGRES_DB: ${POSTGRES_DB:-kavach}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kavach_admin} -d ${POSTGRES_DB:-kavach}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-KavachRedisPass2026!}"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-KavachRedisPass2026!}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - DB_URL=postgresql+asyncpg://${POSTGRES_USER:-kavach_admin}:${POSTGRES_PASSWORD:-KavachSecurePass2026!}@postgres:5432/${POSTGRES_DB:-kavach}
+      - QUEUE_TYPE=redis
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-KavachRedisPass2026!}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-kavach-production-secret-key-enterprise-xdr-7777}
+      - JWT_SECRET=${JWT_SECRET:-kavach-jwt-secret-key-256bit-secure-token-production}
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - NVIDIA_NIM_API_KEY=${NVIDIA_NIM_API_KEY:-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}
+      - NVIDIA_NIM_BASE_URL=${NVIDIA_NIM_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      - NVIDIA_NIM_MODEL=${NVIDIA_NIM_MODEL:-google/diffusiongemma-26b-a4b-it}
+      - NOTIFICATION_SERVER=${NOTIFICATION_SERVER:-}
+      - NOTIFICATION_PORT=${NOTIFICATION_PORT:-587}
+      - NOTIFICATION_USERNAME=${NOTIFICATION_USERNAME:-kavachcybertech@gmail.com}
+      - NOTIFICATION_PASSWORD=${NOTIFICATION_PASSWORD:-}
+      - NOTIFICATION_FROM=${NOTIFICATION_FROM:-KAVACH Security Platform <kavachcybertech@gmail.com>}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - AWS_SNS_TOPIC_ARN=${AWS_SNS_TOPIC_ARN:-}
+      - AWS_SNS_AUTO_SUBSCRIBE=${AWS_SNS_AUTO_SUBSCRIBE:-true}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-south-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+
+  frontend:
+    build:
+      context: ./kavach-frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+volumes:
+  pg_data:
+  redis_data:

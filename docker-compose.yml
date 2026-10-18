@@ -23,6 +23,14 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
   backend:
     build:
       context: ./backend
@@ -31,22 +39,27 @@ services:
     environment:
       - ENVIRONMENT=development
       - DEBUG=true
+      - BROKER_TYPE=redis
+      - REDIS_URL=redis://redis:6379/0
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       - kafka
+      - redis
     volumes:
       - ./backend:/app
+      - ./kavach-frontend:/kavach-frontend
       - ./data:/data
 
   frontend:
-    build:
-      context: ./frontend
+    image: nginx:alpine
+    restart: always
     ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://backend:8000
+      - "5173:80"
+    volumes:
+      - ./kavach-frontend:/usr/share/nginx/html:ro
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+
+volumes:
+  redis_data:
+

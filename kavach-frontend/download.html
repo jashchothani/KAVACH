@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Official Downloads &amp; System Requirements — KAVACH</title>
+    <meta name="description"
+        content="Download official KAVACH Windows Enterprise Suite, Android SOC Companion, and Browser Threat Intelligence Extension. Complete Windows system requirements and installation guides.">
+    <meta name="theme-color" content="#05080E">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <script>
+        try {
+            var t = localStorage.getItem('kavach-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+            document.documentElement.dataset.theme = t
+        } catch (e) {
+            document.documentElement.dataset.theme = 'dark'
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/site.css">
+    <link rel="stylesheet" href="css/extras.css">
+    <style>
+        .dl-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            background: rgba(200, 39, 45, 0.12);
+            border: 1px solid rgba(255, 68, 77, 0.35);
+            color: #ff525d;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+            letter-spacing: 0.04em;
+        }
+
+        .dl-hero-badge i {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #ff444d;
+            box-shadow: 0 0 10px #ff444d;
+            display: inline-block;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        .release-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 50px;
+        }
+
+        .rel-card {
+            background: rgba(18, 22, 34, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .rel-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 68, 77, 0.45);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(200, 39, 45, 0.2);
+        }
+
+        .rel-card.featured {
+            border-color: rgba(255, 68, 77, 0.5);
+            background: linear-gradient(180deg, rgba(30, 24, 32, 0.85) 0%, rgba(18, 22, 34, 0.8) 100%);
+            box-shadow: 0 8px 32px rgba(200, 39, 45, 0.15);
+        }
+
+        .rel-card.featured::before {
+            content: "FLAGSHIP WINDOWS SUITE";
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: #ff525d;
+            background: rgba(200, 39, 45, 0.15);
+            border: 1px solid rgba(255, 68, 77, 0.35);
+            padding: 3px 9px;
+            border-radius: 9999px;
+        }
+
+        .rel-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .rel-icon-wrap {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            flex-shrink: 0;
+        }
+
+        .rel-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--t1);
+            margin: 0 0 4px 0;
+        }
+
+        .rel-meta {
+            font-size: 0.82rem;
+            color: var(--t2);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .rel-desc {
+            font-size: 0.92rem;
+            color: var(--t2);
+            line-height: 1.55;
+            margin-bottom: 20px;
+        }
+
+        .rel-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .rel-features li {
+            font-size: 0.88rem;
+            color: var(--t1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            line-height: 1.4;
+        }
+
+        .rel-features li span.check {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.45);
+            color: #10b981;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-weight: 800;
+        }
+
+        .rel-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-download-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #c8272d 0%, #ff444d 100%);
+            color: #ffffff !important;
+            font-weight: 600;
+            padding: 13px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 0.94rem;
+            box-shadow: 0 8px 24px rgba(200, 39, 45, 0.35);
+            transition: all 0.25s ease;
+        }
+
+        .btn-download-primary:hover {
+            box-shadow: 0 10px 30px rgba(200, 39, 45, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-download-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--t1) !important;
+            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.25s ease;
+        }
+
+        .btn-download-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .hash-bar {
+            background: rgba(10, 14, 22, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--t2);
+            word-break: break-all;
+        }
+
+        .hash-bar span.val {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn-copy-hash {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--t1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            cursor: pointer;
+            font-weight: 600;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .btn-copy-hash:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        /* Requirements Table */
+        .specs-container {
+            background: rgba(18, 22, 34, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 50px;
+        }
+
+        .specs-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.9rem;
+        }
+
+        .specs-table th {
+            text-align: left;
+            padding: 16px 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            color: var(--t1);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .specs-table th.col-min {
+            color: #fbbf24;
+        }
+
+        .specs-table th.col-rec {
+            color: #34d399;
+        }
+
+        .specs-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .specs-table td.aspect {
+            font-weight: 600;
+            color: var(--t1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .specs-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge-pill-min {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 9999px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fbbf24;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .badge-pill-rec {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 9999px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #34d399;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        /* Step-by-step guides */
+        .guide-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 28px;
+            margin-bottom: 50px;
+        }
+
+        .guide-block {
+            background: rgba(18, 22, 34, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 32px;
+        }
+
+        .guide-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--t1);
+            margin: 0 0 20px 0;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .step-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(200, 39, 45, 0.15);
+            border: 1px solid rgba(255, 68, 77, 0.4);
+            color: #ff525d;
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step-body h4 {
+            margin: 0 0 4px 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--t1);
+        }
+
+        .step-body p {
+            margin: 0;
+            font-size: 0.88rem;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .smartscreen-alert {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 3px solid #f59e0b;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+            font-size: 0.84rem;
+            color: #fef3c7;
+            line-height: 1.45;
+        }
+
+        .smartscreen-alert strong {
+            color: #fbbf24;
+        }
+
+        .code-box {
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: #38bdf8;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            overflow-x: auto;
+        }
+
+        @media (max-width: 768px) {
+            .specs-container, .guide-block {
+                padding: 20px;
+            }
+            .specs-table th, .specs-table td {
+                padding: 12px 10px;
+                font-size: 0.82rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="lock">
+    <div id="pre">
+        <div class="pre-c t"></div>
+        <div class="pre-c b"></div>
+        <div class="pre-in">
+            <img class="pre-logo logo-l" src="assets/logo.png" alt="KAVACH">
+            <img class="pre-logo logo-d" src="assets/logo-dark.png" alt="">
+            <div class="pre-bar"><i id="prebar"></i></div>
+            <div class="pre-n" id="pren">0%</div>
+        </div>
+    </div>
+    <div id="progress"></div>
+
+    <header class="nav" id="nav">
+        <div class="container">
+            <a class="brand" href="/" aria-label="KAVACH home">
+                <img class="logo-l" src="assets/logo.png" alt="KAVACH by Swastik Chemical (India)">
+                <img class="logo-d" src="assets/logo-dark.png" alt="">
+            </a>
+            <ul class="nav-links" id="links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/features">Features</a></li>
+                <li><a href="/how-it-works">How it works</a></li>
+                <li><a href="/raksha-ai">Raksha AI</a></li>
+                <li><a href="/security">Security</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/contact">Contact</a></li>
+                
+            </ul>
+            <div class="nav-cta">
+                <button class="theme-btn" id="theme" aria-label="Toggle light and dark mode">
+                    <span class="moon">☾</span><span class="sun">☀</span>
+                </button>
+                <a class="btn btn-sm btn-download" href="/download">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="dl-text">Download</span>
+                </a>
+                <a class="btn btn-sm" href="/login">Sign in</a>
+                <a class="btn btn-sm btn-fill" href="/get-started">Get Started</a>
+                <button class="burger" id="burger" aria-label="Menu"><span></span><span></span></button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Page Hero -->
+        <section class="page-hero">
+            <div class="hbg s1" data-pal="0">
+                <div class="blob a"></div>
+                <div class="blob b"></div>
+                <div class="blob c"></div>
+                <div class="blob d"></div>
+                <canvas class="gl"></canvas>
+                <div class="grain"></div>
+                <div class="shade"></div>
+            </div>
+            <div class="container">
+                <div class="dl-hero-badge"><i></i> OFFICIAL SOVEREIGN RELEASE v2.1.0</div>
+                <h1 class="sw">KAVACH <span class="grad">Endpoint Defense</span></h1>
+                <p class="reveal">
+                    Architected specifically for Windows 10 &amp; 11 (64-bit) endpoints with native real-time companion support for Android and Chromium browsers. 100% on-premises cryptographic security.
+                </p>
+            </div>
+        </section>
+
+        <!-- Official Releases Section -->
+        <section style="padding-top: 30px;">
+            <div class="container">
+                <div class="sec-head reveal">
+                    <span class="eyebrow">Verified Binaries</span>
+                    <h2>Official <span class="grad">Release Downloads</span></h2>
+                    <p>Cryptographically signed packages. Verify the SHA-256 hash using PowerShell before executing.</p>
+                </div>
+
+                <div class="release-grid">
+                    <!-- 1. Windows Suite (Flagship) -->
+                    <div class="rel-card featured reveal">
+                        <div>
+                            <div class="rel-header">
+                                <div class="rel-icon-wrap" style="color: #00f0ff;">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+                                </div>
+                                <div>
+                                    <h3 class="rel-title">KAVACH Windows Suite</h3>
+                                    <div class="rel-meta">KAVACH-Setup-2.1.0.exe • 257.2 MB</div>
+                                </div>
+                            </div>
+                            <p class="rel-desc">
+                                Complete Windows desktop cybersecurity suite including Session 0 background telemetry service, standalone CPython runtime, Flutter Desktop UI, and Native System Tray Guardian.
+                            </p>
+                            <ul class="rel-features">
+                                <li><span class="check">✓</span> 16 Kernel Telemetry Sensors</li>
+                                <li><span class="check">✓</span> System Tray Guardian &amp; Popup</li>
+                                <li><span class="check">✓</span> User &amp; SOC Analyst Dual UI</li>
+                                <li><span class="check">✓</span> Built-in Machine Learning Defense</li>
+                            </ul>
+                        </div>
+                        <div class="rel-actions">
+                            <a class="btn-download-primary" href="/releases/KAVACH-Setup-2.1.0.exe" download="KAVACH-Setup-2.1.0.exe">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Download for Windows (x64)
+                            </a>
+                            <div class="hash-bar">
+                                <span class="val" id="hashWin" title="48af794a159624f7440a8f50d5afb52b429d5aad0bb1c9fe3ada4e88c898f0b5">SHA256: 48af794a159624...f0b5</span>
+                                <button class="btn-copy-hash" data-copy="48af794a159624f7440a8f50d5afb52b429d5aad0bb1c9fe3ada4e88c898f0b5">Copy Hash</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Android App Companion -->
+                    <div class="rel-card reveal">
+                        <div>
+                            <div class="rel-header">
+                                <div class="rel-icon-wrap" style="color: #10b981;">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="12" cy="18" r="1"/><path d="M9 5h6"/></svg>
+                                </div>
+                                <div>
+                                    <h3 class="rel-title">KAVACH Android Companion</h3>
+                                    <div class="rel-meta">kavach-mobile-release.apk • 77.34 MB</div>
+                                </div>
+                            </div>
+                            <p class="rel-desc">
+                                Mobile SOC operations companion with real-time push alert notifications, remote host isolation trigger, biometric auth, and mobile Raksha AI copilot.
+                            </p>
+                            <ul class="rel-features">
+                                <li><span class="check">✓</span> Instant Incident Push Alerts</li>
+                                <li><span class="check">✓</span> One-Tap Remote Host Isolation</li>
+                                <li><span class="check">✓</span> Raksha AI Mobile Copilot</li>
+                                <li><span class="check">✓</span> Zero-Trust Biometric Security</li>
+                            </ul>
+                        </div>
+                        <div class="rel-actions">
+                            <a class="btn-download-secondary" href="/releases/kavach-mobile-release.apk" download="kavach-mobile-release.apk">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Download Android APK (v1.4.0)
+                            </a>
+                            <div class="hash-bar">
+                                <span class="val" id="hashApk" title="d8aeadbd04c30d1a4fd7ea4f90c400065729d09cebf3fb8b6417b75be0cdc709">SHA256: d8aeadbd04c30d...c709</span>
+                                <button class="btn-copy-hash" data-copy="d8aeadbd04c30d1a4fd7ea4f90c400065729d09cebf3fb8b6417b75be0cdc709">Copy Hash</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Browser Extension -->
+                    <div class="rel-card reveal">
+                        <div>
+                            <div class="rel-header">
+                                <div class="rel-icon-wrap" style="color: #ff525d;">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                                </div>
+                                <div>
+                                    <h3 class="rel-title">Browser Threat Sentinel</h3>
+                                    <div class="rel-meta">kavach-extension.zip • 128.8 KB</div>
+                                </div>
+                            </div>
+                            <p class="rel-desc">
+                                Manifest V3 browser extension for Chrome, Edge, and Brave. Protects search results with verified ticks (✓), detects Gmail phishing, and flags WhatsApp Web spam numbers.
+                            </p>
+                            <ul class="rel-features">
+                                <li><span class="check">✓</span> Search Result Safety Ticks (✓)</li>
+                                <li><span class="check">✓</span> Gmail Phishing &amp; Spoof Shield</li>
+                                <li><span class="check">✓</span> WhatsApp Scam Number Detector</li>
+                                <li><span class="check">✓</span> Zero-Day URL Threat Blocker</li>
+                            </ul>
+                        </div>
+                        <div class="rel-actions">
+                            <a class="btn-download-secondary" href="/releases/kavach-extension.zip" download="kavach-extension.zip">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Download Extension Package
+                            </a>
+                            <div class="hash-bar">
+                                <span class="val" id="hashExt" title="9fbf1ee8b4670e1e4ea59f223100cecf4dc2987b6bc83c26e820924517c0b08f">SHA256: 9fbf1ee8b4670e...b08f</span>
+                                <button class="btn-copy-hash" data-copy="9fbf1ee8b4670e1e4ea59f223100cecf4dc2987b6bc83c26e820924517c0b08f">Copy Hash</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Windows System Requirements Table (Bare Minimum vs Recommended) -->
+        <section class="alt">
+            <div class="container">
+                <div class="sec-head reveal">
+                    <span class="eyebrow">Windows Specifications</span>
+                    <h2>System <span class="grad">Requirements</span></h2>
+                    <p>Designed and optimized exclusively for Windows 64-bit systems. Check your system specs below.</p>
+                </div>
+
+                <div class="specs-container reveal">
+                    <table class="specs-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 28%;">Requirement</th>
+                                <th class="col-min" style="width: 36%;"><span class="badge-pill-min">BARE MINIMUM</span></th>
+                                <th class="col-rec" style="width: 36%;"><span class="badge-pill-rec">RECOMMENDED</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="aspect"><span>🪟</span> Windows OS</td>
+                                <td>Windows 10 (64-bit)</td>
+                                <td><strong>Windows 11 (64-bit)</strong> / Server 2022</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect"><span>⚡</span> Processor (CPU)</td>
+                                <td>Dual-Core 64-bit (1.8 GHz)</td>
+                                <td><strong>Quad-Core (2.4 GHz+)</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="aspect"><span>🧠</span> Memory (RAM)</td>
+                                <td>4 GB <small style="color:#38bdf8">(Agent uses &lt;120 MB)</small></td>
+                                <td><strong>8 GB or more</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="aspect"><span>💾</span> Storage</td>
+                                <td>500 MB Free Space</td>
+                                <td><strong>2 GB SSD</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="aspect"><span>📐</span> Architecture</td>
+                                <td>64-bit (x64) Only</td>
+                                <td><strong>64-bit (x64)</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="aspect"><span>🔒</span> Security</td>
+                                <td>Administrator Rights</td>
+                                <td><strong>TPM 2.0 &amp; Secure Boot</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PowerShell Hash Verification Box -->
+                <div class="card reveal" style="padding: 24px; border-left: 4px solid var(--accent); margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                        <span>🛡️</span> Cryptographic File Integrity Verification
+                    </h3>
+                    <p style="margin: 0 0 10px 0; font-size: 0.88rem; color: var(--t2);">
+                        Run this command in Windows PowerShell inside the folder where you downloaded the setup file to verify its SHA-256 signature matches the release manifest:
+                    </p>
+                    <div class="code-box">
+                        <code>Get-FileHash -Algorithm SHA256 .\KAVACH-Setup-2.1.0.exe | Format-List</code>
+                        <button class="btn-copy-hash" data-copy="Get-FileHash -Algorithm SHA256 .\KAVACH-Setup-2.1.0.exe | Format-List">Copy Code</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detailed Step-by-Step Installation Guides -->
+        <section>
+            <div class="container">
+                <div class="sec-head reveal">
+                    <span class="eyebrow">Step-by-Step</span>
+                    <h2>Detailed <span class="grad">Installation Guides</span></h2>
+                    <p>Follow these exact steps to deploy and activate KAVACH on your systems.</p>
+                </div>
+
+                <div class="guide-grid">
+                    <!-- Guide 1: Windows Installation -->
+                    <div class="guide-block reveal">
+                        <h3 class="guide-title">
+                            <span style="color: #00f0ff;">🪟</span> How to Install KAVACH on Windows 10 &amp; 11
+                        </h3>
+                        <div class="step-list">
+                            <div class="step-item">
+                                <div class="step-num">1</div>
+                                <div class="step-body">
+                                    <h4>Download and Verify</h4>
+                                    <p>Download <code>KAVACH-Setup-2.1.0.exe</code> from the releases section above. Optionally run the PowerShell SHA-256 command to verify file integrity.</p>
+                                </div>
+                            </div>
+
+                            <div class="step-item">
+                                <div class="step-num">2</div>
+                                <div class="step-body">
+                                    <h4>Launch Installer &amp; Windows SmartScreen</h4>
+                                    <p>Double-click <code>KAVACH-Setup-2.1.0.exe</code> to begin installation.</p>
+                                    <div class="smartscreen-alert">
+                                        <strong>⚠️ Windows SmartScreen Note:</strong> Because this is an enterprise sovereign binary signed with an internal corporate certificate, Windows SmartScreen may show <em>"Windows protected your PC"</em>. Click <strong>"More info"</strong> and then click <strong>"Run anyway"</strong> to proceed.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="step-item">
+                                <div class="step-num">3</div>
+                                <div class="step-body">
+                                    <h4>Approve User Account Control (UAC) Elevation</h4>
+                                    <p>When the Windows UAC elevation prompt appears, click <strong>"Yes"</strong>. Administrator privileges are strictly required to register the Session 0 background telemetry collector and configure real-time OS monitoring hooks.</p>
+                                </div>
+                            </div>
+
+                            <div class="step-item">
+                                <div class="step-num">4</div>
+                                <div class="step-body">
+                                    <h4>Choose Installation Directory</h4>
+                                    <p>The setup wizard will install the binaries to <code>C:\Program Files\KAVACH</code> (or your custom directory). It installs the Flutter High-DPI Desktop client, the native System Tray Guardian, and the 16 real-time sensor collectors.</p>
+                                </div>
+                            </div>
+
+                            <div class="step-item">
+                                <div class="step-num">5</div>
+                                <div class="step-body">
+                                    <h4>Automatic Tray Guardian Activation</h4>
+                                    <p>Upon installation completion, the high-tech KAVACH Shield icon will appear in your Windows Taskbar System Tray (Notification Area). Click it once to inspect live protection status or access the full Sovereign Desktop Console.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Guide 2: Android APK Sideloading -->
+                    <div class="guide-block reveal">
+                        <h3 class="guide-title">
+                            <span style="color: #10b981;">📱</span> How to Install KAVACH Mobile Companion (Android)
+                        </h3>
+                        <div class="step-list">
+                            <div class="step-item">
+                                <div class="step-num">1</div>
+                                <div class="step-body">
+                                    <h4>Download APK File</h4>
+                                    <p>Tap the <strong>Download Android APK</strong> button on your mobile device to download <code>kavach-mobile-release.apk</code>.</p>
+                                </div>
+                            </div>
+
+                            <div class="step-item">
+                                <div class="step-num">2</div>
+                                <div class="step-body">
+                                    <h4>Enable "Install Unknown Apps" in Settings</h4>
+                                    <p>Open your file manager or browser downloads. When prompted by Android that the application is from an external source, tap <strong>Settings</strong> and toggle on <strong>"Allow from this source"</strong>.</p>
+                                </div>
+                            </div>
+
+                            <div class="step-item">
+                                <div class="step-num">3</div>
+                                <div class="step-body">
+                                    <h4>Install and Grant Permissions</h4>
+                                    <p>Tap <strong>Install</strong>. Once installed, open KAVACH Mobile. Allow Notification permissions so that emergency containment alerts reach your lockscreen in real time.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Guide 3: Browser Extension Sideloading -->
+                    <div class="guide-block reveal">
+                        <h3 class="guide-title">
+                            <span style="color: #ff525d;">🧩</span> How to Install Browser Threat Intelligence Extension
+                        </h3>
+                        <div class="step-list">
+                            <div class="step-item">
+                                <div class="step-num">1</div>
+                                <div class="step-body">
+                                    <h4>Extract Extension ZIP</h4>
+                                    <p>Download <code>kavach-extension.zip</code> and extract the contents to a folder on your machine (for example, <code>C:\KAVACH\extension</code>).</p>
+                                </div>
+                            </div>
+
+                            <div class="step-item">
+                                <div class="step-num">2</div>
+                                <div class="step-body">
+                                    <h4>Open Chrome / Edge Extensions Page</h4>
+                                    <p>In Google Chrome, Microsoft Edge, or Brave, open a new tab and navigate to <code>chrome://extensions</code> or <code>edge://extensions</code>.</p>
+                                </div>
+                            </div>
+
+                            <div class="step-item">
+                                <div class="step-num">3</div>
+                                <div class="step-body">
+                                    <h4>Enable Developer Mode &amp; Load Unpacked</h4>
+                                    <p>In the top-right corner, toggle the switch for <strong>"Developer mode"</strong> to ON. Click the <strong>"Load unpacked"</strong> button and select the extracted extension folder.</p>
+                                </div>
+                            </div>
+
+                            <div class="step-item">
+                                <div class="step-num">4</div>
+                                <div class="step-body">
+                                    <h4>Pin and Enjoy Real-Time Link Safety</h4>
+                                    <p>Pin the KAVACH Shield icon to your browser toolbar. Now when searching Google or Bing, every result will display a verified green tick (✓) or red threat badge (✗) with an interactive threat summary!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section style="padding-top:20px; padding-bottom:60px;">
+            <div class="container">
+                <div class="cta reveal zoom">
+                    <h2 style="position:relative">Deploy Sovereign Security <span class="grad">Today</span></h2>
+                    <p style="position:relative">Need custom enterprise deployment, Active Directory GPO MSI packaging, or cloud provisioning? Our dedicated engineering team is here to assist.</p>
+                    <div class="hero-btns" style="justify-content:center;position:relative">
+                        <a class="btn btn-primary" href="/releases/KAVACH-Setup-2.1.0.exe" download="KAVACH-Setup-2.1.0.exe">Download Windows Installer (102 MB)</a>
+                        <a class="btn btn-ghost" href="/contact">Contact Enterprise Support</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="foot-grid">
+                <div>
+                    <a class="brand" href="/">
+                        <img class="logo-l" src="assets/logo.png" alt="KAVACH by Swastik Chemical (India)">
+                        <img class="logo-d" src="assets/logo-dark.png" alt="">
+                    </a>
+                    <p style="margin:22px 0;max-width:320px;font-size:.92rem">
+                        AI-driven SOAR-XDR threat intelligence and response platform, built for sovereign, sub-second defense.
+                    </p>
+                    <span class="stat-ok"><i></i>ALL 16 COLLECTORS NOMINAL</span>
+                </div>
+                <div>
+                    <h4>Platform</h4>
+                    <ul>
+                        <li><a href="/features">Platform Features</a></li>
+                        <li><a href="/features">16 Telemetry Engines</a></li>
+                        <li><a href="/features">IsolationForest ML</a></li>
+                        <li><a href="/features">KAVACH URL Shield</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Intelligence</h4>
+                    <ul>
+                        <li><a href="/how-it-works">How KAVACH Works</a></li>
+                        <li><a href="/raksha-ai">Raksha AI Copilot</a></li>
+                        <li><a href="/security">Security &amp; Sanitization</a></li>
+                        <li><a href="/security">Audit Trail &amp; Provenance</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="/about">About KAVACH</a></li>
+                        <li><a href="/get-started">Onboarding Guide</a></li>
+                        <li><a href="/login">Operations Login</a></li>
+                        <li><a href="/download">Download Agent</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                        <li><a href="/privacy">Privacy Policy</a></li>
+                        <li><a href="/terms">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="foot-bottom">
+                <span>© 2026 KAVACH · Swastik Chemical (India) — Enterprise Security &amp; Cyber R&amp;D Division</span>
+                <span class="mono">v2.1.0 · Sovereign Production Release</span>
+            </div>
+        </div>
+    </footer>
+
+    <section class="sign" id="sign">
+        <div class="sign-glow"></div>
+        <div class="sign-hearts"></div>
+        <div class="container">
+            <p class="sign-k">Crafted in India, for defenders everywhere</p>
+            <h3 class="sign-w">Written with love,</h3>
+            <div class="sign-line"><i></i><span class="heart">♥</span><i></i></div>
+            <div class="sign-b" aria-label="team KAVACH">team KAVACH</div>
+        </div>
+    </section>
+
+    <button class="totop" id="totop" aria-label="Back to top">↑</button>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/site.js"></script>
+    <script src="js/extras.js"></script>
+    <script>
+        // Copy hash handler with feedback
+        document.querySelectorAll('.btn-copy-hash').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const text = btn.getAttribute('data-copy');
+                if (text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        const original = btn.textContent;
+                        btn.textContent = 'Copied! ✓';
+                        btn.style.background = '#10b981';
+                        btn.style.color = '#ffffff';
+                        btn.style.borderColor = '#34d399';
+                        setTimeout(() => {
+                            btn.textContent = original;
+                            btn.style.background = '';
+                            btn.style.color = '';
+                            btn.style.borderColor = '';
+                        }, 2000);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,100 @@
+{
+  "family": "kavach-production",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "2048",
+  "memory": "4096",
+  "executionRoleArn": "arn:aws:iam::123456789012:role/kavach-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::123456789012:role/kavach-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "kavach-backend",
+      "image": "123456789012.dkr.ecr.ap-south-1.amazonaws.com/kavach-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "ENVIRONMENT", "value": "production" },
+        { "name": "DEBUG", "value": "false" },
+        { "name": "LOG_LEVEL", "value": "INFO" },
+        { "name": "DB_URL", "value": "postgresql+asyncpg://kavach_admin:$(DB_PASSWORD)@kavach-rds.c9akxxxx.ap-south-1.rds.amazonaws.com:5432/kavach" },
+        { "name": "QUEUE_TYPE", "value": "redis" },
+        { "name": "REDIS_URL", "value": "redis://kavach-redis.xxxx.clustercfg.aps1.cache.amazonaws.com:6379/0" },
+        { "name": "API_HOST", "value": "0.0.0.0" },
+        { "name": "API_PORT", "value": "8000" }
+      ],
+      "secrets": [
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:123456789012:secret:kavach/prod/app-secrets:SECRET_KEY::"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:123456789012:secret:kavach/prod/app-secrets:JWT_SECRET::"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:123456789012:secret:kavach/prod/rds-credentials:password::"
+        }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/api/v1/health\").read()' || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 40
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/kavach-production",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "backend",
+          "awslogs-create-group": "true"
+        }
+      }
+    },
+    {
+      "name": "kavach-frontend",
+      "image": "123456789012.dkr.ecr.ap-south-1.amazonaws.com/kavach-frontend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+      "dependsOn": [
+        {
+          "containerName": "kavach-backend",
+          "condition": "HEALTHY"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/kavach-production",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "frontend",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ]
+}

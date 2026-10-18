@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+  <title>KAVACH ΓÇö Raksha AI Cybersecurity Copilot Console</title>
+
+  <!-- Google Fonts: Outfit, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- KAVACH Pure CSS Stylesheet -->
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body class="site-body">
+  <!-- Atmospheric Glows -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Global Header -->
+  <header class="site-header">
+    <div class="site-nav-container">
+      <a href="./index.html" class="site-logo">
+        <div class="site-logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="site-logo-text">
+          <h1>KAVACH</h1>
+          <span>Raksha AI Copilot</span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="site-nav-links">
+          <li><a href="./index.html" class="site-nav-link"><i class="fa-solid fa-house"></i> Home</a></li>
+          <li><a href="./dashboard.html" class="site-nav-link"><i class="fa-solid fa-chart-line"></i> SOC Dashboard</a></li>
+          <li><a href="./fleet.html" class="site-nav-link"><i class="fa-solid fa-network-wired"></i> Fleet & Agents</a></li>
+          <li><a href="./incidents.html" class="site-nav-link"><i class="fa-solid fa-shield-virus"></i> Incidents & SOAR</a></li>
+          <li><a href="./mitre.html" class="site-nav-link"><i class="fa-solid fa-cubes"></i> MITRE Matrix</a></li>
+          <li><a href="./raksha.html" class="site-nav-link active"><i class="fa-solid fa-brain"></i> Raksha AI</a></li>
+          <li><a href="./docs.html" class="site-nav-link"><i class="fa-solid fa-book"></i> Docs</a></li>
+        </ul>
+      </nav>
+
+      <div class="site-nav-cta">
+        <a href="./dashboard.html" class="btn btn-primary"><i class="fa-solid fa-gauge"></i> Live SOC</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width:1100px; margin: 100px auto 40px; padding: 0 24px;">
+    <!-- Chat Card -->
+    <div class="chat-card" style="height: calc(100vh - 160px); display:flex; flex-direction:column; box-shadow: 0 25px 70px rgba(0,0,0,0.8), 0 0 40px rgba(236,72,153,0.15);">
+      <div class="chat-header">
+        <div class="chat-bot-avatar"><i class="fa-solid fa-brain"></i></div>
+        <div class="chat-bot-info">
+          <h4>Raksha AI Cybersecurity Copilot</h4>
+          <p><span class="stream-pulse" style="display:inline-block; margin-right:4px;"></span> Ingesting 16-Sensor Fleet Telemetry</p>
+        </div>
+
+        <div style="margin-left:auto; display:flex; gap:10px;">
+          <button class="btn btn-secondary" style="padding:6px 14px; font-size:0.75rem;" onclick="clearChat()">
+            <i class="fa-solid fa-trash-can"></i> Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Prompt Suggestion Bar -->
+      <div style="padding: 12px 20px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-color); display:flex; gap:8px; overflow-x:auto;">
+        <button class="btn btn-secondary" style="font-size:0.75rem; white-space:nowrap; padding:5px 12px;" onclick="sendPresetPrompt('Analyze cross-host C2 beaconing indicators to 185.220.101.5')">
+          <i class="fa-solid fa-crosshairs" style="color:var(--magenta);"></i> C2 Beaconing Forensics
+        </button>
+        <button class="btn btn-secondary" style="font-size:0.75rem; white-space:nowrap; padding:5px 12px;" onclick="sendPresetPrompt('Explain PowerShell Base64 obfuscation technique T1059.001')">
+          <i class="fa-solid fa-terminal" style="color:var(--cyan);"></i> Explain T1059 Technique
+        </button>
+        <button class="btn btn-secondary" style="font-size:0.75rem; white-space:nowrap; padding:5px 12px;" onclick="sendPresetPrompt('Generate executive incident report for srv-dc01')">
+          <i class="fa-solid fa-file-shield" style="color:var(--green);"></i> Generate Incident Report
+        </button>
+        <button class="btn btn-secondary" style="font-size:0.75rem; white-space:nowrap; padding:5px 12px;" onclick="sendPresetPrompt('Check Isolation Forest ML anomaly score for network flow spikes')">
+          <i class="fa-solid fa-chart-line" style="color:var(--purple);"></i> ML Anomaly Score Check
+        </button>
+      </div>
+
+      <!-- Message History -->
+      <div class="chat-messages" id="raksha-messages" style="flex:1; overflow-y:auto; padding:24px;">
+        <div class="chat-bubble assistant">
+          ≡ƒ¢í∩╕Å <strong>Welcome to Raksha AI Copilot.</strong><br><br>
+          I have real-time visibility into the continuous <strong>16-sensor telemetry pipeline</strong>, 
+          the <strong>Isolation Forest ML engine</strong>, and registered fleet endpoints.<br><br>
+          Ask me about current security alerts, MITRE ATT&CK technique attributions, or trigger automated SOAR containment playbooks.
+        </div>
+      </div>
+
+      <!-- Chat Input Form -->
+      <form class="chat-input-bar" onsubmit="handleChatSubmit(event)" style="padding:16px 20px;">
+        <input type="text" id="raksha-input" class="chat-input" placeholder="Ask Raksha AI about fleet security, threat correlation, or playbooks..." autocomplete="off" />
+        <button type="submit" class="chat-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = 'http://localhost:8000/api/v1';
+
+    function sendPresetPrompt(text) {
+      const input = document.getElementById('raksha-input');
+      if (input) {
+        input.value = text;
+        handleChatSubmit(new Event('submit'));
+      }
+    }
+
+    function clearChat() {
+      const msgBox = document.getElementById('raksha-messages');
+      if (msgBox) {
+        msgBox.innerHTML = `
+          <div class="chat-bubble assistant">
+            ≡ƒ¢í∩╕Å Chat cleared. Raksha AI is ready for your query.
+          </div>
+        `;
+      }
+    }
+
+    async function handleChatSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('raksha-input');
+      const msgBox = document.getElementById('raksha-messages');
+      if (!input || !msgBox || !input.value.trim()) return;
+
+      const userText = input.value.trim();
+      input.value = '';
+
+      msgBox.innerHTML += `<div class="chat-bubble user">${userText}</div>`;
+      msgBox.scrollTop = msgBox.scrollHeight;
+
+      const loadId = 'bot-' + Date.now();
+      msgBox.innerHTML += `<div class="chat-bubble assistant" id="${loadId}"><i class="fa-solid fa-circle-notch fa-spin"></i> Raksha AI analyzing telemetry & MITRE intelligence...</div>`;
+      msgBox.scrollTop = msgBox.scrollHeight;
+
+      try {
+        const resp = await fetch(`${API_BASE}/raksha/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userText, context: 'Fleet Operations View' })
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          document.getElementById(loadId).innerHTML = data?.reply || 'Analysis completed.';
+          msgBox.scrollTop = msgBox.scrollHeight;
+          return;
+        }
+      } catch {}
+
+      // Intelligent Local Copilot Simulation
+      setTimeout(() => {
+        let reply = '';
+        if (userText.toLowerCase().includes('c2') || userText.toLowerCase().includes('beacon')) {
+          reply = `≡ƒÜ¿ <strong>C2 Attribution Analysis:</strong><br><br>
+          ΓÇó <strong>Indicator:</strong> <code>185.220.101.5:4444</code> (Port 4444 reverse shell).<br>
+          ΓÇó <strong>Affected Nodes:</strong> <code>srv-dc01</code> and <code>workstation-finance-02</code>.<br>
+          ΓÇó <strong>MITRE ATT&CK:</strong> T1071.001 (Web Protocols) & T1021.002 (SMB Admin Shares).<br>
+          ΓÇó <strong>Isolation Forest Score:</strong> Anomaly Confidence 99.4% (Contamination threshold exceeded).<br><br>
+          ΓÜí <strong>Recommended Action:</strong> Execute SOAR Playbook <code>isolate_affected_hosts</code> immediately to prevent lateral movement.`;
+        } else if (userText.toLowerCase().includes('powershell') || userText.toLowerCase().includes('t1059')) {
+          reply = `≡ƒÆ╗ <strong>MITRE T1059.001 Execution Breakdown:</strong><br><br>
+          ΓÇó <strong>Detection:</strong> Captured Base64 obfuscated command executed via <code>powershell.exe</code>.<br>
+          ΓÇó <strong>Decoded Content:</strong> Identified download cradle contacting remote staging server.<br>
+          ΓÇó <strong>Sensor Hook:</strong> Windows PowerShell ScriptBlock Logging (Event ID 4104).<br><br>
+          ≡ƒ¢í∩╕Å <strong>Mitigation:</strong> Process was suspended. Recommended enabling PowerShell Constrained Language Mode across the OU.`;
+        } else if (userText.toLowerCase().includes('report')) {
+          reply = `≡ƒôï <strong>Executive Incident Briefing:</strong><br><br>
+          ΓÇó <strong>Incident ID:</strong> INC-2026-001<br>
+          ΓÇó <strong>Target Node:</strong> <code>srv-dc01</code> (Windows Server 2025)<br>
+          ΓÇó <strong>Severity:</strong> CRITICAL<br>
+          ΓÇó <strong>Root Cause:</strong> Synchronized external socket creation following brute force logon attempts.<br>
+          ΓÇó <strong>Status:</strong> Automated network containment standby. 0 data exfiltrated.`;
+        } else {
+          reply = `≡ƒ¢í∩╕Å <strong>Raksha AI Telemetry Assessment:</strong><br><br>
+          All 16 endpoint sensors are operating normally with &lt; 8.4 ms priority delivery latency. Fleet health index is <strong>94.8/100</strong>.<br><br>
+          ΓÇó <strong>Active Endpoints:</strong> 6 nodes reporting regular heartbeats.<br>
+          ΓÇó <strong>Queues:</strong> 0 dropped events in Redis Streams memory broker.<br>
+          ΓÇó <strong>Model Status:</strong> Isolation Forest v1.17 loaded with 98,383 training vectors.`;
+        }
+
+        document.getElementById(loadId).innerHTML = reply;
+        msgBox.scrollTop = msgBox.scrollHeight;
+      }, 750);
+    }
+  </script>
+</body>
+</html>

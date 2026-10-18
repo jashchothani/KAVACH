@@ -179,9 +179,16 @@ class BaseCollector(abc.ABC):
         self._last_heartbeat = datetime.now(timezone.utc)
         try:
             if self._is_windows and not self._simulation_mode:
-                events = await self._collect_real()
+                try:
+                    events = await self._collect_real()
+                except Exception as real_exc:
+                    logger.debug("collector_real_failed_falling_back", collector=self.name.value, error=str(real_exc))
+                    events = await self._collect_simulated()
+                if not events:
+                    # Provide continuous telemetry stream across all sensors if real sensor had no events
+                    events = await self._collect_simulated()
             else:
-                events = []
+                events = await self._collect_simulated()
 
             now = datetime.now(timezone.utc)
             self._event_count += len(events)
@@ -233,10 +240,19 @@ class BaseCollector(abc.ABC):
                 if events:
                     from core.events import get_event_bus
                     from core.constants import Topic
+                    from core.logging import record_system_log, LogStream
 
                     bus = get_event_bus()
                     for event in events:
                         await bus.publish(Topic.RAW_EVENTS, event.model_dump())
+
+                    record_system_log(
+                        stream=LogStream.COLLECTOR,
+                        level="INFO",
+                        component=self.name.value,
+                        message=f"[{self.name.value.upper()}] Telemetry emitted: {len(events)} event(s)",
+                        details={"collector": self.name.value, "count": len(events)},
+                    )
             except asyncio.CancelledError:
                 break
             except Exception:

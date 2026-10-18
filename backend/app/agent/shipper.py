@@ -17,6 +17,7 @@ import asyncio
 import gzip
 import json
 import platform
+import random
 import socket
 import sys
 import time
@@ -64,13 +65,16 @@ class ShipperClient:
         spooler: ResilientSpooler,
         batch_size: int = 100,
         flush_interval_sec: float = 3.0,
+        identity_manager: Any | None = None,
     ) -> None:
         self.endpoint_url = endpoint_url.rstrip("/")
         self.host_token = host_token
         self.spooler = spooler
         self.batch_size = batch_size
         self.flush_interval_sec = flush_interval_sec
+        self.identity_manager = identity_manager
         self.host_meta = get_host_fingerprint()
+        self._backoff_sec = 1.0
 
         self._running = False
         self._client: httpx.AsyncClient | None = None
@@ -78,18 +82,37 @@ class ShipperClient:
         self._heartbeat_task: asyncio.Task | None = None
         self._immediate_event = asyncio.Event()
 
+        # Telemetry transmission status & metrics
+        self.last_successful_upload: float | None = None
+        self.last_upload_event_count: int = 0
+        self.total_events_shipped: int = 0
+        self.total_batches_shipped: int = 0
+        self.connection_status: str = "INITIALIZING"
+        self.last_error: str | None = None
+
     async def start(self) -> None:
         """Start background shipper loops."""
         self._running = True
+
+        headers = {
+            "X-Host-Token": self.host_token,
+            "X-Host-ID": self.host_meta["host_id"],
+            "X-Hostname": self.host_meta["hostname"],
+            "User-Agent": f"KAVACH-Agent/2.1 ({self.host_meta['os']})",
+        }
+
+        # Check for cryptographic Device Identity
+        if self.identity_manager:
+            auth_headers = self.identity_manager.get_auth_headers()
+            headers.update(auth_headers)
+            if "X-Device-ID" in auth_headers:
+                self.host_meta["host_id"] = auth_headers["X-Device-ID"]
+
         self._client = httpx.AsyncClient(
-            timeout=10.0,
-            headers={
-                "X-Host-Token": self.host_token,
-                "X-Host-ID": self.host_meta["host_id"],
-                "X-Hostname": self.host_meta["hostname"],
-                "User-Agent": f"KAVACH-Agent/2.1 ({self.host_meta['os']})",
-            },
+            timeout=httpx.Timeout(connect=5.0, read=25.0, write=15.0, pool=10.0),
+            headers=headers,
         )
+        self.connection_status = "CONNECTING"
         self._flush_task = asyncio.create_task(self._shipping_loop())
         self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
         logger.info(
@@ -102,11 +125,17 @@ class ShipperClient:
     async def stop(self) -> None:
         """Stop background tasks and flush remaining high-priority spool."""
         self._running = False
+        self.connection_status = "STOPPED"
         self._immediate_event.set()
-        if self._flush_task:
-            self._flush_task.cancel()
-        if self._heartbeat_task:
-            self._heartbeat_task.cancel()
+
+        # Allow in-flight batch upload to complete cleanly (up to 2.5 seconds)
+        for task in (self._flush_task, self._heartbeat_task):
+            if task and not task.done():
+                try:
+                    await asyncio.wait_for(asyncio.shield(task), timeout=2.5)
+                except (asyncio.TimeoutError, asyncio.CancelledError):
+                    task.cancel()
+
         if self._client:
             await self._client.aclose()
         logger.info("shipper_client_stopped")
@@ -114,6 +143,22 @@ class ShipperClient:
     def notify_immediate(self) -> None:
         """Signal shipper to wake up immediately for Critical or High events."""
         self._immediate_event.set()
+
+    def get_status(self) -> dict[str, Any]:
+        """Return live health and upload metrics for the Windows Companion."""
+        return {
+            "status": self.connection_status,
+            "running": self._running,
+            "endpoint_url": self.endpoint_url,
+            "host_id": self.host_meta["host_id"],
+            "hostname": self.host_meta["hostname"],
+            "last_successful_upload": self.last_successful_upload,
+            "last_upload_event_count": self.last_upload_event_count,
+            "total_events_shipped": self.total_events_shipped,
+            "total_batches_shipped": self.total_batches_shipped,
+            "last_error": self.last_error,
+            "spool": self.spooler.get_stats(),
+        }
 
     async def _shipping_loop(self) -> None:
         """Continuous consumer loop reading from spooler and posting to cloud."""
@@ -138,15 +183,22 @@ class ShipperClient:
                 success = await self._send_batch(events)
                 if success:
                     self.spooler.ack_batch(event_ids)
+                    self._backoff_sec = 1.0
                     logger.debug("batch_shipped_successfully", count=len(events))
                 else:
                     self.spooler.nack_batch(event_ids)
-                    # Backoff slightly on transmission failure
-                    await asyncio.sleep(2.0)
+                    # Exponential backoff with jitter on transmission failure (capped at 30s)
+                    jitter = random.uniform(0.75, 1.25)
+                    self._backoff_sec = min(30.0, self._backoff_sec * 2.0)
+                    sleep_time = self._backoff_sec * jitter
+                    logger.debug("shipping_backoff_sleep", seconds=round(sleep_time, 2))
+                    await asyncio.sleep(sleep_time)
 
             except asyncio.CancelledError:
                 break
             except Exception as exc:
+                self.connection_status = "OFFLINE_SPOOLING"
+                self.last_error = str(exc)
                 logger.error("shipping_loop_error", error=str(exc))
                 await asyncio.sleep(3.0)
 
@@ -181,11 +233,21 @@ class ShipperClient:
                 resp = await self._client.post(url, json=payload)
 
             if resp.status_code in (200, 201, 202):
+                self.last_successful_upload = time.time()
+                self.last_upload_event_count = len(events)
+                self.total_events_shipped += len(events)
+                self.total_batches_shipped += 1
+                self.connection_status = "ONLINE"
+                self.last_error = None
                 return True
             else:
+                self.connection_status = "OFFLINE_SPOOLING"
+                self.last_error = f"HTTP {resp.status_code}: {resp.text[:100]}"
                 logger.warning("cloud_ingest_rejected", status=resp.status_code, body=resp.text[:200])
                 return False
         except httpx.RequestError as exc:
+            self.connection_status = "OFFLINE_SPOOLING"
+            self.last_error = str(exc)
             logger.warning("cloud_server_unreachable", endpoint=url, error=str(exc))
             return False
 

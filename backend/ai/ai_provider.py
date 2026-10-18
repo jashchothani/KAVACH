@@ -243,17 +243,27 @@ class GeminiProvider:
             raise AIProviderError("GEMINI_API_KEY not configured")
 
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            self._client = genai
-            self._model = genai.GenerativeModel(
-                model_name=self._settings.ai.gemini_model,
-                generation_config={
-                    "temperature": self._settings.ai.temperature,
-                    "max_output_tokens": self._settings.ai.max_tokens,
-                },
-            )
-            logger.info("gemini_client_initialized", model=self._settings.ai.gemini_model)
+            # Try new google-genai package first, fall back to deprecated package
+            try:
+                import google.genai as genai_new
+                client = genai_new.Client(api_key=api_key)
+                self._client = client
+                self._model = client  # store client as model for unified access
+                self._genai_new = True
+                logger.info("gemini_client_initialized_new_sdk", model=self._settings.ai.gemini_model)
+            except ImportError:
+                import google.generativeai as genai
+                genai.configure(api_key=api_key)
+                self._client = genai
+                self._model = genai.GenerativeModel(
+                    model_name=self._settings.ai.gemini_model,
+                    generation_config={
+                        "temperature": self._settings.ai.temperature,
+                        "max_output_tokens": self._settings.ai.max_tokens,
+                    },
+                )
+                self._genai_new = False
+                logger.info("gemini_client_initialized", model=self._settings.ai.gemini_model)
         except Exception as exc:
             raise AIProviderError(f"Failed to initialize Gemini: {exc}")
 
@@ -265,8 +275,9 @@ class GeminiProvider:
             await self._ensure_client()
             await self._rate_limiter.acquire(estimated_tokens)
             full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
-            response = await asyncio.to_thread(
-                self._model.generate_content, full_prompt
+            response = await asyncio.wait_for(
+                asyncio.to_thread(self._model.generate_content, full_prompt),
+                timeout=5.0,
             )
             if response and response.text:
                 return response.text

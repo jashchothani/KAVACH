@@ -2,7 +2,32 @@ from __future__ import annotations
 import asyncio
 import json
 from typing import Any, Callable, Coroutine
-from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
+try:
+    from aiokafka import AIOKafkaConsumer, AIOKafkaProducer  # type: ignore
+    HAS_AIOKAFKA = True
+except ImportError:
+    class _AIOKafkaStub:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        async def start(self) -> None:
+            pass
+
+        async def stop(self) -> None:
+            pass
+
+        async def send_and_wait(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def __aiter__(self) -> Any:
+            return self
+
+        async def __anext__(self) -> Any:
+            raise StopAsyncIteration
+
+    AIOKafkaProducer = _AIOKafkaStub  # type: ignore[misc, assignment]
+    AIOKafkaConsumer = _AIOKafkaStub  # type: ignore[misc, assignment]
+    HAS_AIOKAFKA = False
 
 from app.core.constants import Topic
 from app.core.logging import get_logger

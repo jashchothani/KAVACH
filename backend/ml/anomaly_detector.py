@@ -15,7 +15,9 @@ try:
     from sklearn.ensemble import IsolationForest
     SKLEARN_AVAILABLE = True
 except Exception:
-    IsolationForest = Any
+    class IsolationForest:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
     SKLEARN_AVAILABLE = False
 
 from core.config import get_settings

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KAVACH — Web Safety & Phishing Protection</title>
+  <title>KAVACH — Web, Gmail &amp; WhatsApp Threat Sentinel</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -11,22 +11,24 @@
     <!-- Header -->
     <header class="header">
       <div class="brand">
-        <span class="shield-logo">🛡️</span>
+        <img src="../assets/icon48.png" class="shield-logo-img" alt="KAVACH Shield" width="28" height="28">
         <div>
           <h1 class="logo">KAVACH</h1>
-          <p class="tagline">Neural Phishing & Web Shield</p>
+          <p class="tagline">SOAR-XDR Threat &amp; Phishing Sentinel</p>
         </div>
       </div>
       <div class="backend-status" id="backendStatus">
-        <span class="dot"></span> <span id="statusText">Checking...</span>
+        <span class="dot"></span> <span id="statusText">Active Defense</span>
       </div>
     </header>
 
-    <!-- Navigation Tabs -->
+    <!-- Navigation Tabs (5 Tabs) -->
     <nav class="nav-tabs">
-      <button class="nav-tab active" data-tab="activeTabSection">Current Site</button>
-      <button class="nav-tab" data-tab="scannerSection">URL Scanner</button>
-      <button class="nav-tab" data-tab="settingsSection">Shield & Threats</button>
+      <button class="nav-tab active" data-tab="activeTabSection">Web</button>
+      <button class="nav-tab" data-tab="commsSection">Comms</button>
+      <button class="nav-tab" data-tab="scannerSection">Scanner</button>
+      <button class="nav-tab" data-tab="eventsSection">Events</button>
+      <button class="nav-tab" data-tab="diagnosticsSection">Diagnostics</button>
     </nav>
 
     <!-- TAB 1: Current Active Tab -->
@@ -52,7 +54,7 @@
         <div class="verdict-info">
           <div class="status-badge" id="statusBadge">ANALYZING</div>
           <div class="verdict-title" id="verdictTitle">Inspecting site structure...</div>
-          <div class="verdict-subtitle" id="verdictSubtitle">Neural heuristics & threat intel active</div>
+          <div class="verdict-subtitle" id="verdictSubtitle">Neural heuristics &amp; threat intel active</div>
         </div>
       </div>
 
@@ -90,7 +92,7 @@
 
       <!-- Indicators List -->
       <div class="section-box">
-        <div class="section-heading">Threat Indicators</div>
+        <div class="section-heading">Threat Signals &amp; Indicators</div>
         <ul class="indicator-list" id="indicatorList">
           <li class="indicator-item">Connecting to KAVACH Engine...</li>
         </ul>
@@ -100,77 +102,228 @@
       <div class="ai-box">
         <div class="ai-box-header">
           <span class="ai-spark">✨</span>
-          <strong>Raksha AI Plain-English Assessment</strong>
+          <strong>Raksha AI Plain-English Verdict</strong>
         </div>
         <p class="ai-desc" id="aiSummary">
-          Raksha AI is inspecting page security signals, TLS integrity, and brand imitation baselines...
+          Raksha AI is evaluating page security signals, TLS certificate trust chains, and brand imitation baselines...
         </p>
       </div>
     </section>
 
-    <!-- TAB 2: Quick URL Scanner -->
+    <!-- TAB 2: Gmail & WhatsApp Guard -->
+    <section class="tab-pane" id="commsSection">
+      <!-- Live Overview Card -->
+      <div class="comms-hero-card">
+        <div class="comms-hero-header">
+          <div class="comms-badge"><i></i> REAL-TIME INBOX &amp; CHAT SHIELD</div>
+          <span class="comms-status-tag">ACTIVE</span>
+        </div>
+        <h3 class="comms-hero-title">Continuous Communications Defense</h3>
+        <p class="comms-hero-sub">Intercepts spoofed sender addresses, phishing attachments, unknown foreign WhatsApp numbers, and part-time task scams.</p>
+      </div>
+
+      <!-- Service Status Cards -->
+      <div class="comms-services-grid">
+        <!-- Gmail Shield -->
+        <div class="service-card">
+          <div class="service-card-top">
+            <div class="service-brand">
+              <span class="service-icon" style="color: #ea4335;">✉️</span>
+              <div>
+                <strong>Gmail Phishing Sentinel</strong>
+                <span class="service-sub">mail.google.com</span>
+              </div>
+            </div>
+            <span class="pill-active">PROTECTED</span>
+          </div>
+          <p class="service-desc">Scans inbox rows &amp; message bodies for brand impersonation, deceptive URLs, and dangerous file attachments.</p>
+          <div class="service-stat-row">
+            <span>Red Flag Warning Banners:</span>
+            <strong style="color: #10b981;">AUTO-INJECT</strong>
+          </div>
+        </div>
+
+        <!-- WhatsApp Web Shield -->
+        <div class="service-card">
+          <div class="service-card-top">
+            <div class="service-brand">
+              <span class="service-icon" style="color: #25d366;">💬</span>
+              <div>
+                <strong>WhatsApp Web Scam Blocker</strong>
+                <span class="service-sub">web.whatsapp.com</span>
+              </div>
+            </div>
+            <span class="pill-active">PROTECTED</span>
+          </div>
+          <p class="service-desc">Flags high-risk international numbers (+92, +234, +880) and detects task scams, lottery fraud, and malicious APK files.</p>
+          <div class="service-stat-row">
+            <span>Deceptive Link Neutralizer:</span>
+            <strong style="color: #10b981;">ENABLED</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Toggles -->
+      <div class="settings-group">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>Gmail Impersonation Alert Banners</strong>
+            <span>Shows red alert bar above spoofed emails</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="gmailShieldToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>WhatsApp Scam Number Detector</strong>
+            <span>Alerts on unknown international scam chats</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="whatsappShieldToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Universal Threat Scanner -->
     <section class="tab-pane" id="scannerSection">
       <div class="scanner-card">
-        <label class="scanner-label" for="manualUrlInput">Quick URL Security Scanner</label>
-        <p class="scanner-subtext">Inspect any link or domain without opening it in your browser.</p>
+        <label class="scanner-label" for="manualInput">Unified Security Intelligence Scanner</label>
+        <p class="scanner-subtext">Inspect any URL, Sender Email, or WhatsApp Phone Number without opening it.</p>
+        
+        <!-- Input Selector -->
+        <div class="scanner-type-row">
+          <button class="scanner-type-btn active" data-type="url">URL Link</button>
+          <button class="scanner-type-btn" data-type="email">Sender Email</button>
+          <button class="scanner-type-btn" data-type="phone">Phone Number</button>
+        </div>
+
         <div class="scanner-input-group">
-          <input type="text" id="manualUrlInput" placeholder="https://example.com/login" autocomplete="off" />
+          <input type="text" id="manualInput" placeholder="https://example.com/login" autocomplete="off">
           <button id="manualScanBtn">Analyze</button>
         </div>
       </div>
 
       <div class="scan-result-card" id="scanResultCard" style="display: none;">
         <div class="scan-header">
-          <strong id="scanResultDomain">domain.com</strong>
+          <strong id="scanResultTarget">example.com</strong>
           <span class="status-badge" id="scanResultBadge">SAFE</span>
         </div>
         <div class="scan-score-row">
-          <span>Evaluated Risk Score:</span>
+          <span>Evaluated Threat Score:</span>
           <strong id="scanResultScore">0/100</strong>
         </div>
-        <p class="scan-summary" id="scanResultSummary">Verified safe domain.</p>
+        <p class="scan-summary" id="scanResultSummary">Verified safe target.</p>
         <ul class="indicator-list" id="scanResultIndicators"></ul>
       </div>
     </section>
 
-    <!-- TAB 3: Shield Controls & Recent Threats -->
-    <section class="tab-pane" id="settingsSection">
+    <!-- TAB 4: Security Events & Threat History -->
+    <section class="tab-pane" id="eventsSection">
       <div class="settings-group">
         <div class="toggle-row">
           <div class="toggle-info">
-            <strong>McAfee SiteAdvisor Link Annotator</strong>
-            <span>Shows green ticks (✓) and red crosses (✗) on search results</span>
+            <strong>KAVACH Active Search Sentinel</strong>
+            <span>Displays verified shield ticks on Google, Bing &amp; DuckDuckGo</span>
           </div>
           <label class="switch">
-            <input type="checkbox" id="linkAnnotatorToggle" checked />
+            <input type="checkbox" id="linkAnnotatorToggle" checked>
             <span class="slider"></span>
           </label>
         </div>
 
         <div class="toggle-row">
           <div class="toggle-info">
-            <strong>Strict Phishing Shield</strong>
-            <span>Blocks high-risk phishing sites with interstitial warning</span>
+            <strong>Strict Interstitial Phishing Shield</strong>
+            <span>Blocks high-risk phishing pages with red sovereign barrier</span>
           </div>
           <label class="switch">
-            <input type="checkbox" id="strictShieldToggle" />
+            <input type="checkbox" id="strictShieldToggle">
             <span class="slider"></span>
           </label>
         </div>
       </div>
 
       <div class="recent-threats-box">
-        <div class="section-heading">Recently Intercepted Threats</div>
+        <div class="events-box-header">
+          <div class="section-heading">Security Event Log</div>
+          <button class="purge-history-btn" id="clearHistoryBtn" title="Purge local event log">Clear Log</button>
+        </div>
         <ul class="threat-feed" id="recentThreatsList">
-          <li class="threat-empty">No malicious domains encountered recently. You are fully protected!</li>
+          <li class="threat-empty">No malicious domains or scam numbers encountered. You are fully protected!</li>
         </ul>
+      </div>
+    </section>
+
+    <!-- TAB 5: Diagnostic Engine Mode -->
+    <section class="tab-pane" id="diagnosticsSection">
+      <div class="diag-container">
+        <div class="diag-header-card">
+          <div class="diag-badge">SYSTEM DIAGNOSTICS</div>
+          <h3 class="diag-title">Extension &amp; Telemetry Health</h3>
+          <p class="diag-sub">Live health verification across extension runtime and backend endpoints.</p>
+        </div>
+
+        <div class="diag-metrics-grid">
+          <div class="diag-card">
+            <span class="diag-card-label">EXTENSION MANIFEST</span>
+            <strong class="diag-card-val" id="diagManifestVer">MV3 · v1.0.0</strong>
+          </div>
+          <div class="diag-card">
+            <span class="diag-card-label">SERVICE WORKER</span>
+            <strong class="diag-card-val" style="color: #10b981;" id="diagWorkerStatus">ACTIVE</strong>
+          </div>
+          <div class="diag-card">
+            <span class="diag-card-label">BACKEND API</span>
+            <strong class="diag-card-val" id="diagApiStatus">Pinging...</strong>
+          </div>
+          <div class="diag-card">
+            <span class="diag-card-label">API LATENCY</span>
+            <strong class="diag-card-val" id="diagApiLatency">-- ms</strong>
+          </div>
+        </div>
+
+        <div class="diag-list-box">
+          <div class="section-heading">Component Telemetry</div>
+          <div class="diag-item-row">
+            <span>Database (SQLite)</span>
+            <strong id="diagDbStatus" style="color: #94a3b8;">Checking...</strong>
+          </div>
+          <div class="diag-item-row">
+            <span>Anomaly ML Engine</span>
+            <strong id="diagMlStatus" style="color: #94a3b8;">Checking...</strong>
+          </div>
+          <div class="diag-item-row">
+            <span>Raksha AI Provider</span>
+            <strong id="diagAiProvider" style="color: #94a3b8;">Checking...</strong>
+          </div>
+          <div class="diag-item-row">
+            <span>Gmail Phishing Sentinel</span>
+            <strong style="color: #10b981;">Ready · DOM Idle</strong>
+          </div>
+          <div class="diag-item-row">
+            <span>WhatsApp Scam Guard</span>
+            <strong style="color: #10b981;">Ready · Number Classifier</strong>
+          </div>
+        </div>
+
+        <button class="footer-btn secondary" id="runDiagnosticsBtn" style="margin-top: 10px; width: 100%;">
+          Run Diagnostic Health Check
+        </button>
       </div>
     </section>
 
     <!-- Footer Actions -->
     <footer class="footer">
       <button class="footer-btn secondary" id="rescanBtn">🔄 Re-scan</button>
-      <button class="footer-btn primary" id="openSocBtn">🛡️ Open SOC Console</button>
+      <button class="footer-btn primary" id="openSocBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="vertical-align: -1px; margin-right: 4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Open SOC Console
+      </button>
     </footer>
   </div>
 

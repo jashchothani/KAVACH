@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+  <title>KAVACH ΓÇö MITRE ATT&CK Enterprise Matrix & Threat Intel</title>
+
+  <!-- Google Fonts: Outfit, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- KAVACH Pure CSS Stylesheet -->
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body class="site-body">
+  <!-- Atmospheric Glows -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Global Header -->
+  <header class="site-header">
+    <div class="site-nav-container">
+      <a href="./index.html" class="site-logo">
+        <div class="site-logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="site-logo-text">
+          <h1>KAVACH</h1>
+          <span>MITRE ATT&CK Intel</span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="site-nav-links">
+          <li><a href="./index.html" class="site-nav-link"><i class="fa-solid fa-house"></i> Home</a></li>
+          <li><a href="./dashboard.html" class="site-nav-link"><i class="fa-solid fa-chart-line"></i> SOC Dashboard</a></li>
+          <li><a href="./fleet.html" class="site-nav-link"><i class="fa-solid fa-network-wired"></i> Fleet & Agents</a></li>
+          <li><a href="./incidents.html" class="site-nav-link"><i class="fa-solid fa-shield-virus"></i> Incidents & SOAR</a></li>
+          <li><a href="./mitre.html" class="site-nav-link active"><i class="fa-solid fa-cubes"></i> MITRE Matrix</a></li>
+          <li><a href="./raksha.html" class="site-nav-link"><i class="fa-solid fa-brain"></i> Raksha AI</a></li>
+          <li><a href="./docs.html" class="site-nav-link"><i class="fa-solid fa-book"></i> Docs</a></li>
+        </ul>
+      </nav>
+
+      <div class="site-nav-cta">
+        <a href="./dashboard.html" class="btn btn-primary"><i class="fa-solid fa-gauge"></i> Live SOC</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width:1320px; margin: 100px auto 60px; padding: 0 24px;">
+    <!-- Page Header -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 32px; flex-wrap:wrap; gap:16px;">
+      <div>
+        <span class="section-tag"><i class="fa-solid fa-cubes"></i> ENTERPRISE THREAT MAPPING</span>
+        <h1 style="font-family:var(--font-sans); font-size:2.4rem; font-weight:900; color:#fff;">MITRE ATT&CK Matrix & Threat Intel</h1>
+        <p style="color:var(--text-muted); font-size:0.95rem;">Tactics and technique coverage heatmapped against live fleet telemetry and IoC feeds.</p>
+      </div>
+
+      <!-- Severity Filter -->
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary active" onclick="filterTactics('all')">All Tactics</button>
+        <button class="btn btn-secondary" onclick="filterTactics('critical')">Critical Only</button>
+        <button class="btn btn-secondary" onclick="filterTactics('high')">High Only</button>
+      </div>
+    </div>
+
+    <!-- Tactic Cards Grid -->
+    <div class="mitre-grid" id="mitre-cards-container" style="margin-bottom:40px;">
+      <!-- Populated dynamically by JS -->
+    </div>
+
+    <!-- Threat Intelligence IOC Database -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title"><i class="fa-solid fa-database" style="color:var(--cyan);"></i> Live Indicators of Compromise (IOC) Database</div>
+          <div class="card-subtitle">Active blacklisted IP addresses, malware file hashes, and sinkholed C2 domains</div>
+        </div>
+        <span class="badge badge-online">Threat Intelligence Feed Active</span>
+      </div>
+
+      <div class="card-body">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Indicator Value</th>
+                <th>Attributed Threat Actor</th>
+                <th>Severity</th>
+                <th>Confidence</th>
+                <th>Action Taken</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-critical">IPV4 C2</span></td>
+                <td style="font-family:var(--font-mono); color:#fff; font-weight:700;">185.220.101.5:4444</td>
+                <td>APT29 / Cozy Bear</td>
+                <td><span class="badge badge-critical">CRITICAL</span></td>
+                <td style="color:var(--green); font-weight:800;">99%</td>
+                <td><span class="badge badge-high">Host Isolated</span></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-high">SHA-256</span></td>
+                <td style="font-family:var(--font-mono); color:#fff; font-weight:700;">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</td>
+                <td>BlackCat / ALPHV Ransomware</td>
+                <td><span class="badge badge-high">HIGH</span></td>
+                <td style="color:var(--green); font-weight:800;">96%</td>
+                <td><span class="badge badge-high">Quarantined</span></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-medium">DOMAIN</span></td>
+                <td style="font-family:var(--font-mono); color:#fff; font-weight:700;">secure-bank-account-update.xyz</td>
+                <td>Phishing Campaign</td>
+                <td><span class="badge badge-medium">MEDIUM</span></td>
+                <td style="color:var(--green); font-weight:800;">92%</td>
+                <td><span class="badge badge-low">DNS Sinkholed</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Technique Drilldown Modal -->
+  <div class="modal-overlay" id="modal-technique">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-tactic-name"><i class="fa-solid fa-shield-halved" style="color:var(--magenta);"></i> Technique Details</h3>
+        <button class="modal-close" onclick="closeTechniqueModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-tactic-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeTechniqueModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TACTICS = [
+      { id: 'TA0001', name: 'Initial Access', count: 14, severity: 'high', techniques: ['T1190 Exploit Public Application', 'T1566 Phishing Email'] },
+      { id: 'TA0002', name: 'Execution', count: 28, severity: 'critical', techniques: ['T1059.001 PowerShell Shellcode', 'T1059.003 Windows Cmd Shell'] },
+      { id: 'TA0003', name: 'Persistence', count: 9, severity: 'medium', techniques: ['T1053 Scheduled Task Hook', 'T1547 Registry Run Keys'] },
+      { id: 'TA0004', name: 'Privilege Escalation', count: 18, severity: 'critical', techniques: ['T1068 Exploitation for PrivEsc', 'T1548 Abuse Elevation Control'] },
+      { id: 'TA0005', name: 'Defense Evasion', count: 24, severity: 'critical', techniques: ['T1562.001 Disable Security Tools', 'T1027 Obfuscated Files'] },
+      { id: 'TA0006', name: 'Credential Access', count: 16, severity: 'high', techniques: ['T1003 OS Credential Dumping', 'T1110 Brute Force'] },
+      { id: 'TA0007', name: 'Discovery', count: 11, severity: 'low', techniques: ['T1082 System Information Discovery', 'T1016 Network Configuration'] },
+      { id: 'TA0008', name: 'Lateral Movement', count: 12, severity: 'critical', techniques: ['T1021.002 SMB/Windows Admin Shares', 'T1021.001 Remote Desktop Protocol'] },
+      { id: 'TA0009', name: 'Collection', count: 7, severity: 'medium', techniques: ['T1115 Clipboard Data', 'T1005 Data from Local System'] },
+      { id: 'TA0011', name: 'Command & Control', count: 21, severity: 'critical', techniques: ['T1071.001 Web Protocols (HTTP/S)', 'T1572 Protocol Tunneling'] }
+    ];
+
+    function renderTactics(filter = 'all') {
+      const container = document.getElementById('mitre-cards-container');
+      if (!container) return;
+
+      const filtered = filter === 'all' ? TACTICS : TACTICS.filter(t => t.severity === filter);
+      container.innerHTML = filtered.map(t => `
+        <div class="mitre-tactic-card ${t.severity}" onclick="openTechniqueModal('${t.id}')">
+          <div class="tactic-top">
+            <span>${t.id}</span>
+            <span>${t.severity.toUpperCase()}</span>
+          </div>
+          <div class="tactic-title">${t.name}</div>
+          <div class="tactic-stats">
+            <span>Observed Activity:</span>
+            <span style="font-weight:800; color:#fff;">${t.count} hits</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterTactics(sev) {
+      document.querySelectorAll('.btn-secondary').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      renderTactics(sev);
+    }
+
+    function openTechniqueModal(tacticId) {
+      const tactic = TACTICS.find(t => t.id === tacticId);
+      if (!tactic) return;
+
+      document.getElementById('modal-tactic-name').innerHTML = `<i class="fa-solid fa-shield-halved" style="color:var(--magenta);"></i> ${tactic.name} (${tactic.id})`;
+      document.getElementById('modal-tactic-body').innerHTML = `
+        <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:14px;">
+          Detected MITRE ATT&CK techniques under <strong>${tactic.name}</strong> across the fleet:
+        </p>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${tactic.techniques.map(tech => `
+            <div style="background:#0b0e17; padding:12px; border-radius:8px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:700; color:#fff;">${tech}</span>
+              <span class="badge badge-critical">Active Detection</span>
+            </div>
+          `).join('')}
+        </div>
+        <div style="margin-top:16px;">
+          <div style="font-size:0.75rem; font-weight:800; color:#64748b; margin-bottom:6px;">AUTOMATED PLAYBOOK RECOMMENDATION</div>
+          <span class="badge badge-high" style="padding:6px 12px;"><i class="fa-solid fa-bolt"></i> Endpoint Process Quarantine & Firewall Block</span>
+        </div>
+      `;
+
+      document.getElementById('modal-technique')?.classList.add('open');
+    }
+
+    function closeTechniqueModal() {
+      document.getElementById('modal-technique')?.classList.remove('open');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => renderTactics('all'));
+  </script>
+</body>
+</html>

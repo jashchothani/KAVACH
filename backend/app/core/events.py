@@ -56,6 +56,18 @@ class MessageBus(ABC):
         ...
 
 
+def _normalize_topic(topic: Any) -> str:
+    """Safely extract topic string regardless of enum origin or string representation."""
+    if hasattr(topic, "value"):
+        return str(topic.value)
+    topic_str = str(topic)
+    if topic_str.startswith("Topic."):
+        name = topic_str.split(".", 1)[1]
+        if hasattr(Topic, name):
+            return str(getattr(Topic, name).value)
+    return topic_str
+
+
 class InMemoryMessageBus(MessageBus):
     """
     In-process message bus using bounded asyncio.Queue per topic.
@@ -76,7 +88,7 @@ class InMemoryMessageBus(MessageBus):
 
     async def publish(self, topic: Topic | str, message: dict[str, Any]) -> None:
         """Publish a message. Drops gracefully if queue is completely saturated."""
-        topic_str = topic.value if isinstance(topic, Topic) else str(topic)
+        topic_str = _normalize_topic(topic)
         queue = self._queues[topic_str]
 
         try:
@@ -89,9 +101,19 @@ class InMemoryMessageBus(MessageBus):
     async def subscribe(
         self, topic: Topic | str, callback: SubscriberCallback, group: str = "default"
     ) -> None:
-        """Subscribe a callback to a topic."""
-        topic_str = topic.value if isinstance(topic, Topic) else str(topic)
+        """Subscribe a callback to a topic, spawning consumer immediately if bus is active."""
+        topic_str = _normalize_topic(topic)
         self._subscribers[topic_str].append(callback)
+
+        if self._running:
+            existing = any(t.get_name() == f"bus-consumer-{topic_str}" and not t.done() for t in self._tasks)
+            if not existing:
+                queue = self._queues[topic_str]
+                task = asyncio.create_task(
+                    self._consumer_loop(topic_str, queue, self._subscribers[topic_str]),
+                    name=f"bus-consumer-{topic_str}",
+                )
+                self._tasks.append(task)
 
     async def start(self) -> None:
         """Start consumer loops for all topics."""
@@ -178,5 +200,6 @@ def get_event_bus() -> MessageBus:
 
 
 def set_event_bus(bus: MessageBus) -> None:
-    """Override the global event bus (for testing)."""
-    _bus_instance = bus
+    """Override the global event bus (for testing and agent service)."""
+    global _global_bus
+    _global_bus = bus

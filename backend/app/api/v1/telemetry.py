@@ -20,9 +20,10 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
+from starlette.requests import ClientDisconnect
 
 from app.core.broker import get_message_broker
 from app.core.config import get_settings
@@ -139,27 +140,42 @@ async def ingest_telemetry(
     x_host_token: str | None = Header(None, alias="X-Host-Token"),
     x_host_id: str | None = Header(None, alias="X-Host-ID"),
     x_hostname: str | None = Header(None, alias="X-Hostname"),
+    x_device_token: str | None = Header(None, alias="X-Device-Token"),
+    x_device_id: str | None = Header(None, alias="X-Device-ID"),
 ):
     """
     Ingest a batch of telemetry events from external standalone edge collectors.
     Supports JSON body and gzip-compressed JSON payload.
+    Supports both cryptographic X-Device-Token and legacy X-Host-Token.
     """
-    # 1. Verify Host Token
-    settings = get_settings()
-    configured_token = getattr(settings, "host_agent_token", "kavach_agent_default_secret")
-    provided_token = x_host_token or ""
+    # 1. Verify Cryptographic Device Token or Legacy Host Token
+    if x_device_token and x_device_id:
+        from app.services.enrollment_service import EnrollmentService
+        from app.core.exceptions import AuthenticationError
+        try:
+            async with get_session() as session:
+                await EnrollmentService.authenticate_device(session, x_device_id, x_device_token)
+        except AuthenticationError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=exc.message,
+            )
+    else:
+        settings = get_settings()
+        configured_token = getattr(settings, "host_agent_token", "kavach_agent_default_secret")
+        provided_token = x_host_token or ""
 
-    is_valid = (
-        provided_token == configured_token
-        or provided_token in _VALID_TOKENS
-        or not configured_token
-    )
-
-    if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or missing X-Host-Token header",
+        is_valid = (
+            provided_token == configured_token
+            or provided_token in _VALID_TOKENS
+            or not configured_token
         )
+
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or missing X-Host-Token or X-Device-Token header",
+            )
 
     # 2. Rate Limiting Protection
     client_key = x_host_id or (request.client.host if request.client else "unknown_client")
@@ -169,9 +185,46 @@ async def ingest_telemetry(
             detail="Ingestion rate limit exceeded for this host (max 600 batches/min)",
         )
 
-    # 3. Handle Gzip or Raw JSON decompression
+    # 3. Handle Gzip or Raw JSON decompression with ClientDisconnect guard
     content_encoding = request.headers.get("content-encoding", "").lower()
-    raw_body = await request.body()
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > 10 * 1024 * 1024:  # 10MB limit
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail="Telemetry payload exceeds 10MB batch limit",
+                )
+        except ValueError:
+            pass
+
+    try:
+        raw_body = await request.body()
+    except ClientDisconnect:
+        req_id = request.headers.get("X-Request-ID")
+        logger.info(
+            "telemetry_client_disconnected",
+            client=client_key,
+            path=str(request.url.path),
+            request_id=req_id,
+        )
+        return Response(
+            status_code=499,
+            content=b'{"success":false,"error":{"code":"CLIENT_DISCONNECTED","message":"Client closed connection before telemetry body was fully received"}}',
+            media_type="application/json",
+        )
+    except Exception as exc:
+        logger.warning("telemetry_body_read_error", client=client_key, error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to read incoming request body: {exc}",
+        )
+
+    if len(raw_body) > 10 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Telemetry payload exceeds 10MB batch limit",
+        )
 
     if "gzip" in content_encoding:
         try:

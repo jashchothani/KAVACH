@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+  <title>KAVACH ΓÇö SOC Command Center & Live Telemetry</title>
+
+  <!-- Google Fonts: Outfit, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Chart.js CDN for 60fps Animated Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- KAVACH Pure CSS Stylesheet -->
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <div id="app-root">
+    <!-- ====================================================================
+         Sidebar Navigation
+         ==================================================================== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="./index.html" class="logo-icon" style="text-decoration:none;">
+          <i class="fa-solid fa-shield-halved"></i>
+        </a>
+        <div class="logo-text">
+          <h1>KAVACH</h1>
+          <p>SOAR-XDR Core v2.4</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- Section: PUBLIC & OVERVIEW -->
+        <div class="nav-section">
+          <div class="nav-section-title">PORTAL & DASHBOARD</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="/" target="_blank" style="color:var(--cyan); font-weight:700;"><i class="fa-solid fa-atom"></i> Launch React 3D SPA</a>
+            </li>
+            <li class="nav-item active">
+              <a href="./dashboard.html"><i class="fa-solid fa-chart-line"></i> SOC Command Center</a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Section: TELEMETRY & FLEET -->
+        <div class="nav-section">
+          <div class="nav-section-title">TELEMETRY & FLEET</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="./fleet.html"><i class="fa-solid fa-network-wired"></i> Fleet & Agents <span class="nav-badge" id="nav-fleet-count">Live</span></a>
+            </li>
+            <li class="nav-item active-view-trigger" data-view="logs">
+              <button><i class="fa-solid fa-terminal"></i> 5-Tier Log Streams</button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Section: SECURITY OPERATIONS -->
+        <div class="nav-section">
+          <div class="nav-section-title">SECURITY OPERATIONS</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="./incidents.html"><i class="fa-solid fa-shield-virus"></i> Incidents & SOAR <span class="nav-badge" id="nav-incident-count">0</span></a>
+            </li>
+            <li class="nav-item">
+              <a href="./mitre.html"><i class="fa-solid fa-cubes"></i> MITRE ATT&CK Matrix</a>
+            </li>
+            <li class="nav-item">
+              <a href="./raksha.html"><i class="fa-solid fa-brain"></i> Raksha AI Copilot</a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Section: DEVELOPER -->
+        <div class="nav-section">
+          <div class="nav-section-title">SYSTEM & DOCS</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="./docs.html"><i class="fa-solid fa-book"></i> API Docs & Guide</a>
+            </li>
+            <li class="nav-item">
+              <a href="http://localhost:8000/docs" target="_blank"><i class="fa-solid fa-square-arrow-up-right"></i> Swagger Spec</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="analyst-avatar">A</div>
+        <div class="analyst-info">
+          <h4>SOC Lead Analyst</h4>
+          <p><span class="stream-pulse" style="display:inline-block; margin-right:4px;"></span> Online (WebSocket)</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ====================================================================
+         Main Wrapper & Topbar
+         ==================================================================== -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebar-toggle-btn" class="btn btn-secondary" style="padding: 6px 12px; border-radius: 8px;">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <h2 class="page-title" id="page-title">SOC Command Center</h2>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Live Telemetry Stream Indicator -->
+          <div class="stream-pill" id="ws-indicator" title="Live WebSocket stream from cloud analysis server">
+            <span class="stream-pulse"></span>
+            <span id="ws-status-text">CONNECTING...</span>
+          </div>
+
+          <!-- Multi-Host Fleet Switcher Dropdown -->
+          <div class="host-switcher" style="position: relative;">
+            <button class="host-btn" id="host-switcher-btn">
+              <i class="fa-solid fa-server" style="color: var(--cyan);"></i>
+              <span id="active-host-label">All Fleet Endpoints</span>
+              <span class="badge badge-online" id="active-host-badge" style="font-size: 0.65rem;">Live</span>
+              <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; color: #64748b;"></i>
+            </button>
+            <div class="host-menu" id="host-switcher-menu">
+              <!-- Dynamically populated by JS -->
+            </div>
+          </div>
+
+          <!-- Quick Action: Enroll Agent Modal -->
+          <button class="btn btn-cyan" onclick="app.openEnrollModal()" title="Enroll new endpoint collector agent">
+            <i class="fa-solid fa-plus"></i> Enroll Node
+          </button>
+
+          <!-- Audit Trigger -->
+          <button class="btn btn-primary" id="btn-run-audit" title="Trigger full sensor health check across all 16 collectors">
+            <i class="fa-solid fa-bolt"></i> Run SOC Audit
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <main class="content-area">
+        <!-- VIEW: DASHBOARD (Active Default) -->
+        <section class="view-pane active" id="view-dashboard">
+          <!-- KPI Stats Grid -->
+          <div class="stats-grid-4">
+            <div class="metric-box grad-cyan">
+              <div class="metric-label">
+                <span>Fleet Security Score</span>
+                <i class="fa-solid fa-shield-heart metric-icon"></i>
+              </div>
+              <div class="metric-val">94.8 <span style="font-size:1rem; color:#94a3b8;">/100</span></div>
+              <div class="metric-sub"><i class="fa-solid fa-arrow-trend-up"></i> +2.4% vs last baseline</div>
+            </div>
+
+            <div class="metric-box grad-magenta">
+              <div class="metric-label">
+                <span>Critical Incidents</span>
+                <i class="fa-solid fa-shield-virus metric-icon"></i>
+              </div>
+              <div class="metric-val" id="metric-critical-incidents">0</div>
+              <div class="metric-sub" style="color:var(--magenta);"><i class="fa-solid fa-crosshairs"></i> Cross-host correlation active</div>
+            </div>
+
+            <div class="metric-box grad-purple">
+              <div class="metric-label">
+                <span>Active Collectors</span>
+                <i class="fa-solid fa-microchip metric-icon"></i>
+              </div>
+              <div class="metric-val">16 <span style="font-size:1rem; color:#94a3b8;">/16</span></div>
+              <div class="metric-sub"><i class="fa-solid fa-check-double"></i> 100% sensors operational</div>
+            </div>
+
+            <div class="metric-box grad-green">
+              <div class="metric-label">
+                <span>Priority Ingestion</span>
+                <i class="fa-solid fa-network-wired metric-icon"></i>
+              </div>
+              <div class="metric-val" id="card-online-count">6 Nodes</div>
+              <div class="metric-sub"><i class="fa-solid fa-bolt"></i> Redis Streams zero drop</div>
+            </div>
+          </div>
+
+          <!-- 60FPS Charts Grid 1 -->
+          <div class="charts-grid-2">
+            <!-- Chart 1: Real-time Rolling Network Flow -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title"><i class="fa-solid fa-chart-line" style="color:var(--cyan);"></i> Real-Time Telemetry Stream Flow</div>
+                  <div class="card-subtitle">Continuous 60fps sliding window of live TCP & UDP bandwidth</div>
+                </div>
+                <span class="badge badge-online"><i class="fa-solid fa-wave-square"></i> 2.5s Sliding Buffer</span>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="networkFlowChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chart 2: Attack Vectors Doughnut -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title"><i class="fa-solid fa-chart-pie" style="color:var(--magenta);"></i> Attack Vectors Distribution</div>
+                  <div class="card-subtitle">Threat surface classification across active fleet</div>
+                </div>
+                <span class="badge badge-low">All Vectors</span>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="attackVectorsChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 60FPS Charts Grid 2 -->
+          <div class="charts-grid-2">
+            <!-- Chart 3: Threat Velocity Bar Chart -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title"><i class="fa-solid fa-chart-simple" style="color:var(--purple);"></i> Threat Neutralization Velocity</div>
+                  <div class="card-subtitle">Weekly blocked anomalous events and contained processes</div>
+                </div>
+                <span class="badge badge-high"><i class="fa-solid fa-arrow-trend-up"></i> Auto-Mitigated</span>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="threatVelocityChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chart 4: Ingress vs Egress Wave Area -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title"><i class="fa-solid fa-water" style="color:var(--green);"></i> Ingress vs Egress Telemetry Rate</div>
+                  <div class="card-subtitle">Dual wave dual-band traffic density (MB/s)</div>
+                </div>
+                <span class="badge badge-online">Synchronized</span>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="bandwidthWaveChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live 5-Tier Log Stream Section -->
+          <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+              <div>
+                <div class="card-title"><i class="fa-solid fa-terminal" style="color:var(--cyan);"></i> Live 5-Tier Stream Explorer</div>
+                <div class="card-subtitle">Prioritized real-time event pipeline (Critical & High expedited with zero queue loss)</div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" onclick="app.exportLogs()"><i class="fa-solid fa-download"></i> Export JSON</button>
+                <button class="btn btn-primary" onclick="app.fetchLogs()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Feed</button>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <!-- Tier Filter Chips Bar -->
+              <div class="tier-bar">
+                <button class="tier-chip active" data-tier="all" onclick="app.filterLogTier('all')">All Streams</button>
+                <button class="tier-chip" data-tier="critical" onclick="app.filterLogTier('critical')">≡ƒö┤ Critical (P0)</button>
+                <button class="tier-chip" data-tier="high" onclick="app.filterLogTier('high')">≡ƒƒá High (P1)</button>
+                <button class="tier-chip" data-tier="medium" onclick="app.filterLogTier('medium')">≡ƒƒí Medium (P2)</button>
+                <button class="tier-chip" data-tier="low" onclick="app.filterLogTier('low')">≡ƒö╡ Low (P3)</button>
+                <button class="tier-chip" data-tier="statistical" onclick="app.filterLogTier('statistical')">≡ƒôè Statistical</button>
+              </div>
+
+              <!-- Search Bar -->
+              <div style="display:flex; gap:12px; margin-bottom:16px;">
+                <input type="text" class="chat-input" id="log-search-input" placeholder="Search logs by IP, process name, hash, or technique..." style="border-radius:8px;" onkeyup="app.searchLogs(this.value)" />
+                <select class="btn btn-secondary" style="border-radius:8px; padding:0 14px;" onchange="app.filterCollector(this.value)">
+                  <option value="all">All 16 Collectors</option>
+                  <option value="process">Process Sensor</option>
+                  <option value="network">Network Sockets</option>
+                  <option value="powershell">PowerShell ScriptBlock</option>
+                  <option value="file_monitor">FIM File Integrity</option>
+                  <option value="eventlog">Windows EventLog</option>
+                  <option value="dns">DNS Queries</option>
+                  <option value="usb">USB Removable</option>
+                  <option value="sysmon">Sysmon Telemetry</option>
+                </select>
+              </div>
+
+              <!-- Table -->
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Tier</th>
+                      <th>Host Node</th>
+                      <th>Collector</th>
+                      <th>Event Summary</th>
+                      <th>Target Destination</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="logs-table-body">
+                    <!-- Dynamically populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       Modals
+       ==================================================================== -->
+  <!-- 1. Log Inspector Modal -->
+  <div class="modal-overlay" id="modal-log-inspector">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-code" style="color:var(--cyan);"></i> Raw Telemetry Event Inspector</h3>
+        <button class="modal-close" onclick="app.closeModal('modal-log-inspector')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <pre id="log-inspector-json" style="background:#0b0e17; padding:16px; border-radius:8px; font-family:var(--font-mono); font-size:0.8rem; color:#38bdf8; overflow-x:auto;"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="app.copyLogJson()"><i class="fa-solid fa-copy"></i> Copy JSON</button>
+        <button class="btn btn-primary" onclick="app.closeModal('modal-log-inspector')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MITRE Drilldown Modal -->
+  <div class="modal-overlay" id="modal-mitre-drilldown">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="mitre-modal-title"><i class="fa-solid fa-shield-halved" style="color:var(--magenta);"></i> MITRE ATT&CK Technique</h3>
+        <button class="modal-close" onclick="app.closeModal('modal-mitre-drilldown')">&times;</button>
+      </div>
+      <div class="modal-body" id="mitre-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="app.closeModal('modal-mitre-drilldown')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Incident Investigation Modal -->
+  <div class="modal-overlay" id="modal-incident-investigate">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-crosshairs" style="color:var(--magenta);"></i> Incident Forensics & SOAR Response</h3>
+        <button class="modal-close" onclick="app.closeModal('modal-incident-investigate')">&times;</button>
+      </div>
+      <div class="modal-body" id="inc-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="app.closeModal('modal-incident-investigate')">Dismiss</button>
+        <button class="btn btn-primary" id="inc-execute-playbook-btn"><i class="fa-solid fa-bolt"></i> Execute SOAR Playbook</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Enroll Endpoint Modal -->
+  <div class="modal-overlay" id="modal-enroll-endpoint">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-key" style="color:var(--cyan);"></i> Enroll Endpoint Collector Agent</h3>
+        <button class="modal-close" onclick="app.closeModal('modal-enroll-endpoint')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); font-size: 0.85rem;">
+          Generate a cryptographically signed authentication token for an endpoint to stream telemetry to this KAVACH Cloud Gateway.
+        </p>
+        <input type="text" id="enroll-hostname-input" placeholder="Enter endpoint hostname (e.g. workstation-finance-01)..." class="chat-input" style="border-radius: 8px; margin: 12px 0;" />
+        <button class="btn btn-cyan" onclick="app.generateEnrollToken()"><i class="fa-solid fa-key"></i> Generate Enrollment Token</button>
+
+        <div id="enroll-token-result" style="display:none; margin-top: 16px; flex-direction:column; gap:12px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="app.closeModal('modal-enroll-endpoint')">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KAVACH Pure JavaScript Application Engine -->
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -144,10 +144,10 @@ class NotificationSettings(BaseSettings):
 
     server: str = Field(default="", description="SMTP server")
     port: int = Field(default=587, description="SMTP port")
-    username: str = Field(default="", description="SMTP username")
+    username: str = Field(default="kavachcybertech@gmail.com", description="SMTP username")
     password: str = Field(default="", description="SMTP password")
     use_tls: bool = Field(default=True, description="Use TLS")
-    soc_email: str = Field(default="", alias="SOC_EMAIL")
+    soc_email: str = Field(default="kavachcybertech@gmail.com", alias="SOC_EMAIL")
     soc_phone: str = Field(default="", alias="SOC_PHONE")
 
 

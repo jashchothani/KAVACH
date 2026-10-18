@@ -55,6 +55,12 @@ class ValidationError(KavachBaseException):
     status_code = 422
 
 
+class ConflictError(KavachBaseException):
+    error_code = "RESOURCE_CONFLICT"
+    status_code = 409
+
+
+
 class CollectorError(KavachBaseException):
     error_code = "COLLECTOR_ERROR"
     status_code = 500

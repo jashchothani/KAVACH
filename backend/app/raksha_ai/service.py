@@ -10,11 +10,13 @@ High-level security intelligence workflows:
 
 from __future__ import annotations
 
+import asyncio
 import json
+import os
 from typing import Any
 
 from app.core.logging import get_logger
-from app.raksha_ai.provider import get_llm_provider, LocalFallbackProvider
+from app.raksha_ai.provider import get_llm_provider, LocalFallbackProvider, GoogleGeminiProvider
 from app.raksha_ai.sanitizer import sanitize_telemetry, sanitize_text
 
 logger = get_logger(__name__)
@@ -45,16 +47,18 @@ class RakshaAIService:
         prompt += "\nPlease provide a clear, professional cybersecurity assessment with concrete next actions."
 
         try:
-            content = await self._provider.generate_response(prompt)
+            content = await asyncio.wait_for(self._provider.generate_response(prompt), timeout=4.5)
+            provider_used = self._provider.provider_name
         except Exception as exc:
             logger.warning("primary_llm_failed_falling_back", error=str(exc))
             fallback = LocalFallbackProvider()
             content = await fallback.generate_response(prompt)
+            provider_used = fallback.provider_name
 
         return {
             "response": content,
-            "provider": self._provider.provider_name,
-            "is_ai_generated": not isinstance(self._provider, LocalFallbackProvider),
+            "provider": provider_used or self._provider.provider_name,
+            "is_ai_generated": "Offline" not in (provider_used or ""),
         }
 
     async def explain_alert(self, alert_dict: dict[str, Any]) -> str:

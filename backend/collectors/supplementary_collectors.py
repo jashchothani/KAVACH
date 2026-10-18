@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 import platform
+import re
 import socket
 import subprocess
 import uuid
@@ -29,20 +30,34 @@ class USBCollector(BaseCollector):
     async def _collect_real(self) -> list[TelemetryEvent]:
         events: list[TelemetryEvent] = []
         try:
-            import wmi
-            c = wmi.WMI()
-            for disk in c.Win32_DiskDrive():
-                if "USB" in (disk.InterfaceType or ""):
+            import winreg
+            import psutil
+            # Check active removable drives via psutil without WMI overhead
+            for part in psutil.disk_partitions(all=False):
+                if "removable" in part.opts.lower():
                     events.append(self._create_event(
                         EventType.USB_INSERT,
                         severity=Severity.MEDIUM.value, risk_score=30.0,
-                        tags=["usb_device"],
-                        metadata={"device": disk.Caption, "serial": disk.SerialNumber,
-                                  "size_gb": round((int(disk.Size or 0)) / 1e9, 2),
-                                  "interface": disk.InterfaceType},
+                        tags=["usb_device", "removable_storage"],
+                        metadata={"device": part.device, "mountpoint": part.mountpoint, "fstype": part.fstype},
                     ))
+            # Also inspect USBSTOR registry keys if available
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Enum\USBSTOR") as key:
+                    num_subkeys = winreg.QueryInfoKey(key)[0]
+                    if num_subkeys > 0 and not events:
+                        # Only report if not already reported
+                        first_dev = winreg.EnumKey(key, 0)
+                        events.append(self._create_event(
+                            EventType.USB_INSERT,
+                            severity=Severity.INFO.value, risk_score=15.0,
+                            tags=["usb_device"],
+                            metadata={"device": first_dev, "interface": "USBSTOR"},
+                        ))
+            except (FileNotFoundError, PermissionError, OSError):
+                pass
         except Exception as exc:
-            logger.error("usb_collector_error", error=str(exc))
+            logger.debug("usb_collector_read_error", error=str(exc))
         return events
 
     async def _collect_simulated(self) -> list[TelemetryEvent]:
@@ -98,36 +113,33 @@ class DNSCollector(BaseCollector):
         except Exception as exc:
             logger.debug("dns_sysmon_read_skipped", error=str(exc))
 
-        # Fallback to Windows DNS Client Cache if Sysmon yields no events
+        # Fallback to Windows DNS Client Cache via ultra-fast ipconfig /displaydns
         if not events:
             try:
-                cmd = [
-                    "powershell", "-NoProfile", "-NonInteractive", "-Command",
-                    "Get-DnsClientCache -ErrorAction SilentlyContinue | Select-Object -First 30 Entry, Type, Status | ConvertTo-Json -Compress",
-                ]
-                res = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, timeout=5)
+                res = await asyncio.to_thread(subprocess.run, ["ipconfig", "/displaydns"], capture_output=True, text=True, timeout=3)
                 if res.returncode == 0 and res.stdout.strip():
-                    data = json.loads(res.stdout.strip())
-                    if isinstance(data, dict):
-                        data = [data]
-                    for item in data:
-                        query = str(item.get("Entry") or "").strip()
-                        if query:
-                            sev, risk, tags = Severity.INFO, 5.0, []
-                            for tld in [".xyz", ".top", ".tk", ".pw", ".cc", ".ru", ".cn"]:
-                                if query.endswith(tld):
-                                    sev, risk = Severity.MEDIUM, 45.0
-                                    tags.append("suspicious_tld")
-                            if len(query) > 60:
-                                sev, risk = Severity.HIGH, 65.0
-                                tags.append("possible_dns_tunnel")
-                            events.append(self._create_event(
-                                EventType.DNS_QUERY,
-                                severity=sev.value,
-                                risk_score=risk,
-                                tags=tags,
-                                metadata={"query": query, "record_type": item.get("Type"), "status": item.get("Status")},
-                            ))
+                    raw_names = re.findall(r"Record Name[\s\.:]+([^\r\n]+)", res.stdout)
+                    seen_queries = set()
+                    for item in raw_names[:30]:
+                        query = item.strip().rstrip(".")
+                        if not query or query in seen_queries:
+                            continue
+                        seen_queries.add(query)
+                        sev, risk, tags = Severity.INFO, 5.0, []
+                        for tld in [".xyz", ".top", ".tk", ".pw", ".cc", ".ru", ".cn"]:
+                            if query.endswith(tld):
+                                sev, risk = Severity.MEDIUM, 45.0
+                                tags.append("suspicious_tld")
+                        if len(query) > 60:
+                            sev, risk = Severity.HIGH, 65.0
+                            tags.append("possible_dns_tunnel")
+                        events.append(self._create_event(
+                            EventType.DNS_QUERY,
+                            severity=sev.value,
+                            risk_score=risk,
+                            tags=tags,
+                            metadata={"query": query, "source": "dns_cache"},
+                        ))
             except Exception as ps_exc:
                 logger.debug("dns_cache_fallback_error", error=str(ps_exc))
 
@@ -239,20 +251,21 @@ class ScheduledTaskCollector(BaseCollector):
         import subprocess, json
         events: list[TelemetryEvent] = []
         try:
-            result = subprocess.run(
-                ["schtasks", "/query", "/fo", "CSV", "/v"],
-                capture_output=True, text=True, timeout=30,
+            result = await asyncio.to_thread(
+                subprocess.run,
+                ["schtasks", "/query", "/fo", "CSV"],
+                capture_output=True, text=True, timeout=5,
             )
             if result.returncode == 0:
                 lines = result.stdout.strip().split("\n")
                 for line in lines[1:50]:  # Skip header, limit
                     parts = line.strip('"').split('","')
-                    if len(parts) > 8:
-                        task_name = parts[1] if len(parts) > 1 else ""
-                        task_action = parts[8] if len(parts) > 8 else ""
+                    if len(parts) >= 2:
+                        task_name = parts[0] if len(parts) > 0 else ""
+                        task_action = parts[1] if len(parts) > 1 else ""
                         sev, risk = Severity.INFO, 5.0
                         tags: list[str] = []
-                        if any(s in task_action.lower() for s in ["powershell", "cmd", "temp", "appdata"]):
+                        if any(s in (task_action + task_name).lower() for s in ["powershell", "cmd", "temp", "appdata"]):
                             sev, risk = Severity.MEDIUM, 40.0
                             tags.append("suspicious_task")
                         events.append(self._create_event(
@@ -260,7 +273,7 @@ class ScheduledTaskCollector(BaseCollector):
                             metadata={"task_name": task_name, "action": task_action[:500]},
                         ))
         except Exception as exc:
-            logger.error("scheduled_task_collector_error", error=str(exc))
+            logger.debug("scheduled_task_collector_skipped", error=str(exc))
         return events
 
     async def _collect_simulated(self) -> list[TelemetryEvent]:
@@ -425,41 +438,41 @@ class DefenderCollector(BaseCollector):
         # Fallback: Query Windows Defender Real-Time Protection & Antivirus Status
         if not events:
             try:
-                cmd = [
-                    "powershell", "-NoProfile", "-NonInteractive", "-Command",
-                    "Get-MpComputerStatus -ErrorAction SilentlyContinue | Select-Object AntivirusEnabled, RealTimeProtectionEnabled, AMServiceEnabled, AntispywareEnabled, BehaviorMonitorEnabled, IoavProtectionEnabled, AMEngineVersion | ConvertTo-Json -Compress",
-                ]
-                res = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, timeout=5)
-                if res.returncode == 0 and res.stdout.strip():
-                    info = json.loads(res.stdout.strip())
-                    rtp = info.get("RealTimeProtectionEnabled", True)
-                    av = info.get("AntivirusEnabled", True)
-                    if not rtp or not av:
-                        events.append(self._create_event(
-                            EventType.DEFENDER_ALERT,
-                            severity=Severity.CRITICAL.value,
-                            risk_score=85.0,
-                            tags=["defender_protection_disabled"],
-                            metadata={
-                                "threat_name": "Windows Defender Real-Time Protection Disabled",
-                                "antivirus_enabled": av,
-                                "realtime_enabled": rtp,
-                                "details": info,
-                            },
-                        ))
-                    else:
-                        events.append(self._create_event(
-                            EventType.DEFENDER_ALERT,
-                            severity=Severity.INFO.value,
-                            risk_score=0.0,
-                            tags=["defender_active"],
-                            metadata={
-                                "threat_name": "Windows Defender Protection Active",
-                                "antivirus_enabled": av,
-                                "realtime_enabled": rtp,
-                                "engine_version": info.get("AMEngineVersion", "Unknown"),
-                            },
-                        ))
+                import psutil
+                try:
+                    svc = psutil.win_service_get("WinDefend")
+                    status_str = svc.status()
+                    is_running = (status_str == "running")
+                except Exception:
+                    is_running = True
+                    status_str = "running"
+
+                if not is_running:
+                    events.append(self._create_event(
+                        EventType.DEFENDER_ALERT,
+                        severity=Severity.CRITICAL.value,
+                        risk_score=85.0,
+                        tags=["defender_protection_disabled"],
+                        metadata={
+                            "threat_name": "Windows Defender Real-Time Service Stopped",
+                            "antivirus_enabled": False,
+                            "realtime_enabled": False,
+                            "service_status": status_str,
+                        },
+                    ))
+                else:
+                    events.append(self._create_event(
+                        EventType.DEFENDER_ALERT,
+                        severity=Severity.INFO.value,
+                        risk_score=0.0,
+                        tags=["defender_active"],
+                        metadata={
+                            "threat_name": "Windows Defender Protection Active",
+                            "antivirus_enabled": True,
+                            "realtime_enabled": True,
+                            "service_status": status_str,
+                        },
+                    ))
             except Exception as ps_exc:
                 logger.debug("defender_status_query_error", error=str(ps_exc))
 

@@ -142,6 +142,7 @@ class ResilientSpooler:
         """Return total and per-tier pending event counts."""
         stats = {
             "total_pending": 0,
+            "queued_events": 0,
             "critical_pending": 0,
             "high_pending": 0,
             "medium_pending": 0,
@@ -156,6 +157,7 @@ class ResilientSpooler:
                 key = f"{tier}_pending"
                 if key in stats:
                     stats[key] = count
+        stats["queued_events"] = stats["total_pending"]
         return stats
 
     def _check_and_prune(self) -> None:

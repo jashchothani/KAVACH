@@ -7,10 +7,10 @@ light-themed HTML email templates and dynamic radial gradient styling.
 
 from __future__ import annotations
 
-import asyncio
-import smtplib
+from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 from typing import Any
 
 from core.config import get_settings
@@ -24,8 +24,22 @@ class EmailService:
 
     def __init__(self) -> None:
         self._settings = get_settings()
-        # Define base URL for the logo, e.g., from a CDN or static assets server.
         self._base_url = getattr(self._settings, "api_base_url", "http://localhost:8000")
+        # Locate local KAVACH logo for embedded email attachments
+        self._logo_path = self._find_logo_path()
+
+    def _find_logo_path(self) -> Path | None:
+        candidates = [
+            Path(__file__).parent / "kavach-logo.png",
+            Path(__file__).parent.parent / "static" / "kavach-logo.png",
+            Path(__file__).parent.parent / "email_notifications" / "templates" / "kavach-logo.png",
+            Path("assets/kavach_logo.png"),
+            Path("kavach-frontend/assets/logo.png"),
+        ]
+        for c in candidates:
+            if c.exists():
+                return c
+        return None
 
     async def send_notification(
         self,
@@ -41,22 +55,59 @@ class EmailService:
         settings = self._settings.notification
         target_email = recipient or settings.soc_email or settings.username
 
+        # Check AWS SNS Topic configuration
+        sns_topic_arn = os.environ.get("AWS_SNS_TOPIC_ARN") or getattr(settings, "sns_topic_arn", None)
+        if sns_topic_arn:
+            try:
+                import boto3
+                region = os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
+                sns_client = boto3.client("sns", region_name=region)
+                clean_subj = f"{'[KAVACH ALERT] ' if is_alert else '[KAVACH] '}{subject}"
+                clean_subj = clean_subj[:97] + "..." if len(clean_subj) > 100 else clean_subj
+                sns_msg = (
+                    f"==================================================\n"
+                    f"🛡️  KAVACH SOAR-XDR SECURITY PLATFORM\n"
+                    f"==================================================\n"
+                    f"Recipient: {recipient_name} <{target_email}>\n"
+                    f"Subject: {clean_subj}\n\n"
+                    f"{body}\n\n"
+                    f"Portal Link: {action_url or self._base_url}\n"
+                    f"SOC Hotline: {settings.soc_phone or '+91 1800-KAVACH-SOC'}\n"
+                    f"=================================================="
+                )
+                await asyncio.to_thread(
+                    sns_client.publish,
+                    TopicArn=sns_topic_arn,
+                    Subject=clean_subj,
+                    Message=sns_msg,
+                    MessageAttributes={
+                        "Recipient": {"DataType": "String", "StringValue": target_email or "security-team"},
+                        "IsAlert": {"DataType": "String", "StringValue": str(is_alert)},
+                    }
+                )
+                logger.info("email_notification_sent_via_sns", topic=sns_topic_arn, subject=clean_subj)
+                if not settings.server or not settings.username or not settings.password:
+                    return True
+            except Exception as sns_err:
+                logger.warning("sns_publish_error_in_email_service", error=str(sns_err))
+
         if not settings.server or not settings.username or not settings.password:
             logger.warning("email_service_not_configured")
             return False
 
         def _send() -> bool:
             try:
-                msg = MIMEMultipart("alternative")
+                # Main container using 'related' to embed inline images + alternative text
+                msg = MIMEMultipart("related")
 
                 # Prefix subject based on is_alert
                 subject_prefix = "[KAVACH ALERT] " if is_alert else "[KAVACH] "
                 msg["Subject"] = f"{subject_prefix}{subject}"
-                msg["From"] = f"KAVACH Security Platform <{settings.username}>"
+                msg["From"] = f"KAVACH Security Platform <{settings.username or 'kavachcybertech@gmail.com'}>"
                 msg["To"] = target_email
 
-                # Logo URL
-                logo_url = f"{self._base_url}/static/kavach-logo.png"
+                # Alternative container for plain text and HTML
+                alt_part = MIMEMultipart("alternative")
 
                 # --- Design Palette & Dynamic Options based on is_alert ---
                 if is_alert:
@@ -93,11 +144,11 @@ class EmailService:
 
                 # Standard footer text
                 footer_text = f"""
-                    Generated automatically by KAVACH SOAR-XDR Platform | SOC Phone: {settings.soc_phone}<br>
+                    Generated automatically by KAVACH SOAR-XDR Platform | SOC Phone: {settings.soc_phone} | Email: <a href="mailto:kavachcybertech@gmail.com" style="color: #ffffff; text-decoration: underline;">kavachcybertech@gmail.com</a><br>
                     © 2026 Swastik Chemical (India). All rights reserved.
                 """
 
-                # HTML Template recreating the reference layout exactly
+                # HTML Template referencing inline CID attachment
                 html_content = f"""
                 <!DOCTYPE html>
                 <html lang="en">
@@ -116,9 +167,9 @@ class EmailService:
                                     <!-- 1. Top Section: Concentric Gradient Header -->
                                     <tr>
                                         <td align="center" style="background: radial-gradient(circle at top, {bg_grad_3} 0%, {bg_grad_2} 45%, {bg_grad_1} 100%); padding: 35px 25px 60px 25px; text-align: center;">
-                                            <!-- Brand Logo Header -->
+                                            <!-- Brand Logo Header embedded via CID attachment -->
                                             <div style="margin-bottom: 20px;">
-                                                <img src="{logo_url}" alt="KAVACH Logo" width="130" style="max-width: 130px; height: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                                                <img src="cid:kavach_logo" alt="KAVACH Logo" width="140" style="max-width: 140px; height: auto; display: inline-block; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));">
                                             </div>
 
                                             <!-- Headline Text -->
@@ -186,9 +237,21 @@ class EmailService:
                 </html>
                 """
 
-                # Attach plaintext and HTML fallbacks
-                msg.attach(MIMEText(body, "plain"))
-                msg.attach(MIMEText(html_content, "html"))
+                # Attach plaintext and HTML fallbacks to alt_part
+                alt_part.attach(MIMEText(body, "plain"))
+                alt_part.attach(MIMEText(html_content, "html"))
+                msg.attach(alt_part)
+
+                # Attach KAVACH logo as an embedded MIMEImage with Content-ID
+                if self._logo_path and self._logo_path.exists():
+                    try:
+                        with open(self._logo_path, "rb") as f:
+                            logo_img = MIMEImage(f.read(), _subtype="png")
+                        logo_img.add_header("Content-ID", "<kavach_logo>")
+                        logo_img.add_header("Content-Disposition", "inline", filename="kavach_logo.png")
+                        msg.attach(logo_img)
+                    except Exception as img_err:
+                        logger.warning("failed_to_attach_logo_image", error=str(img_err))
 
                 # SMTP Logic
                 with smtplib.SMTP(settings.server, settings.port, timeout=10) as server:

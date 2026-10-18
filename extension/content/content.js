@@ -41,14 +41,14 @@
     initLinkAnnotations();
   }
 
-  // 3. McAfee SiteAdvisor-Style Link Annotator
+  // 3. KAVACH Active Search Sentinel Link Annotator
   function initLinkAnnotations() {
     annotateLinks();
 
     // Observe dynamic changes (e.g., infinite scroll or AJAX on Google / Bing)
     const observer = new MutationObserver(debounce(() => {
       annotateLinks();
-    }, 400));
+    }, 350));
 
     observer.observe(document.body || document.documentElement, {
       childList: true,
@@ -57,61 +57,104 @@
   }
 
   function annotateLinks() {
-    // Select prominent search engine results and prominent content links
-    const selectors = [
-      // Google search results
-      "div.g h3 a", "div.g a[jsname]", "div.yuRUbf > a", "a[data-ved] h3",
-      // Bing search results
-      "li.b_algo h2 a", "li.b_algo .b_title a",
-      // DuckDuckGo search results
-      "a[data-testid='result-title-a']", "a.result__url",
-      // General external links
-      "main a[href^='http']", "article a[href^='http']", "div#content a[href^='http']"
-    ];
-
-    const elements = document.querySelectorAll(selectors.join(", "));
     const currentHost = window.location.hostname;
+    const isGoogle = /google\./i.test(currentHost);
+    const isBing = /bing\./i.test(currentHost);
+    const isDuckDuckGo = /duckduckgo\./i.test(currentHost);
 
-    elements.forEach((el) => {
-      // Find the anchor element
-      const anchor = el.tagName === "A" ? el : el.closest("a");
-      if (!anchor || anchor.dataset.kavachChecked || !anchor.href) return;
+    if (isGoogle) {
+      // Find all Google primary organic results
+      const results = document.querySelectorAll("div.g, div[data-hveid]");
+      results.forEach((container) => {
+        if (container.dataset.kavachChecked) return;
+        
+        // Target ONLY the primary title heading h3
+        const h3 = container.querySelector("h3");
+        if (!h3) return;
 
-      const urlStr = anchor.href;
-      if (urlStr.startsWith("javascript:") || urlStr.startsWith("#") || urlStr.startsWith("mailto:")) return;
+        // Find the associated anchor
+        const anchor = h3.closest("a") || container.querySelector("a[href^='http']");
+        if (!anchor || !anchor.href) return;
 
-      let parsed;
-      try {
-        parsed = new URL(urlStr);
-      } catch (e) {
-        return;
-      }
+        const urlStr = anchor.href;
+        if (urlStr.startsWith("javascript:") || urlStr.startsWith("#") || urlStr.startsWith("mailto:")) return;
 
-      // Skip internal anchors on the same host unless on a search engine
-      const isSearchEngine = /google\.|bing\.|duckduckgo\.|yahoo\./i.test(currentHost);
-      if (!isSearchEngine && parsed.hostname === currentHost) return;
+        let parsed;
+        try {
+          parsed = new URL(urlStr);
+        } catch (e) {
+          return;
+        }
 
-      anchor.dataset.kavachChecked = "true";
-      attachBadge(anchor, urlStr, parsed.hostname);
-    });
+        // Never annotate Google internal links
+        if (parsed.hostname.includes("google.")) return;
+
+        container.dataset.kavachChecked = "true";
+        anchor.dataset.kavachChecked = "true";
+
+        // Attach cleanly directly to the h3 title heading (never to the breadcrumbs or three dots)
+        attachBadge(h3, urlStr, parsed.hostname);
+      });
+      return;
+    }
+
+    if (isBing) {
+      const results = document.querySelectorAll("li.b_algo");
+      results.forEach((container) => {
+        if (container.dataset.kavachChecked) return;
+        const h2 = container.querySelector("h2");
+        if (!h2) return;
+        const anchor = h2.querySelector("a") || h2.closest("a");
+        if (!anchor || !anchor.href) return;
+        let parsed;
+        try { parsed = new URL(anchor.href); } catch (e) { return; }
+        if (parsed.hostname.includes("bing.com") || parsed.hostname.includes("microsoft.com")) return;
+        container.dataset.kavachChecked = "true";
+        attachBadge(h2, anchor.href, parsed.hostname);
+      });
+      return;
+    }
+
+    if (isDuckDuckGo) {
+      const results = document.querySelectorAll("article[data-testid='result'], li[data-layout='organic']");
+      results.forEach((container) => {
+        if (container.dataset.kavachChecked) return;
+        const h2 = container.querySelector("h2");
+        if (!h2) return;
+        const anchor = h2.querySelector("a") || h2.closest("a");
+        if (!anchor || !anchor.href) return;
+        let parsed;
+        try { parsed = new URL(anchor.href); } catch (e) { return; }
+        container.dataset.kavachChecked = "true";
+        attachBadge(h2, anchor.href, parsed.hostname);
+      });
+      return;
+    }
   }
 
-  function attachBadge(anchor, url, hostname) {
+  const SVG_ICONS = {
+    SAFE: `<svg class="kavach-badge-svg" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5.5v6.2c0 5.25 3.4 10.15 8 11.3 4.6-1.15 8-6.05 8-11.3V5.5L12 2z" fill="#10b981"/><path d="M8.5 12.2l2.3 2.3 4.7-4.7" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    DANGER: `<svg class="kavach-badge-svg" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5.5v6.2c0 5.25 3.4 10.15 8 11.3 4.6-1.15 8-6.05 8-11.3V5.5L12 2z" fill="#ef4444"/><path d="M9 9l6 6M15 9l-6 6" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg>`,
+    WARN: `<svg class="kavach-badge-svg" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5.5v6.2c0 5.25 3.4 10.15 8 11.3 4.6-1.15 8-6.05 8-11.3V5.5L12 2z" fill="#f59e0b"/><path d="M12 8v5M12 16v0.5" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/></svg>`,
+    LOADING: `<svg class="kavach-badge-svg" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5.5v6.2c0 5.25 3.4 10.15 8 11.3 4.6-1.15 8-6.05 8-11.3V5.5L12 2z" fill="#334155"/><circle cx="12" cy="12" r="4.5" stroke="#38bdf8" stroke-width="2" stroke-dasharray="8 6" class="kavach-spin"/></svg>`
+  };
+
+  function attachBadge(targetEl, url, hostname) {
     const badge = document.createElement("span");
     badge.className = "kavach-advisor-badge kavach-advisor-loading";
-    badge.title = "KAVACH Safety: Scanning...";
-    badge.textContent = "•";
+    badge.setAttribute("aria-label", "KAVACH Safety: Scanning...");
+    badge.innerHTML = SVG_ICONS.LOADING;
 
-    // Insert badge immediately after anchor text or heading
-    anchor.parentNode.insertBefore(badge, anchor.nextSibling);
+    // Append badge cleanly directly inside the title heading element
+    targetEl.appendChild(badge);
 
     // Evaluate safety
     evaluateUrlSafety(url, hostname, (rating) => {
       badge.className = `kavach-advisor-badge ${rating.badgeClass}`;
-      badge.textContent = rating.icon;
-      badge.title = `KAVACH: ${rating.label} (${rating.scoreText})`;
+      badge.innerHTML = rating.svgIcon;
+      badge.setAttribute("aria-label", `KAVACH: ${rating.label} (${rating.scoreText})`);
 
-      // Hover / Click interaction: Show SiteAdvisor Popover Card
+      // Hover / Click interaction: Show KAVACH Popover Card
       badge.addEventListener("mouseenter", (e) => {
         showSiteCard(e.pageX, e.pageY, url, hostname, rating);
       });
@@ -140,6 +183,7 @@
       const rating = {
         level: "SAFE",
         badgeClass: "kavach-advisor-safe",
+        svgIcon: SVG_ICONS.SAFE,
         icon: "✓",
         label: "Verified Safe",
         score: 5,
@@ -160,6 +204,7 @@
       const rating = {
         level: "DANGER",
         badgeClass: "kavach-advisor-danger",
+        svgIcon: SVG_ICONS.DANGER,
         icon: "✗",
         label: "High Risk Phishing",
         score: 88,
@@ -179,6 +224,7 @@
           ? {
               level: "SUSPICIOUS",
               badgeClass: "kavach-advisor-warn",
+              svgIcon: SVG_ICONS.WARN,
               icon: "!",
               label: "Caution — New TLD",
               score: 45,
@@ -188,6 +234,7 @@
           : {
               level: "SAFE",
               badgeClass: "kavach-advisor-safe",
+              svgIcon: SVG_ICONS.SAFE,
               icon: "✓",
               label: "Normal Site",
               score: 10,
@@ -207,6 +254,7 @@
         rating = {
           level: "DANGER",
           badgeClass: "kavach-advisor-danger",
+          svgIcon: SVG_ICONS.DANGER,
           icon: "✗",
           label: "Dangerous Site",
           score,
@@ -217,6 +265,7 @@
         rating = {
           level: "SUSPICIOUS",
           badgeClass: "kavach-advisor-warn",
+          svgIcon: SVG_ICONS.WARN,
           icon: "!",
           label: "Suspicious",
           score,
@@ -227,6 +276,7 @@
         rating = {
           level: "SAFE",
           badgeClass: "kavach-advisor-safe",
+          svgIcon: SVG_ICONS.SAFE,
           icon: "✓",
           label: "Verified Safe",
           score,
@@ -240,7 +290,7 @@
     });
   }
 
-  // 4. McAfee SiteAdvisor-style Floating Popover Card
+  // 4. KAVACH Link Sentinel Floating Popover Card
   let cardRemovalTimeout = null;
 
   function showSiteCard(x, y, url, hostname, rating) {
@@ -264,11 +314,17 @@
 
     const pillClass = rating.level === "DANGER" ? "danger" : rating.level === "SUSPICIOUS" ? "suspicious" : "safe";
     const statusIcon = rating.level === "DANGER" ? "🚨" : rating.level === "SUSPICIOUS" ? "⚠️" : "🛡️";
+    const brandIconUrl = (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL) 
+      ? chrome.runtime.getURL("assets/icon16.png") 
+      : "";
+    const brandIconHtml = brandIconUrl 
+      ? `<img src="${brandIconUrl}" class="kavach-card-shield-img" width="18" height="18" alt="KAVACH">`
+      : `<span class="shield">${statusIcon}</span>`;
 
     activeCard.innerHTML = `
       <div class="kavach-card-header">
         <div class="kavach-card-brand">
-          <span class="shield">${statusIcon}</span>
+          ${brandIconHtml}
           <div class="kavach-card-domain" title="${hostname}">${hostname}</div>
         </div>
         <span class="kavach-card-pill ${pillClass}">${rating.label}</span>
@@ -315,7 +371,7 @@
     });
 
     document.getElementById("kavachCardSocBtn")?.addEventListener("click", () => {
-      window.open("http://localhost:5173/threats", "_blank");
+      window.open("http://localhost:8000/soc", "_blank");
     });
   }
 

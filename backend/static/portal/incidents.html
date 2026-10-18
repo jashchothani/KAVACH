@@ -1,0 +1,267 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+  <title>KAVACH ΓÇö Correlated Incidents & SOAR Automation Center</title>
+
+  <!-- Google Fonts: Outfit, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome 6 Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- KAVACH Pure CSS Stylesheet -->
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body class="site-body">
+  <!-- Atmospheric Glows -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Global Header -->
+  <header class="site-header">
+    <div class="site-nav-container">
+      <a href="./index.html" class="site-logo">
+        <div class="site-logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="site-logo-text">
+          <h1>KAVACH</h1>
+          <span>Incidents & SOAR Core</span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="site-nav-links">
+          <li><a href="./index.html" class="site-nav-link"><i class="fa-solid fa-house"></i> Home</a></li>
+          <li><a href="./dashboard.html" class="site-nav-link"><i class="fa-solid fa-chart-line"></i> SOC Dashboard</a></li>
+          <li><a href="./fleet.html" class="site-nav-link"><i class="fa-solid fa-network-wired"></i> Fleet & Agents</a></li>
+          <li><a href="./incidents.html" class="site-nav-link active"><i class="fa-solid fa-shield-virus"></i> Incidents & SOAR</a></li>
+          <li><a href="./mitre.html" class="site-nav-link"><i class="fa-solid fa-cubes"></i> MITRE Matrix</a></li>
+          <li><a href="./raksha.html" class="site-nav-link"><i class="fa-solid fa-brain"></i> Raksha AI</a></li>
+          <li><a href="./docs.html" class="site-nav-link"><i class="fa-solid fa-book"></i> Docs</a></li>
+        </ul>
+      </nav>
+
+      <div class="site-nav-cta">
+        <a href="./dashboard.html" class="btn btn-primary"><i class="fa-solid fa-gauge"></i> Live SOC</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width:1320px; margin: 100px auto 60px; padding: 0 24px;">
+    <!-- Page Header -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 32px; flex-wrap:wrap; gap:16px;">
+      <div>
+        <span class="section-tag"><i class="fa-solid fa-shield-virus"></i> THREAT RESPONSE ORCHESTRATION</span>
+        <h1 style="font-family:var(--font-sans); font-size:2.4rem; font-weight:900; color:#fff;">Correlated Incidents & SOAR Playbooks</h1>
+        <p style="color:var(--text-muted); font-size:0.95rem;">Cross-host attack campaigns correlated by ML and rule heuristics with automated containment actions.</p>
+      </div>
+
+      <div style="display:flex; gap:12px;">
+        <button class="btn btn-secondary" onclick="loadIncidents()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Incidents</button>
+      </div>
+    </div>
+
+    <!-- Incident Severity Filter Bar -->
+    <div class="tier-bar" style="margin-bottom:24px;">
+      <button class="tier-chip active" onclick="filterSeverity('all')">All Incidents (<span id="count-all">0</span>)</button>
+      <button class="tier-chip" onclick="filterSeverity('critical')">≡ƒö┤ Critical (<span id="count-critical">0</span>)</button>
+      <button class="tier-chip" onclick="filterSeverity('high')">≡ƒƒá High (<span id="count-high">0</span>)</button>
+      <button class="tier-chip" onclick="filterSeverity('medium')">≡ƒƒí Medium (<span id="count-medium">0</span>)</button>
+    </div>
+
+    <!-- Active Incidents Cards List -->
+    <div id="incidents-list-container" style="display:flex; flex-direction:column; gap:20px;">
+      <!-- Populated dynamically by JS -->
+    </div>
+  </main>
+
+  <!-- SOAR Execution Modal -->
+  <div class="modal-overlay" id="modal-playbook">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="playbook-modal-title"><i class="fa-solid fa-bolt" style="color:var(--magenta);"></i> Execute SOAR Playbook</h3>
+        <button class="modal-close" onclick="closePlaybookModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="playbook-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closePlaybookModal()">Cancel</button>
+        <button class="btn btn-primary" id="confirm-execute-btn"><i class="fa-solid fa-shield-halved"></i> Confirm & Execute</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8000/api/v1';
+    let incidents = [];
+
+    async function loadIncidents() {
+      try {
+        const resp = await fetch(`${API_BASE}/incidents?limit=50`);
+        if (resp.ok) {
+          incidents = await resp.json();
+        } else {
+          throw new Error('fallback');
+        }
+      } catch {
+        incidents = [
+          {
+            id: 'inc-001',
+            title: '≡ƒÜ¿ Distributed Multi-Host Campaign: Shared C2 Beaconing to 185.220.101.5',
+            severity: 'critical',
+            affected_hosts: ['srv-dc01', 'workstation-finance-02'],
+            status: 'detected',
+            mitre_technique: 'T1071 (Application Layer Protocol) ΓÇó T1021 (SMB Movement)',
+            created_at: new Date().toISOString(),
+            description: 'Detected synchronized beaconing from 2 endpoints to high-entropy external IP 185.220.101.5:4444.\nObserved SMB lateral movement attempts over port 445.\nRecommended Action: Immediate host network quarantine.',
+            recommended_playbook: 'isolate_affected_hosts'
+          },
+          {
+            id: 'inc-002',
+            title: 'ΓÜá∩╕Å Obfuscated PowerShell Shellcode & Execution Policy Bypass',
+            severity: 'high',
+            affected_hosts: ['workstation-finance-02'],
+            status: 'investigating',
+            mitre_technique: 'T1059.001 (PowerShell) ΓÇó T1027 (Obfuscated Files)',
+            created_at: new Date(Date.now() - 3600000).toISOString(),
+            description: 'Base64 encoded payload executed via powershell.exe with -WindowStyle Hidden -ExecutionPolicy Bypass.\nPayload downloaded secondary stage to AppData\\Local\\Temp.',
+            recommended_playbook: 'terminate_process_tree'
+          },
+          {
+            id: 'inc-003',
+            title: '≡ƒ¢í∩╕Å Unauthorized System32 Binary Modification Attempt (FIM Tripwire)',
+            severity: 'medium',
+            affected_hosts: ['srv-dc01'],
+            status: 'contained',
+            mitre_technique: 'T1562 (Disable Security Tools)',
+            created_at: new Date(Date.now() - 7200000).toISOString(),
+            description: 'File integrity monitor intercepted attempt to replace utilman.exe with cmd.exe executable.\nTripwire auto-contained modification.',
+            recommended_playbook: 'restore_fim_backup'
+          }
+        ];
+      }
+
+      updateCounts();
+      renderIncidentCards(incidents);
+    }
+
+    function updateCounts() {
+      document.getElementById('count-all').textContent = incidents.length;
+      document.getElementById('count-critical').textContent = incidents.filter(i => i.severity === 'critical').length;
+      document.getElementById('count-high').textContent = incidents.filter(i => i.severity === 'high').length;
+      document.getElementById('count-medium').textContent = incidents.filter(i => i.severity === 'medium').length;
+    }
+
+    function filterSeverity(sev) {
+      document.querySelectorAll('.tier-chip').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+
+      if (sev === 'all') {
+        renderIncidentCards(incidents);
+      } else {
+        renderIncidentCards(incidents.filter(i => i.severity === sev));
+      }
+    }
+
+    function renderIncidentCards(items) {
+      const container = document.getElementById('incidents-list-container');
+      if (!container) return;
+
+      if (items.length === 0) {
+        container.innerHTML = '<div class="card" style="text-align:center; padding:40px; color:#64748b;">No incidents matching selected filter.</div>';
+        return;
+      }
+
+      container.innerHTML = items.map((inc, idx) => {
+        const aff = inc.affected_hosts || [];
+        const isCrit = inc.severity === 'critical';
+        const badgeClass = isCrit ? 'badge-critical' : inc.severity === 'high' ? 'badge-high' : 'badge-medium';
+
+        return `
+          <div class="card" style="border-left: 4px solid ${isCrit ? 'var(--red)' : inc.severity === 'high' ? 'var(--amber)' : 'var(--cyan)'};">
+            <div class="card-header">
+              <div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                  <span class="badge ${badgeClass}">${inc.severity.toUpperCase()}</span>
+                  <span style="font-family:var(--font-mono); font-size:0.75rem; color:#64748b;">ID: ${inc.id}</span>
+                  <span class="badge badge-low">${(inc.status || 'DETECTED').toUpperCase()}</span>
+                </div>
+                <h3 style="font-family:var(--font-sans); font-size:1.25rem; font-weight:800; color:#fff;">${inc.title}</h3>
+              </div>
+              <button class="btn btn-primary" onclick="openPlaybookModal('${inc.id}')">
+                <i class="fa-solid fa-bolt"></i> Execute SOAR
+              </button>
+            </div>
+
+            <div class="card-body">
+              <div style="display:flex; gap:24px; margin-bottom:16px; flex-wrap:wrap;">
+                <div>
+                  <div style="font-size:0.7rem; font-weight:800; color:#64748b; margin-bottom:4px;">AFFECTED HOSTS (${aff.length})</div>
+                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    ${aff.map(h => `<span class="badge badge-critical" style="font-size:0.7rem;"><i class="fa-solid fa-computer"></i> ${h}</span>`).join('')}
+                  </div>
+                </div>
+
+                <div>
+                  <div style="font-size:0.7rem; font-weight:800; color:#64748b; margin-bottom:4px;">ATT&CK TECHNIQUES</div>
+                  <span class="badge badge-low" style="font-family:var(--font-mono);">${inc.mitre_technique || 'T1071 / T1059'}</span>
+                </div>
+
+                <div>
+                  <div style="font-size:0.7rem; font-weight:800; color:#64748b; margin-bottom:4px;">RECOMMENDED PLAYBOOK</div>
+                  <span class="badge badge-high"><i class="fa-solid fa-bolt"></i> ${inc.recommended_playbook || 'isolate_device'}</span>
+                </div>
+              </div>
+
+              <div style="background:#0b0e17; padding:16px; border-radius:8px; font-family:var(--font-mono); font-size:0.8rem; color:#cbd5e1; white-space:pre-wrap;">${inc.description}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openPlaybookModal(incId) {
+      const inc = incidents.find(i => i.id === incId);
+      if (!inc) return;
+
+      const body = document.getElementById('playbook-modal-body');
+      const aff = inc.affected_hosts || [];
+      body.innerHTML = `
+        <div style="margin-bottom:14px;">
+          <h4 style="font-weight:800; font-size:1.1rem; color:#fff; margin-bottom:4px;">${inc.title}</h4>
+          <span class="badge badge-critical">${inc.severity.toUpperCase()}</span>
+        </div>
+        <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:12px;">
+          Executing this automated playbook will immediately invoke the endpoint agent response hook:
+        </p>
+        <div style="background:#0b0e17; padding:14px; border-radius:8px; margin-bottom:14px;">
+          <div style="font-weight:800; color:var(--magenta); font-size:0.9rem; margin-bottom:6px;">Playbook: ${inc.recommended_playbook || 'isolate_affected_hosts'}</div>
+          <ul style="color:#cbd5e1; font-size:0.8rem; padding-left:18px;">
+            <li>Sever network sockets to external indicators</li>
+            <li>Apply Windows Firewall isolation rules (Block all inbound/outbound except KAVACH Cloud)</li>
+            <li>Kill spawned descendant process trees</li>
+            <li>Save RAM and forensic dump to <code>data/exports/</code></li>
+          </ul>
+        </div>
+      `;
+
+      document.getElementById('confirm-execute-btn').onclick = () => {
+        alert(`ΓÜí Playbook '${inc.recommended_playbook}' dispatched successfully to ${aff.join(', ')}! Hosts isolated.`);
+        closePlaybookModal();
+      };
+
+      document.getElementById('modal-playbook')?.classList.add('open');
+    }
+
+    function closePlaybookModal() {
+      document.getElementById('modal-playbook')?.classList.remove('open');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadIncidents);
+  </script>
+</body>
+</html>

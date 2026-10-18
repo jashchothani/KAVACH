@@ -62,6 +62,8 @@ class EmailService:
             context["dashboard_url"] = base_url
         if "soc_phone" not in context:
             context["soc_phone"] = smtp.soc_phone or "9004976777"
+        if "soc_email" not in context:
+            context["soc_email"] = getattr(smtp, "soc_email", None) or "kavachcybertech@gmail.com"
         
         # Render template
         try:
@@ -72,12 +74,45 @@ class EmailService:
             self._write_to_dead_letter(to, template_name, subject, context, f"Template error: {exc}")
             return False
 
+        # Prepare logo attachment for Resend and SMTP
+        logo_path = Path(__file__).parent / "templates" / "kavach-logo.png"
+        if not logo_path.exists():
+            logo_path = Path("backend/static/kavach-logo.png")
+        if not logo_path.exists():
+            logo_path = Path("assets/kavach_logo.png")
+
+        logo_b64: str | None = None
+        logo_bytes: bytes | None = None
+        if logo_path.exists():
+            try:
+                import base64
+                with open(logo_path, "rb") as f:
+                    logo_bytes = f.read()
+                logo_b64 = base64.b64encode(logo_bytes).decode("ascii")
+            except Exception as e:
+                logger.warning("could_not_read_logo_attachment", error=str(e))
+
         # Check for Resend API key first
         resend_api_key = os.environ.get("RESEND_API_KEY") or getattr(self.settings.notification, "resend_api_key", None)
         if resend_api_key:
             try:
                 import httpx
-                from_email = os.environ.get("RESEND_FROM_EMAIL", "KAVACH Security <onboarding@resend.dev>")
+                from_email = os.environ.get("RESEND_FROM_EMAIL", "KAVACH Security <kavachcybertech@gmail.com>")
+                resend_payload: dict[str, Any] = {
+                    "from": from_email,
+                    "to": [to],
+                    "subject": subject,
+                    "html": html_content,
+                }
+                if logo_b64:
+                    resend_payload["attachments"] = [
+                        {
+                            "filename": "kavach_logo.png",
+                            "content": logo_b64,
+                            "content_type": "image/png",
+                            "id": "kavach_logo",
+                        }
+                    ]
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.post(
                         "https://api.resend.com/emails",
@@ -85,12 +120,7 @@ class EmailService:
                             "Authorization": f"Bearer {resend_api_key}",
                             "Content-Type": "application/json",
                         },
-                        json={
-                            "from": from_email,
-                            "to": [to],
-                            "subject": subject,
-                            "html": html_content,
-                        },
+                        json=resend_payload,
                     )
                     if resp.status_code in (200, 201):
                         logger.info("email_sent_via_resend", recipient=to, subject=subject)
@@ -99,6 +129,48 @@ class EmailService:
                         logger.warning("resend_api_returned_error", status_code=resp.status_code, body=resp.text)
             except Exception as exc:
                 logger.warning("resend_send_failed", error=str(exc))
+
+        # Check for AWS SNS configuration
+        aws_sns_topic_arn = os.environ.get("AWS_SNS_TOPIC_ARN") or getattr(self.settings.notification, "sns_topic_arn", None)
+        if aws_sns_topic_arn:
+            try:
+                import boto3
+                region = os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
+                sns_client = boto3.client("sns", region_name=region)
+
+                plain_summary = self._build_plaintext_summary(subject, template_name, context)
+                clean_subject = (subject if len(subject) <= 100 else subject[:97] + "...")
+
+                # Auto-subscribe recipient if enabled
+                auto_sub = os.environ.get("AWS_SNS_AUTO_SUBSCRIBE", "false").lower() in ("true", "1", "yes")
+                if auto_sub and to and "@" in to:
+                    try:
+                        sns_client.subscribe(
+                            TopicArn=aws_sns_topic_arn,
+                            Protocol="email",
+                            Endpoint=to,
+                            ReturnSubscriptionArn=True
+                        )
+                    except Exception as sub_err:
+                        logger.debug("sns_auto_subscribe_skipped", error=str(sub_err))
+
+                publish_payload = {
+                    "TopicArn": aws_sns_topic_arn,
+                    "Subject": clean_subject,
+                    "Message": plain_summary,
+                    "MessageAttributes": {
+                        "Recipient": {"DataType": "String", "StringValue": to},
+                        "Template": {"DataType": "String", "StringValue": template_name},
+                        "Platform": {"DataType": "String", "StringValue": "KAVACH"}
+                    }
+                }
+
+                resp = await asyncio.to_thread(sns_client.publish, **publish_payload)
+                msg_id = resp.get("MessageId", "unknown")
+                logger.info("email_sent_via_aws_sns", msg_id=msg_id, recipient=to, topic=aws_sns_topic_arn)
+                return True
+            except Exception as sns_exc:
+                logger.warning("aws_sns_publish_failed", error=str(sns_exc))
 
         # If in test/development and not testing SMTP error retries, or if SMTP is unconfigured, log as mock
         # Check if SMTP is configured with real credentials
@@ -130,13 +202,23 @@ class EmailService:
         for attempt in range(1, max_retries + 1):
             try:
                 def _send_sync():
-                    msg = MIMEMultipart("alternative")
+                    # Use 'related' to embed inline attachments with Content-ID
+                    msg = MIMEMultipart("related")
                     msg["Subject"] = subject
-                    msg["From"] = f"KAVACH Security Platform <{smtp.username}>"
+                    msg["From"] = f"KAVACH Security Platform <{smtp.username or 'kavachcybertech@gmail.com'}>"
                     msg["To"] = to
-                    
-                    msg.attach(MIMEText(plain_text, "plain"))
-                    msg.attach(MIMEText(html_content, "html"))
+
+                    alt_part = MIMEMultipart("alternative")
+                    alt_part.attach(MIMEText(plain_text, "plain"))
+                    alt_part.attach(MIMEText(html_content, "html"))
+                    msg.attach(alt_part)
+
+                    if logo_bytes:
+                        from email.mime.image import MIMEImage
+                        logo_part = MIMEImage(logo_bytes, _subtype="png")
+                        logo_part.add_header("Content-ID", "<kavach_logo>")
+                        logo_part.add_header("Content-Disposition", "inline", filename="kavach_logo.png")
+                        msg.attach(logo_part)
                     
                     with smtplib.SMTP(smtp.server, smtp.port, timeout=10) as server:
                         if smtp.use_tls:
@@ -161,6 +243,67 @@ class EmailService:
 
         
         return False
+
+    def _build_plaintext_summary(self, subject: str, template_name: str, context: dict[str, Any]) -> str:
+        """Construct a formatted text representation from template variables for SNS email subscribers."""
+        lines = [
+            "==================================================",
+            "🛡️  KAVACH SOAR-XDR SECURITY PLATFORM",
+            "==================================================",
+            f"SUBJECT: {subject}",
+            ""
+        ]
+        t_lower = template_name.lower()
+        if "verify" in t_lower:
+            code = context.get("verification_code") or context.get("otp", "N/A")
+            mins = context.get("expires_in_minutes", 10)
+            lines.extend([
+                f"Your KAVACH verification security code is: {code}",
+                "",
+                f"This code will expire in {mins} minutes.",
+                "If you did not request this verification, please contact your SOC administrator immediately.",
+            ])
+        elif "alert" in t_lower:
+            lines.extend([
+                f"🚨 SECURITY INCIDENT ALERT: {context.get('title', subject)}",
+                f"Severity: {context.get('severity', 'HIGH')}",
+                f"Device: {context.get('device_name', 'Endpoint Host')} ({context.get('device_ip', '127.0.0.1')})",
+                f"Time: {context.get('detection_time', 'Just now')}",
+                "",
+                f"Detection Summary: {context.get('what_happened', 'An endpoint telemetry anomaly was flagged.')}",
+                "",
+                f"Recommended Action: {context.get('recommended_action', 'Review host telemetry and isolate process.')}",
+            ])
+        elif "password" in t_lower:
+            lines.extend([
+                "A password reset request was received for your KAVACH account.",
+                f"Reset Link: {context.get('reset_link', context.get('dashboard_url', ''))}",
+                f"Expires in: {context.get('expires_in_minutes', 15)} minutes.",
+            ])
+        elif "digest" in t_lower:
+            lines.extend([
+                f"KAVACH Weekly Threat Digest for {context.get('user_name', 'User')}:",
+                f"• Security Score: {context.get('security_score', '88')}/100",
+                f"• Threats Blocked: {context.get('threats_prevented', 0)}",
+                f"• Active Monitored Devices: {context.get('active_devices', 1)}",
+            ])
+        else:
+            for k, v in context.items():
+                if isinstance(v, (str, int, float, bool)):
+                    lines.append(f"• {k.replace('_', ' ').capitalize()}: {v}")
+
+        dash_url = context.get("dashboard_url", "http://localhost:8000")
+        soc_phone = context.get("soc_phone", "+91 1800-KAVACH-SOC")
+        lines.extend([
+            "",
+            "--------------------------------------------------",
+            f"Operations Portal: {dash_url}",
+            "SOC Contact Email: kavachcybertech@gmail.com",
+            f"SOC Hotline: {soc_phone}",
+            "© 2026 KAVACH · Swastik Chemical (India) Sovereign Cyber Defense",
+            "=================================================="
+        ])
+        return "\n".join(lines)
 
     def _write_to_dead_letter(
         self,

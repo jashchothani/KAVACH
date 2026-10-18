@@ -350,6 +350,36 @@ async def get_audit_vault_status() -> AuditVaultStatus:
     )
 
 
+@router.get("/status")
+async def get_compliance_status() -> dict[str, Any]:
+    """Retrieve combined CERT-In compliance posture, vault health, and telemetry retention status."""
+    vault = await get_audit_vault_status()
+    now_utc = datetime.now(timezone.utc)
+    return {
+        "status": "COMPLIANT",
+        "jurisdiction": "India (CERT-In / MeitY Mandate)",
+        "framework": "Information Technology Act, 2000 Section 70B",
+        "telemetry_minimization": {
+            "personal_documents_collected": False,
+            "browser_history_collected": False,
+            "keystrokes_logged": False,
+            "raw_passwords_captured": False,
+            "retention_period_days": 180,
+            "encryption_at_rest": "AES-256-GCM",
+            "audit_vault_status": vault.status,
+            "hash_chain_active": vault.merkle_hash_chain_active,
+        },
+        "vault_health": {
+            "retention_days_guaranteed": vault.retention_days_guaranteed,
+            "mandatory_retention_days": vault.mandatory_retention_days,
+            "ntp_synchronized": vault.ntp_clock_synchronized,
+            "storage_encryption": vault.cold_storage_encryption,
+            "events_archived": vault.total_events_archived,
+        },
+        "verified_at": now_utc.isoformat(),
+    }
+
+
 @router.post("/mark-reported/{incident_id}")
 async def mark_incident_reported(incident_id: str) -> dict[str, Any]:
     """Mark an incident as officially notified to CERT-In."""

@@ -36,7 +36,57 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: false, error: err.message });
       });
 
-    return true; // Keep message channel open for asynchronous response
+    return true;
+  }
+
+  if (message.type === "SCAN_EMAIL_ML") {
+    fetch(`${BACKEND_API}/ml/scan-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sender_name: message.sender_name || "",
+        sender_email: message.sender_email || "",
+        subject: message.subject || "",
+        body: message.body || "",
+        links: message.links || [],
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        sendResponse({ success: true, data });
+      })
+      .catch((err) => {
+        sendResponse({ success: false, error: err.message });
+      });
+
+    return true;
+  }
+
+  if (message.type === "SCAN_COMMS_ML") {
+    fetch(`${BACKEND_API}/ml/scan-comms`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone_number: message.phone_number || "",
+        message_text: message.message_text || "",
+        links: message.links || [],
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        sendResponse({ success: true, data });
+      })
+      .catch((err) => {
+        sendResponse({ success: false, error: err.message });
+      });
+
+    return true;
   }
 });
 

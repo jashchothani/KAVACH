@@ -18,6 +18,14 @@ import sys
 import os
 from pathlib import Path
 
+# Force UTF-8 on Windows consoles to prevent charmap UnicodeEncodeErrors
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 # Ensure backend/ and backend/app/ are on python path
 CURRENT_DIR = Path(__file__).resolve().parent
 if str(CURRENT_DIR) not in sys.path:

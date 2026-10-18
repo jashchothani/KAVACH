@@ -99,12 +99,14 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_database() -> None:
-    """Create all tables on application startup."""
+    """Create all tables and run safe migrations on application startup."""
     from app.database.models import Base
+    from app.database.migration import run_safe_migrations
 
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await run_safe_migrations(engine)
     logger.info("database_tables_initialized")
 
 

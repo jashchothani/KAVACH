@@ -19,8 +19,8 @@ start "KAVACH Backend (FastAPI)" cmd /k "cd /d %~dp0backend && "%PYTHON_EXE%" -m
 
 timeout /t 2 /nobreak >nul
 
-echo [2/2] Launching Frontend Web App (Vite) on port 5173...
-start "KAVACH Frontend (React/Vite)" cmd /k "cd /d %~dp0frontend && npm run dev"
+echo [2/2] Launching Frontend Web App (HTML/CSS/JS) on port 5173...
+start "KAVACH Frontend (HTML/CSS/JS)" cmd /k "cd /d %~dp0 && "%PYTHON_EXE%" scripts\start_frontend.py"
 
 echo.
 echo ========================================================

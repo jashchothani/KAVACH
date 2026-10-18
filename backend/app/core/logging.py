@@ -14,6 +14,8 @@ import logging
 import logging.handlers
 import sys
 import uuid
+from collections import deque
+from datetime import datetime, timezone
 from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
@@ -161,6 +163,14 @@ def setup_logging() -> None:
     root = logging.getLogger()
     root.setLevel(log_level)
     root.handlers.clear()
+
+    if sys.platform == "win32":
+        if hasattr(sys.stdout, "reconfigure"):
+            try:
+                sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+                sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
 
     # 1. Console Handler (clean format)
     console = logging.StreamHandler(sys.stdout)

@@ -15,6 +15,7 @@ from typing import Optional, Any
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import dotenv
 
 
 class LogLevel(str, Enum):
@@ -30,13 +31,18 @@ class AIProviderType(str, Enum):
     LOCAL_FALLBACK = "local_fallback"
     GEMINI = "gemini"
 
-
 # Base directory resolution
 # backend/app/core/config.py -> backend/app/core -> backend/app -> backend -> KAVACH root
 _CORE_DIR = Path(__file__).resolve().parent
 _APP_DIR = _CORE_DIR.parent
 _BACKEND_DIR = _APP_DIR.parent
 _ROOT_DIR = _BACKEND_DIR.parent
+
+# Load environment variables
+if (_BACKEND_DIR / ".env").is_file():
+    dotenv.load_dotenv(_BACKEND_DIR / ".env")
+if (_ROOT_DIR / ".env").is_file():
+    dotenv.load_dotenv(_ROOT_DIR / ".env")
 
 
 class PathSettings(BaseSettings):
@@ -120,10 +126,10 @@ class NvidiaNimSettings(BaseSettings):
         description="NVIDIA NIM endpoint base URL",
     )
     model: str = Field(
-        default="meta/llama-3.1-70b-instruct",
+        default="google/diffusiongemma-26b-a4b-it",
         description="NVIDIA NIM model identifier",
     )
-    timeout: float = Field(default=30.0, description="API request timeout in seconds")
+    timeout: float = Field(default=8.0, description="API request timeout in seconds")
     max_tokens: int = Field(default=1024, description="Max response tokens")
     temperature: float = Field(default=0.2, description="Sampling temperature for deterministic security guidance")
 

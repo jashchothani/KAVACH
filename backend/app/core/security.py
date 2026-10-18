@@ -48,7 +48,7 @@ class TokenPayload(BaseModel):
     """Decoded JWT token payload."""
     sub: str  # user ID
     username: str
-    role: UserRole
+    role: str | UserRole
     exp: datetime
     iat: datetime
     jti: str  # unique token ID
@@ -92,10 +92,16 @@ def decode_access_token(token: str) -> TokenPayload:
             algorithms=[settings.jwt_algorithm],
             issuer="kavach",
         )
+        role_raw = payload.get("role", "user")
+        try:
+            role_obj: UserRole | str = UserRole(str(role_raw).lower())
+        except Exception:
+            role_obj = str(role_raw)
+
         return TokenPayload(
             sub=payload["sub"],
             username=payload["username"],
-            role=UserRole(payload["role"]),
+            role=role_obj,
             exp=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
             iat=datetime.fromtimestamp(payload["iat"], tz=timezone.utc),
             jti=payload["jti"],
@@ -104,6 +110,7 @@ def decode_access_token(token: str) -> TokenPayload:
         raise TokenExpiredError("Access token has expired")
     except (jwt.InvalidTokenError, KeyError, ValueError) as exc:
         raise InvalidTokenError(f"Invalid access token: {exc}")
+
 
 
 def has_permission(role: str | UserRole, permission: str | Permission) -> bool:
@@ -126,4 +133,25 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
     if len(password) < 6:
         return False, "Password must be at least 6 characters long."
     return True, "Password meets requirements."
+
+
+def is_admin(role: str | UserRole) -> bool:
+    """Return True if the role is an administrator."""
+    r = role.value if isinstance(role, UserRole) else str(role).lower()
+    return r in ("admin", "super_admin", "owner")
+
+
+def is_analyst(role: str | UserRole) -> bool:
+    """Return True if the role is a SOC analyst or security analyst."""
+    r = role.value if isinstance(role, UserRole) else str(role).lower()
+    return r in (
+        "soc_analyst",
+        "analyst",
+        "security_analyst",
+        "incident_responder",
+        "security_manager",
+        "admin",
+        "super_admin",
+        "owner",
+    )
 

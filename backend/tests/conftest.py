@@ -55,3 +55,20 @@ def _force_test_database():
                 p.unlink()
             except OSError:
                 pass
+
+
+import pytest_asyncio
+from httpx import AsyncClient, ASGITransport
+from app.main import create_app
+from app.database.engine import init_database, close_database
+
+
+@pytest_asyncio.fixture
+async def async_client():
+    await init_database()
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+    await close_database()
+

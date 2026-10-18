@@ -18,8 +18,14 @@ desktop.ini
 
 # Environment & Secrets
 .env
+backend/.env
 *.env
 !.env.example
+!backend/.env.example
+
+# Reference & Scratch Repositories
+ref_repos/
+scratch/
 
 # Python / Backend
 backend/.venv/
@@ -92,3 +98,13 @@ mobile/ios/Flutter/Flutter.podspec
 *.mp4
 *.mov
 *.avi
+
+# Build, Dist, Runtime & Binary artifacts
+build/
+dist/
+release/
+runtime/
+*.exe
+*.apk
+*.bak
+scratch_*.py

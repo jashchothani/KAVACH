@@ -15,17 +15,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.database.models import (
+    AccountRequest,
     Alert,
+    AnalystAssignmentHistory,
     AuditLog,
     Base,
     DashboardStats,
     Device,
+    DeviceCredential,
+    EnrollmentChallenge,
     IOC,
     Incident,
     MitreTechnique,
     MLModelMeta,
     MLPrediction,
+    Organization,
     PlaybookExecution,
+    Policy,
     ScannedURL,
     SecurityEvent,
     SystemSetting,
@@ -132,6 +138,55 @@ class AlertRepository(BaseRepository[Alert]):
         result = await self._session.execute(stmt)
         return result.scalars().all()
 
+    async def get_for_devices(self, device_ids: Sequence[str], limit: int = 50) -> Sequence[Alert]:
+        if not device_ids:
+            return []
+        stmt = select(Alert).where(Alert.device_id.in_(device_ids)).order_by(Alert.created_at.desc()).limit(limit)
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
+    async def count_by_severity(self) -> dict[str, int]:
+        stmt = select(Alert.severity, func.count(Alert.id)).group_by(Alert.severity)
+        result = await self._session.execute(stmt)
+        counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
+        for sev, count in result.all():
+            if sev:
+                counts[str(sev).lower()] = int(count)
+        return counts
+
+    async def count_by_status(self) -> dict[str, int]:
+        stmt = select(Alert.status, func.count(Alert.id)).group_by(Alert.status)
+        result = await self._session.execute(stmt)
+        counts = {"new": 0, "investigating": 0, "resolved": 0, "closed": 0}
+        for st, count in result.all():
+            if st:
+                counts[str(st).lower()] = int(count)
+        return counts
+
+    async def get_mitre_heatmap(self) -> list[dict[str, Any]]:
+        stmt = (
+            select(
+                Alert.mitre_technique_id,
+                Alert.mitre_technique_name,
+                Alert.mitre_tactic,
+                func.count(Alert.id).label("count")
+            )
+            .where(Alert.mitre_technique_id.isnot(None))
+            .group_by(Alert.mitre_technique_id, Alert.mitre_technique_name, Alert.mitre_tactic)
+            .order_by(func.count(Alert.id).desc())
+        )
+        result = await self._session.execute(stmt)
+        return [
+            {
+                "technique_id": row[0],
+                "technique_name": row[1],
+                "tactic": row[2],
+                "count": row[3],
+            }
+            for row in result.all()
+        ]
+
+
 
 class IncidentRepository(BaseRepository[Incident]):
     def __init__(self, session: AsyncSession) -> None:
@@ -147,6 +202,18 @@ class IncidentRepository(BaseRepository[Incident]):
         result = await self._session.execute(stmt)
         return result.scalars().all()
 
+    async def get_for_devices(self, device_ids: Sequence[str], limit: int = 50) -> Sequence[Incident]:
+        if not device_ids:
+            return []
+        stmt = (
+            select(Incident)
+            .where((Incident.device_id.in_(device_ids)) & (Incident.status != "resolved"))
+            .order_by(Incident.created_at.desc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
 
 class DeviceRepository(BaseRepository[Device]):
     def __init__(self, session: AsyncSession) -> None:
@@ -156,6 +223,11 @@ class DeviceRepository(BaseRepository[Device]):
         stmt = select(Device).where(Device.hostname == hostname)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_for_user(self, user_id: str, limit: int = 50) -> Sequence[Device]:
+        stmt = select(Device).where(Device.enrolled_user_id == user_id).order_by(Device.last_seen.desc()).limit(limit)
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
 
     async def upsert(self, hostname: str, ip_address: str | None = None, risk_score: float = 0.0) -> Device:
         device = await self.get_by_hostname(hostname)
@@ -242,6 +314,13 @@ class StatsRepository(BaseRepository[DashboardStats]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, DashboardStats)
 
+DashboardStatsRepository = StatsRepository
+
+
+class MitreRepository(BaseRepository[MitreTechnique]):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, MitreTechnique)
+
 
 class SystemSettingRepository(BaseRepository[SystemSetting]):
     def __init__(self, session: AsyncSession) -> None:
@@ -266,3 +345,101 @@ class UserRepository(BaseRepository[User]):
         stmt = select(User).where((User.username == identifier) | (User.email == identifier))
         result = await self._session.execute(stmt)
         return result.scalars().first()
+
+    async def update_last_login(self, user_id: str) -> None:
+        stmt = update(User).where(User.id == user_id).values(last_login=datetime.now(timezone.utc))
+        await self._session.execute(stmt)
+
+
+    async def get_users_by_role(self, role: str, active_only: bool = True) -> list[User]:
+        stmt = select(User).where(User.role.ilike(role))
+        if active_only:
+            stmt = stmt.where(User.is_active == True)
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+
+class OrganizationRepository(BaseRepository[Organization]):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, Organization)
+
+    async def get_by_name(self, name: str) -> Organization | None:
+        stmt = select(Organization).where(Organization.name == name)
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+
+class AccountRequestRepository(BaseRepository[AccountRequest]):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, AccountRequest)
+
+    async def get_pending_admin_queue(self) -> list[AccountRequest]:
+        stmt = select(AccountRequest).where(AccountRequest.status == "REQUESTED").order_by(AccountRequest.created_at.asc())
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_assigned_to_analyst(self, analyst_id: str) -> list[AccountRequest]:
+        stmt = select(AccountRequest).where(
+            (AccountRequest.assigned_analyst_id == analyst_id) &
+            (AccountRequest.status.in_(["ANALYST_ASSIGNED", "PENDING_ACTIVATION"]))
+        ).order_by(AccountRequest.created_at.asc())
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_by_user_id(self, user_id: str) -> AccountRequest | None:
+        stmt = select(AccountRequest).where(AccountRequest.user_id == user_id).order_by(AccountRequest.created_at.desc())
+        result = await self._session.execute(stmt)
+        return result.scalars().first()
+
+
+class AnalystAssignmentHistoryRepository(BaseRepository[AnalystAssignmentHistory]):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, AnalystAssignmentHistory)
+
+    async def get_history_for_request(self, request_id: str) -> list[AnalystAssignmentHistory]:
+        stmt = select(AnalystAssignmentHistory).where(
+            AnalystAssignmentHistory.account_request_id == request_id
+        ).order_by(AnalystAssignmentHistory.assigned_at.desc())
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+
+class EnrollmentChallengeRepository(BaseRepository[EnrollmentChallenge]):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, EnrollmentChallenge)
+
+    async def get_valid_challenge(self, nonce: str) -> EnrollmentChallenge | None:
+        now = datetime.now(timezone.utc)
+        stmt = select(EnrollmentChallenge).where(
+            (EnrollmentChallenge.nonce == nonce) &
+            (EnrollmentChallenge.is_used == False) &
+            (EnrollmentChallenge.expires_at > now)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+
+class DeviceCredentialRepository(BaseRepository[DeviceCredential]):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, DeviceCredential)
+
+    async def get_active_credentials(self, device_id: str) -> list[DeviceCredential]:
+        stmt = select(DeviceCredential).where(
+            (DeviceCredential.device_id == device_id) &
+            (DeviceCredential.is_revoked == False)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+
+class PolicyRepository(BaseRepository[Policy]):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, Policy)
+
+    async def get_active_policies(self, policy_type: str | None = None) -> list[Policy]:
+        stmt = select(Policy).where(Policy.is_active == True)
+        if policy_type:
+            stmt = stmt.where(Policy.policy_type == policy_type)
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+

@@ -130,7 +130,10 @@ async def test_central_pipeline_priority_processing_and_db_linking():
         await pipeline.enqueue_priority(critical_event)
 
         # Allow worker loop to process
-        await asyncio.sleep(0.3)
+        for _ in range(25):
+            if pipeline.get_metrics()["priority_processed_count"] >= 1:
+                break
+            await asyncio.sleep(0.1)
 
         metrics = pipeline.get_metrics()
         assert metrics["status"] == "healthy"

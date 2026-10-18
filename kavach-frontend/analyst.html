@@ -1,0 +1,658 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Enterprise Admin & SOC Command — KAVACH</title><link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/app.css"><link rel="stylesheet" href="css/soc-command.css"></head><body>
+<div class="cyber-grid-bg"></div>
+<div class="demo-banner" id="demo">BACKEND OFFLINE — showing demo data</div>
+<canvas id="bg-canvas"></canvas><div class="vignette"></div>
+
+<!-- HARDWARE USB INSERTION ALERT TOAST -->
+<div class="hw-alert-toast" id="hw-usb-toast">
+  <div class="hw-alert-head">
+    <div class="hw-alert-icon">⚡</div>
+    <div>
+      <div class="hw-alert-title">USB Hardware Inserted</div>
+      <span class="pill critical" style="font-size:0.62rem">WMI DEVICE EVENT</span>
+    </div>
+  </div>
+  <div class="hw-alert-body">
+    <div><b>Device:</b> SanDisk Ultra 64GB (VID: 0781 / PID: 5583)</div>
+    <div><b>Mount:</b> Removable Storage Volume on Port 3</div>
+    <div><b>Auto-Scan:</b> Partition &amp; Autorun inspection active.</div>
+    <div style="color:var(--neon-emerald);margin-top:4px"><b>Verdict:</b> CLEAN • Read-only policy enforced</div>
+  </div>
+  <div class="hw-alert-progress"><div class="hw-alert-progress-bar"></div></div>
+</div>
+
+<div class="shell">
+<aside class="side" id="side">
+  <a class="brand" href="/analyst"><img src="assets/favicon.svg" alt="">KAVACH</a>
+  <div class="grp">Operations</div>
+  <button class="nv on" data-v="overview">📊 Overview</button>
+  <button class="nv" data-v="alerts">🔔 Alert center</button>
+  <button class="nv" data-v="incidents">🧯 Incidents</button>
+  <button class="nv" data-v="mitre">🎯 MITRE ATT&amp;CK</button>
+  <button class="nv" data-v="lineage">🌳 Attack Lineage</button>
+  <div class="grp">Intelligence &amp; Threat</div>
+  <button class="nv" data-v="intel">🌐 Threat Intel</button>
+  <button class="nv" data-v="compliance">🇮🇳 CERT-In Report</button>
+  <button class="nv" data-v="deception">🪤 Mayajaal Deception</button>
+  <div class="grp">Fleet &amp; Sensor</div>
+  <button class="nv" data-v="devices">💻 Fleet</button>
+  <button class="nv" data-v="collectors">📡 Collectors (16)</button>
+  <div class="grp">Response &amp; Audit</div>
+  <button class="nv" data-v="soar">⚡ SOAR center</button>
+  <button class="nv" data-v="audit">📜 Audit Vault</button>
+  <button class="nv" data-v="reports">📑 Reports</button>
+  <button class="nv" data-v="url">🔗 URL scanner</button>
+  <button class="nv" data-v="raksha">🤖 Raksha AI</button>
+
+  <div class="grp">Administration</div>
+  <button class="nv" data-v="users">👥 User Management</button>
+  <div class="me"><b id="uname">—</b><span id="urole">—</span><button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px" id="logout">Sign out</button></div>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex;gap:14px;align-items:center">
+      <button class="btn btn-ghost btn-sm menu-btn" id="menu">☰</button>
+      <div><h1 id="ttl">Overview</h1><p id="sub">SOC situational awareness</p></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <button class="btn btn-ghost btn-sm" id="btn-export-quick">📑 Quick Export</button>
+      <span class="status-dot mono" style="font-size:.76rem"><i></i><span id="clock">LIVE</span></span>
+    </div>
+  </div>
+
+  <!-- 1. OVERVIEW — MILITARY-GRADE CYBER COMMAND CENTER -->
+  <section class="view on" id="v-overview">
+    <!-- INTERACTIVE SIMULATOR & CONTROL STRIP -->
+    <div class="simulator-strip">
+      <div class="simulator-title">⚡ SOC SIMULATION LAB:</div>
+      <button class="sim-btn usb" id="btn-sim-usb">🔌 Simulate USB Insert</button>
+      <button class="sim-btn danger" id="btn-sim-ransom">🛡️ Simulate Ransomware Attack</button>
+      <button class="sim-btn" id="btn-sim-scan">🌐 Simulate Port Scan</button>
+      <button class="sim-btn" id="btn-toggle-sound" style="margin-left:auto">🔊 Audio Active</button>
+    </div>
+
+    <!-- LIVE TELEMETRY MICRO-RIBBON TICKER -->
+    <div class="micro-ribbon">
+      <span class="micro-ribbon-tag">LIVE TELEMETRY</span>
+      <span class="micro-ribbon-text" id="micro-ribbon-text">[08:42:11] [16/16 SENSORS ACTIVE] Telemetry Stream Nominal • Host Hanuman Shielded</span>
+      <span class="status-dot mono" style="font-size:0.68rem;margin-left:auto"><i></i>PIPELINE: &lt;1.8ms</span>
+    </div>
+
+    <!-- TOP EXECUTIVE KPI BANNER (MATCHING REFERENCE IMAGE) -->
+    <div class="soc-kpi-strip">
+      <div class="soc-kpi-item pink">
+        <div class="soc-kpi-label"><span style="color:var(--neon-pink)">●</span> Total Packets Inspected</div>
+        <div class="soc-kpi-val pink">124,697,752</div>
+        <div class="soc-kpi-sub"><span>Throughput: 142.6 MB/s</span><span style="color:#f472b6">▲ 14.2%</span></div>
+      </div>
+      <div class="soc-kpi-item amber">
+        <div class="soc-kpi-label"><span style="color:var(--neon-amber)">●</span> Threat Vectors Evaluated</div>
+        <div class="soc-kpi-val amber">183,380,598</div>
+        <div class="soc-kpi-sub"><span>ML Anomaly Scans</span><span style="color:#fbbf24">▲ 9.8%</span></div>
+      </div>
+      <div class="soc-kpi-item cyan">
+        <div class="soc-kpi-label"><span style="color:var(--neon-cyan)">●</span> Telemetry Events Streamed</div>
+        <div class="soc-kpi-val cyan">168,959,521</div>
+        <div class="soc-kpi-sub"><span>16 Sensors Active</span><span style="color:#38bdf8">100% UP</span></div>
+      </div>
+      <div class="soc-kpi-item blue">
+        <div class="soc-kpi-label"><span style="color:var(--neon-blue)">●</span> Autonomous Defense Ratio</div>
+        <div class="soc-kpi-val blue">99.84%</div>
+        <div class="soc-kpi-sub"><span>Sub-14ms Containment</span><span style="color:#60a5fa">SOAR READY</span></div>
+      </div>
+    </div>
+
+    <!-- CENTRAL 3D PERSPECTIVE HOLOGRAM STAGE -->
+    <div class="hologram-stage">
+      <div class="holo-ring-container">
+        <div class="holo-ring"></div>
+        <div class="holo-ring ring-2"></div>
+        <div class="holo-ring ring-3"></div>
+        <div class="holo-radar-sweep"></div>
+      </div>
+
+      <div class="holo-core">
+        <div class="holo-core-badge">01</div>
+        <div class="holo-core-sub">KAVACH ACTIVE DEFENSE</div>
+      </div>
+
+      <!-- 5 Holographic Orbital Callout Badges -->
+      <div class="holo-orbitals">
+        <div class="holo-orbital-item" style="top:18px;left:24px">
+          <b>01</b>
+          <div>
+            <span>Active Threat Mitigation</span>
+            <small>Zero-Day Shield Running</small>
+          </div>
+        </div>
+        <div class="holo-orbital-item" style="bottom:18px;left:48px">
+          <b style="color:var(--neon-amber)">02</b>
+          <div>
+            <span>USB Hardware Guard</span>
+            <small>Removable Media Shielded</small>
+          </div>
+        </div>
+        <div class="holo-orbital-item" style="top:18px;right:24px">
+          <b style="color:var(--neon-pink)">03</b>
+          <div>
+            <span>16 Engines Pipeline</span>
+            <small>1.2ms Avg Kernel Latency</small>
+          </div>
+        </div>
+        <div class="holo-orbital-item" style="bottom:18px;right:48px">
+          <b style="color:var(--neon-emerald)">04</b>
+          <div>
+            <span>Memory &amp; Ring-0 Integrity</span>
+            <small>LSASS Anti-Dumping Active</small>
+          </div>
+        </div>
+        <div class="holo-orbital-item" style="top:50%;left:12px;transform:translateY(-50%)">
+          <b style="color:var(--neon-blue)">05</b>
+          <div>
+            <span>Autonomous SOAR</span>
+            <small>5 Playbooks Armed</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THE BIG BOX: LIVE PACKET TRANSMISSION FLOW CANVAS -->
+    <div class="hud-card" style="margin-bottom:20px">
+      <div class="hud-head">
+        <h3><span>⚡</span> Live Packet Transmission &amp; Socket Telemetry <small style="color:var(--neon-cyan)">REAL TRANSMISSION MATRIX</small></h3>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <span class="hud-tag">STREAM: REAL-TIME PACKET TELEMETRY</span>
+          <button class="sim-btn" id="btn-packet-pause" style="padding:3px 10px;font-size:0.68rem">⏸ Pause</button>
+        </div>
+      </div>
+
+      <div class="packet-flow-container">
+        <canvas id="packet-canvas"></canvas>
+        <div class="packet-toolbar">
+          <div class="packet-stats">
+            <div class="packet-stat-item">RATE: <b id="pkt-live-pps">24,810 pps</b></div>
+            <div class="packet-stat-item">BANDWIDTH: <b>142.6 MB/s</b></div>
+            <div class="packet-stat-item">SOCKETS: <b>482 Active</b></div>
+            <div class="packet-stat-item">DROP RATE: <b style="color:var(--neon-emerald)">0.002%</b></div>
+          </div>
+          <div class="packet-filter-btns">
+            <button class="pkt-filter-btn active" data-filter="all">ALL</button>
+            <button class="pkt-filter-btn" data-filter="tcp">TCP</button>
+            <button class="pkt-filter-btn" data-filter="udp">UDP</button>
+            <button class="pkt-filter-btn" data-filter="icmp">ICMP</button>
+            <button class="pkt-filter-btn" data-filter="dns">DNS</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUAD ROW 1: PACKET FLOW TREND CHART + SYSTEM MONITOR -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(440px, 1fr));gap:20px;margin-bottom:20px">
+      <!-- TCP/UDP Flow Trend Chart -->
+      <div class="hud-card">
+        <div class="hud-head">
+          <h3><span>📈</span> Packet Flow Dynamics (TCP vs UDP vs ICMP)</h3>
+          <span class="hud-tag">LAST 60 SECONDS</span>
+        </div>
+        <div class="chart-container-glow">
+          <svg class="chart-svg-spline" id="packet-trend-svg" viewBox="0 0 480 180" preserveAspectRatio="none"></svg>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-family:'JetBrains Mono';font-size:0.72rem">
+          <div style="display:flex;gap:14px">
+            <span style="color:var(--neon-cyan)">● TCP Flow: <b>68.4%</b></span>
+            <span style="color:var(--neon-amber)">● UDP Flow: <b>24.1%</b></span>
+            <span style="color:#a78bfa">● ICMP: <b>5.2%</b></span>
+          </div>
+          <span style="color:#94a3b8">PEAK: 124.7 MB/s</span>
+        </div>
+      </div>
+
+      <!-- System Telemetry (CPU & RAM & Cores) -->
+      <div class="hud-card">
+        <div class="hud-head">
+          <h3><span>💻</span> System Resource Telemetry (Host: Hanuman)</h3>
+          <span class="hud-tag" style="background:rgba(16,185,129,0.12);color:var(--neon-emerald)">HEALTHY</span>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px">
+          <div style="padding:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px">
+            <span style="font-family:'JetBrains Mono';font-size:0.7rem;color:#94a3b8">CPU UTILIZATION</span>
+            <div style="font-family:'Outfit';font-size:1.8rem;font-weight:800;color:var(--neon-cyan)" id="sys-cpu-val">34%</div>
+            <div style="font-size:0.68rem;color:#64748b;font-family:'JetBrains Mono'">8 Cores • 16 Threads @ 3.8 GHz</div>
+          </div>
+          <div style="padding:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px">
+            <span style="font-family:'JetBrains Mono';font-size:0.7rem;color:#94a3b8">RAM ALLOCATION</span>
+            <div style="font-family:'Outfit';font-size:1.8rem;font-weight:800;color:var(--neon-blue)" id="sys-ram-val">6.4 / 16.0 GB</div>
+            <div style="font-size:0.68rem;color:#64748b;font-family:'JetBrains Mono'">Cache: 4.8 GB • Available: 9.6 GB</div>
+          </div>
+        </div>
+
+        <span style="display:block;font-family:'JetBrains Mono';font-size:0.68rem;color:#94a3b8;margin-bottom:6px">PER-CORE REAL-TIME LOAD:</span>
+        <div id="sys-cores-strip" style="display:flex;gap:6px"></div>
+      </div>
+    </div>
+
+    <!-- QUAD ROW 2: FILE INTEGRITY (FIM) WINDOW + ROUTER DEVICES -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(440px, 1fr));gap:20px;margin-bottom:20px">
+      <!-- File Modification Window (FIM) -->
+      <div class="hud-card">
+        <div class="hud-head">
+          <h3><span>📁</span> File Modification Watcher (FIM) <small style="color:var(--neon-amber)">WATCHDOG ENGINE</small></h3>
+          <span class="hud-tag">REAL-TIME FILE TAMPERING</span>
+        </div>
+        <div class="tbl-wrap" style="max-height:260px;overflow-y:auto">
+          <table class="fim-table">
+            <thead>
+              <tr>
+                <th>File / Path</th>
+                <th>Action</th>
+                <th>Process</th>
+                <th>SHA-256</th>
+                <th>Time</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="fim-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Network Window (Connected Router Devices & Subnet Topology) -->
+      <div class="hud-card">
+        <div class="hud-head">
+          <h3><span>📡</span> Network Window — Connected Devices &amp; Subnet</h3>
+          <span class="hud-tag">SUBNET: 192.168.1.0/24</span>
+        </div>
+        <div class="tbl-wrap" style="max-height:260px;overflow-y:auto">
+          <table class="fim-table">
+            <thead>
+              <tr>
+                <th>Device / MAC</th>
+                <th>IP Address</th>
+                <th>Throughput</th>
+                <th>Latency</th>
+                <th>Posture</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="router-devices-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUAD ROW 3: CORRELATION MATRIX + THREAT ENRICHMENT -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(440px, 1fr));gap:20px;margin-bottom:20px">
+      <!-- Multi-Stage Correlation Chain -->
+      <div class="hud-card">
+        <div class="hud-head">
+          <h3><span>🔗</span> Multi-Stage Attack Correlation Chain</h3>
+          <span class="hud-tag" style="background:rgba(239,68,68,0.15);color:var(--neon-crimson)">CONFIDENCE: 98.4%</span>
+        </div>
+        <div class="correlation-chain">
+          <div class="corr-node">
+            <div class="corr-dot"></div>
+            <div class="corr-content">
+              <b>1. Initial Vector: winword.exe (PID 4892)</b>
+              <span>Spear-phishing document "invoice_q4.docm" opened from Outlook</span>
+            </div>
+          </div>
+          <div class="corr-node">
+            <div class="corr-dot crimson"></div>
+            <div class="corr-content">
+              <b style="color:#f87171">2. Child Execution: powershell.exe -enc ... (PID 7210)</b>
+              <span>MITRE T1059.001 • Base64 payload decoded directly into memory</span>
+            </div>
+          </div>
+          <div class="corr-node">
+            <div class="corr-dot crimson"></div>
+            <div class="corr-content">
+              <b style="color:#f87171">3. Network Socket Beacon: 185.220.101.5:443</b>
+              <span>MITRE T1071.004 • Tor Exit Node C2 beacon intercepted by Network Engine</span>
+            </div>
+          </div>
+          <div class="corr-node">
+            <div class="corr-dot purple"></div>
+            <div class="corr-content">
+              <b>4. Honeyfile Canary Trip: q4_executive_salaries.xlsx</b>
+              <span>MITRE T1083 • Honeypot access triggered instant SOAR containment</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Threat Intelligence & Enrichment -->
+      <div class="hud-card">
+        <div class="hud-head">
+          <h3><span>🌐</span> Threat Intelligence &amp; Enrichment Center</h3>
+          <span class="hud-tag">VIRUSTOTAL • ABUSEIPDB • SHODAN</span>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div style="padding:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:8px">
+            <span style="font-family:'JetBrains Mono';font-size:0.68rem;color:#fca5a5">VIRUSTOTAL SCORE</span>
+            <div style="font-family:'Outfit';font-size:1.6rem;font-weight:800;color:#ef4444">58 / 72 Engines</div>
+            <div style="font-size:0.65rem;color:#f87171;font-family:'JetBrains Mono'">Cobalt Strike Stager / Trojan</div>
+          </div>
+          <div style="padding:12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px">
+            <span style="font-family:'JetBrains Mono';font-size:0.68rem;color:#fcd34d">ABUSEIPDB CONFIDENCE</span>
+            <div style="font-family:'Outfit';font-size:1.6rem;font-weight:800;color:#fbbf24">96% Malicious</div>
+            <div style="font-size:0.65rem;color:#fbbf24;font-family:'JetBrains Mono'">3,410 Reports in 24 Hours</div>
+          </div>
+        </div>
+
+        <div style="padding:10px 14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px;font-family:'JetBrains Mono';font-size:0.72rem">
+          <div style="margin-bottom:4px"><b>GEO ORIGIN:</b> 🇳🇱 Netherlands (Tor Exit Relay) • ASN 208323</div>
+          <div style="margin-bottom:4px"><b>SHODAN PORTS:</b> Port 22 (SSH OpenSSH 8.9), Port 443 (Nginx C2 Proxy)</div>
+          <div><b>ATTRIBUTED THREAT ACTOR:</b> <span style="color:#f472b6;font-weight:700">APT29 (Cozy Bear) / Emotet</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM FULL-WIDTH BOX: CONTINUOUS 16-ENGINE LIVE LOGS CONSOLE -->
+    <div class="hud-card" style="margin-bottom:20px">
+      <div class="hud-head">
+        <h3><span>📜</span> Continuous 16-Engine Live Security Log Stream <small style="color:var(--neon-cyan)">ALL COLLECTORS ACTIVE</small></h3>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="sim-btn" id="btn-autoscroll-toggle" style="padding:3px 8px;font-size:0.68rem">Auto-Scroll: ON</button>
+          <button class="sim-btn" id="btn-clear-logs" style="padding:3px 8px;font-size:0.68rem">Clear</button>
+        </div>
+      </div>
+
+      <div class="engine-log-console">
+        <div class="engine-log-toolbar">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <select class="input" id="log-engine-filter" style="padding:4px 8px;font-size:0.72rem;background:#050c20;color:#fff;border-color:rgba(0,240,255,0.3)">
+              <option value="all">All 16 Engines</option>
+              <option value="process">Process Monitor</option>
+              <option value="network">Network Inspector</option>
+              <option value="fim">File Integrity (FIM)</option>
+              <option value="login">Login &amp; Auth</option>
+              <option value="powershell">PowerShell Auditor</option>
+              <option value="sysmon">Sysmon Core</option>
+              <option value="eventlog">Windows EventLog</option>
+              <option value="dns">DNS Resolver Guard</option>
+              <option value="registry">Registry Sentinel</option>
+              <option value="usb">USB Device Guard</option>
+              <option value="defender">Windows Defender</option>
+              <option value="schtasks">Scheduled Tasks</option>
+              <option value="software">Software Inventory</option>
+              <option value="sysinfo">System Info</option>
+              <option value="canary">Canary Honeypot</option>
+              <option value="service">Service Watcher</option>
+            </select>
+            <input class="input" id="log-search-input" placeholder="Search logs, PIDs, IP, hash…" style="padding:4px 10px;font-size:0.72rem;width:240px;background:#050c20;color:#fff;border-color:rgba(0,240,255,0.3)">
+          </div>
+          <span style="font-family:'JetBrains Mono';font-size:0.7rem;color:#64748b">STREAMING AT ~1.2 EVENTS/SEC</span>
+        </div>
+
+        <div class="engine-log-stream" id="engine-log-stream"></div>
+      </div>
+    </div>
+
+    <!-- PRESERVED EXPANDABLE HIGH-PRIORITY THREATS TABLE -->
+    <div class="hud-card">
+      <div class="hud-head">
+        <h3><span>⚠️</span> Verified Threat Detections <small>URGENT ACTION QUEUE</small></h3>
+        <button class="btn btn-primary btn-sm" onclick="location.hash='#alerts'">View Full Queue →</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="t">
+          <thead>
+            <tr>
+              <th>Threat Detection</th>
+              <th>Severity</th>
+              <th>Risk Score</th>
+              <th>Status</th>
+              <th>Forensic Observation</th>
+              <th>Detected</th>
+            </tr>
+          </thead>
+          <tbody id="rt"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ALERTS -->
+  <section class="view" id="v-alerts"><div class="panel-c"><div class="toolbar"><input class="input" id="aq" placeholder="Search alerts…"><select class="input" id="as"><option value="">All statuses</option><option>open</option><option>investigating</option><option>resolved</option></select><select class="input" id="av"><option value="">All severities</option><option>critical</option><option>high</option><option>medium</option><option>low</option></select></div>
+    <div class="tbl-wrap"><table class="t"><thead><tr><th>ID</th><th>Alert</th><th>Severity</th><th>MITRE</th><th>Status</th><th>When</th><th></th></tr></thead><tbody id="atb"></tbody></table></div></div></section>
+
+  <!-- INCIDENTS -->
+  <section class="view" id="v-incidents"><div class="panel-c"><h3>Incidents</h3><div class="tbl-wrap"><table class="t"><thead><tr><th>ID</th><th>Title</th><th>Severity</th><th>Alerts</th><th>Status</th><th>Assignee</th><th>Opened</th></tr></thead><tbody id="itb"></tbody></table></div></div></section>
+
+  <!-- MITRE MATRIX HEATMAP -->
+  <section class="view" id="v-mitre">
+    <div class="panel-c">
+      <h3>MITRE ATT&amp;CK Enterprise Matrix Heatmap <small>REAL-TIME DETECTIONS</small></h3>
+      <p style="margin-bottom:18px;color:var(--t2)">Correlated adversary tactics and techniques mapped against active kernel telemetry.</p>
+      <div class="mitre-grid" id="mitre-container"></div>
+    </div>
+  </section>
+
+  <!-- ATTACK GRAPH & LINEAGE -->
+  <section class="view" id="v-lineage">
+    <div class="panel-c" style="max-width:880px">
+      <h3>Process Lineage &amp; Attack Graph <small>PARENT-CHILD EXECUTION CHAIN</small></h3>
+      <p style="margin-bottom:14px;color:var(--t2)">Visual forensic lineage showing process execution ancestry and network C2 beaconing.</p>
+      <div class="process-tree" id="tree-container">
+        <div class="tree-step">
+          <div class="tree-icon">📄</div>
+          <div class="tree-card"><b>1. Initial Vector: winword.exe (PID 4892)</b><small>User opened spear-phishing attachment "invoice_q4.docm"</small></div>
+        </div>
+        <div class="tree-step">
+          <div class="tree-icon bad">⚠️</div>
+          <div class="tree-card"><b>2. Child Execution: powershell.exe -enc ... (PID 7210)</b><small>MITRE T1059.001 • Base64 encoded payload executed in memory</small></div>
+        </div>
+        <div class="tree-step">
+          <div class="tree-icon bad">🌐</div>
+          <div class="tree-card"><b>3. Network Beacon: 185.220.101.5:443 (Outbound Socket)</b><small>MITRE T1071.004 • Cobalt Strike C2 handshake intercepted</small></div>
+        </div>
+        <div class="tree-step">
+          <div class="tree-icon" style="background:rgba(34,197,94,.2);border-color:var(--safe);color:#86EFAC">🛡️</div>
+          <div class="tree-card"><b>4. Automated Containment: Host Isolated (WFP Driver)</b><small>Process terminated in 14ms; network isolated by SOAR Playbook #PB-01</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- THREAT INTELLIGENCE -->
+  <section class="view" id="v-intel">
+    <div class="panel-c">
+      <h3>Threat Intelligence &amp; Indicators of Compromise (IOC) <small>MISP / OTX SYNC</small></h3>
+      <div class="toolbar">
+        <input class="input" id="intel-q" style="flex:1" placeholder="Search hash, domain, or malicious IP…">
+        <button class="btn btn-primary btn-sm" id="btn-intel-search">Search IOC</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="t">
+          <thead><tr><th>Type</th><th>Indicator Value</th><th>Threat Campaign</th><th>Confidence</th><th>Source</th><th>Last Seen</th></tr></thead>
+          <tbody id="intel-tb"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CERT-IN COMPLIANCE -->
+  <section class="view" id="v-compliance">
+    <div class="panel-c" style="max-width:920px">
+      <h3>Indian CERT-In Cybersecurity Compliance <small>DIRECTIVE 2026</small></h3>
+      <div class="compliance-banner">
+        <div>
+          <b style="display:block;margin-bottom:2px">Mandatory 6-Hour Incident Notification Rule</b>
+          <span style="font-size:.85rem;color:var(--t2)">Automated incident reporting package ready for dispatch.</span>
+        </div>
+        <div class="compliance-clock" id="cert-clock">⏱️ 04h : 22m remaining</div>
+      </div>
+      <div class="tbl-wrap" style="margin-bottom:20px">
+        <table class="t">
+          <thead><tr><th>Requirement</th><th>Status</th><th>Implementation Detail</th></tr></thead>
+          <tbody id="cert-tb"></tbody>
+        </table>
+      </div>
+      <button class="btn btn-primary" id="btn-cert-report">✉️ Generate &amp; Dispatch Official CERT-In Report</button>
+    </div>
+  </section>
+
+  <!-- MAYAJAAL DECEPTION -->
+  <section class="view" id="v-deception">
+    <div class="panel-c" style="max-width:920px">
+      <h3>Mayajaal Deception Engine <small>CANARY TRAPS &amp; HONEYPOTS</small></h3>
+      <p style="margin-bottom:16px;color:var(--t2)">Deploy honey credentials, canary files, and decoy services to lure and catch lateral movement.</p>
+      <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" id="btn-deploy-canary">+ Deploy Canary File</button>
+        <button class="btn btn-ghost btn-sm" id="btn-deploy-cred">+ Deploy Fake Credential</button>
+        <button class="btn btn-ghost btn-sm" id="btn-deploy-honey">+ Deploy Decoy Port</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="t">
+          <thead><tr><th>Decoy Name</th><th>Category</th><th>Triggers</th><th>Trap State</th><th>Deployed</th></tr></thead>
+          <tbody id="mayajaal-tb"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUDIT VAULT -->
+  <section class="view" id="v-audit">
+    <div class="panel-c">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h3 style="margin:0 0 2px">Cryptographic Audit Vault <small>PROVENANCE TRAIL</small></h3>
+          <span class="mono" style="font-size:.78rem;color:var(--safe)">SHA-256 Merkle Chain Integrity: VERIFIED ✓</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-verify-chain">⟳ Re-verify Chain Hash</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="t">
+          <thead><tr><th>ID</th><th>Operator</th><th>Action Performed</th><th>Timestamp</th><th>Cryptographic Hash</th><th>Proof</th></tr></thead>
+          <tbody id="audit-tb"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section class="view" id="v-reports">
+    <div class="panel-c" style="max-width:820px">
+      <h3>Executive &amp; Technical Security Reports <small>AUTOMATED GENERATION</small></h3>
+      <p style="margin-bottom:18px;color:var(--t2)">Download compliance audits, executive posture digests, or forensic incident exports.</p>
+      <div class="grid g2" style="gap:16px">
+        <div class="card" data-notilt>
+          <h3>Executive Board Summary</h3>
+          <p>High-level posture score, risk reduction metrics, MTTD/MTTR trends, and asset health.</p>
+          <button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="K.toast('Generating Executive PDF Report…')">📥 Export Executive PDF</button>
+        </div>
+        <div class="card" data-notilt>
+          <h3>CERT-In Regulatory Audit Log</h3>
+          <p>Complete 180-day forensic log export formatted according to Indian Cyber Security Directives.</p>
+          <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="K.toast('Exporting Forensic CSV Archive…')">📥 Export CSV Archive</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FLEET & ENDPOINT MONITORING -->
+  <section class="view" id="v-devices">
+    <div class="panel-c">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h3 style="margin:0 0 4px">Fleet &amp; Endpoint Telemetry <small id="dcount">8 MONITORED HOSTS</small></h3>
+          <p style="color:var(--t2);font-size:.86rem;margin:0">Live telemetry, kernel agent health, CPU/RAM utilization and emergency network containment.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="btn-register-endpoint">➕ Register New Endpoint</button>
+      </div>
+
+      <div class="grid g4" style="gap:14px;margin-bottom:18px">
+        <div class="panel-c kpi" style="padding:16px"><span>Total Endpoints</span><b id="flt-total">8</b></div>
+        <div class="panel-c kpi" style="padding:16px"><span>Shielded &amp; Online</span><b id="flt-online" style="color:var(--safe)">7</b></div>
+        <div class="panel-c kpi" style="padding:16px"><span>Isolated Host</span><b id="flt-isolated" style="color:var(--crimson)">1</b></div>
+        <div class="panel-c kpi" style="padding:16px"><span>Agent Sensor Health</span><b id="flt-health" style="color:#86EFAC">100%</b></div>
+      </div>
+
+      <div class="toolbar" style="margin-bottom:16px;gap:12px;flex-wrap:wrap">
+        <input class="input" id="flt-search" style="flex:1;min-width:220px" placeholder="Search by host, IP, department, or OS…">
+        <select class="input" id="flt-os"><option value="">All Operating Systems</option><option value="Windows">Windows</option><option value="Ubuntu">Ubuntu / Linux</option><option value="macOS">macOS</option></select>
+        <select class="input" id="flt-status"><option value="">All States</option><option value="online">Online</option><option value="isolated">Isolated</option></select>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="t">
+          <thead>
+            <tr>
+              <th>Endpoint Host</th>
+              <th>Network &amp; MAC</th>
+              <th>Operating System</th>
+              <th>Agent Sensor</th>
+              <th>Live CPU Load</th>
+              <th>Memory Used</th>
+              <th>State</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="dtb"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- USER MANAGEMENT & OPERATORS -->
+  <section class="view" id="v-users">
+    <div class="panel-c">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h3 style="margin:0 0 4px">User &amp; Operator Management <small>RBAC ACCESS VAULT</small></h3>
+          <p style="color:var(--t2);font-size:.86rem;margin:0">Create operators, grant SOC privileges, enforce hardware MFA, or manage user access.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="btn-add-user">➕ Add New User</button>
+      </div>
+
+      <div class="grid g4" style="gap:14px;margin-bottom:18px">
+        <div class="panel-c kpi" style="padding:16px"><span>Total Users</span><b id="usr-total">6</b></div>
+        <div class="panel-c kpi" style="padding:16px"><span>SOC Analysts</span><b id="usr-analysts" style="color:#7DD3FC">1</b></div>
+        <div class="panel-c kpi" style="padding:16px"><span>Administrators</span><b id="usr-admins" style="color:var(--crimson)">1</b></div>
+        <div class="panel-c kpi" style="padding:16px"><span>Standard Users</span><b id="usr-standard">2</b></div>
+      </div>
+
+      <div class="toolbar" style="margin-bottom:16px">
+        <input class="input" id="usr-search" style="flex:1" placeholder="Search users by name, email, role, or team…">
+        <select class="input" id="usr-role"><option value="">All Roles</option><option value="soc_analyst">SOC Analyst</option><option value="admin">Administrator</option><option value="incident_responder">Incident Responder</option><option value="user">Standard User</option></select>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="t">
+          <thead>
+            <tr>
+              <th>Operator / User</th>
+              <th>Email Address</th>
+              <th>Role</th>
+              <th>Department</th>
+              <th>Hardware MFA</th>
+              <th>Status</th>
+              <th>Last Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="utb"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLLECTORS -->
+  <section class="view" id="v-collectors"><div class="panel-c"><h3>Telemetry collectors <small id="ccount"></small></h3><div class="tbl-wrap"><table class="t"><thead><tr><th>Collector</th><th>Status</th><th>Events</th><th>Uptime</th><th></th></tr></thead><tbody id="ctb"></tbody></table></div></div></section>
+
+  <!-- SOAR -->
+  <section class="view" id="v-soar"><div class="panel-c"><h3>SOAR playbooks <small>AUTHORISED ACTIONS • AUDITED</small></h3><div class="grid g2" id="pb"></div></div></section>
+
+  <!-- URL -->
+  <section class="view" id="v-url"><div class="panel-c" style="max-width:820px"><h3>URL Shield scanner</h3><form id="uf" class="toolbar"><input class="input" id="url" style="flex:1" placeholder="https://suspicious.example/login" required><button class="btn btn-primary">Scan</button></form><div id="uresult"></div></div></section>
+
+  <!-- RAKSHA AI -->
+  <section class="view" id="v-raksha"><div class="panel-c rchat" style="max-width:900px"><h3>Raksha AI <small>FORENSIC COPILOT</small></h3><div class="chat" id="rc"><div class="bub a">Ready. Ask me to explain an alert, summarise an incident or suggest containment.</div></div><form id="rf"><input class="input" id="rm" placeholder="Why was WS-0492 isolated?" autocomplete="off" required><button class="btn btn-primary">Send</button></form></div></section>
+</main></div>
+<div class="modal-bg" id="mb"><div class="modal"><h3 id="mt"></h3><div id="mbody"></div><div id="mact" style="display:flex;gap:10px;flex-wrap:wrap"></div></div></div>
+<div class="toast" id="toast"></div>
+<script src="js/main.js"></script><script src="js/api.js"></script><script src="js/analyst.js"></script>
+<script src="js/soc-command.js"></script></body></html>

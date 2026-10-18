@@ -39,6 +39,45 @@ class Base(DeclarativeBase):
 
 
 # ---------------------------------------------------------------------------
+# Roles & Account Lifecycle Constants
+# ---------------------------------------------------------------------------
+
+class KavachRole:
+    USER = "USER"
+    SOC_ANALYST = "SOC_ANALYST"
+    ADMIN = "ADMIN"
+
+
+class AccountStatus:
+    REQUESTED = "REQUESTED"
+    ADMIN_APPROVED = "ADMIN_APPROVED"
+    ANALYST_ASSIGNED = "ANALYST_ASSIGNED"
+    PENDING_ACTIVATION = "PENDING_ACTIVATION"
+    ACTIVE = "ACTIVE"
+    REJECTED = "REJECTED"
+    SUSPENDED = "SUSPENDED"
+    DEACTIVATED = "DEACTIVATED"
+    REVOKED = "REVOKED"
+
+
+# ---------------------------------------------------------------------------
+# Organizations
+# ---------------------------------------------------------------------------
+
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    domain: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    max_devices: Mapped[int] = mapped_column(Integer, default=100)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
+# ---------------------------------------------------------------------------
 # Users
 # ---------------------------------------------------------------------------
 
@@ -49,8 +88,13 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[str] = mapped_column(String(50), nullable=False, default="user")
+    role: Mapped[str] = mapped_column(String(50), nullable=False, default=KavachRole.USER, index=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default=AccountStatus.ACTIVE, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    organization_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=True)
+    department: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    phone_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     preferences: Mapped[dict | None] = mapped_column(JSON, nullable=True)
@@ -62,17 +106,20 @@ class User(Base):
     totp_secret: Mapped[str | None] = mapped_column(String(100), nullable=True)
     backup_codes: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
-    # Password Recovery
+    # Password Recovery & Session Revocation
     password_reset_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     password_reset_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     login_attempts: Mapped[int] = mapped_column(Integer, default=0)
     lockout_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    session_revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revocation_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Relationships
     alerts: Mapped[list["Alert"]] = relationship(back_populates="assigned_user", lazy="selectin")
 
     def __repr__(self) -> str:
-        return f"<User {self.username} role={self.role}>"
+        return f"<User {self.username} role={self.role} status={self.status}>"
+
 
 
 # ---------------------------------------------------------------------------
@@ -90,6 +137,10 @@ class Device(Base):
     os_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
     risk_score: Mapped[float] = mapped_column(Float, default=0.0)
     status: Mapped[str] = mapped_column(String(50), default="active")
+    enrollment_status: Mapped[str] = mapped_column(String(50), default="PENDING", index=True)
+    enrolled_user_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    public_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+    agent_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
     last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
@@ -407,3 +458,111 @@ class SystemSetting(Base):
     value_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     description: Mapped[str | None] = mapped_column(String(255), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Account Lifecycle & Dual-Gate Approval Models
+# ---------------------------------------------------------------------------
+
+class AccountRequest(Base):
+    """
+    Two-stage approval workflow:
+    REQUESTED -> ADMIN_APPROVED -> ANALYST_ASSIGNED -> PENDING_ACTIVATION -> ACTIVE
+    """
+    __tablename__ = "account_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    organization_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    organization_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=True)
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    username: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    justification: Mapped[str | None] = mapped_column(Text, nullable=True)
+    department: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    status: Mapped[str] = mapped_column(String(50), default=AccountStatus.REQUESTED, index=True)
+
+    # Step 1: Administrator review
+    admin_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    admin_action_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Step 2: Eligible SOC Analyst assignment & activation
+    assigned_analyst_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True, index=True)
+    assigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    analyst_action_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    analyst_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
+class AnalystAssignmentHistory(Base):
+    """Immutable audit trail for automatic and manual SOC analyst assignments."""
+    __tablename__ = "analyst_assignment_history"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    account_request_id: Mapped[str] = mapped_column(String(36), ForeignKey("account_requests.id"), nullable=False, index=True)
+    analyst_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    assigned_by: Mapped[str] = mapped_column(String(100), default="SYSTEM_AUTO")
+    assignment_strategy: Mapped[str] = mapped_column(String(50), default="LEAST_LOADED")
+    status: Mapped[str] = mapped_column(String(50), default="ASSIGNED")
+    assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ---------------------------------------------------------------------------
+# Cryptographic Device Identity & Enrollment
+# ---------------------------------------------------------------------------
+
+class EnrollmentChallenge(Base):
+    """Single-use, short-lived nonce for device enrollment validation."""
+    __tablename__ = "enrollment_challenges"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    nonce: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    hostname: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    is_used: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class DeviceCredential(Base):
+    """Device public key and bound session tokens with rotation and revocation."""
+    __tablename__ = "device_credentials"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    device_id: Mapped[str] = mapped_column(String(36), ForeignKey("devices.id"), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    public_key_pem: Mapped[str] = mapped_column(Text, nullable=False)
+    key_algorithm: Mapped[str] = mapped_column(String(50), default="RSA-2048")
+    device_token_hash: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    is_revoked: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    revocation_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ---------------------------------------------------------------------------
+# Policies & Compliance Rules
+# ---------------------------------------------------------------------------
+
+class Policy(Base):
+    """Configurable organization and fleet defense policies."""
+    __tablename__ = "policies"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    policy_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rules: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+

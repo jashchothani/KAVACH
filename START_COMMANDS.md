@@ -35,41 +35,62 @@ uvicorn main:app --reload --port 8000
 
 ---
 
-### 2. ⚛️ Frontend Web Application (React / Vite / Three.js)
-
-Open a second terminal and run:
+### 2. 🛡️ KAVACH Web Dashboards (HTML/CSS/JS)
 
 ```bash
-# Navigate to frontend directory
-cd c:\Kavach\frontend
+# Option A: 1-click batch launcher
+start_frontend.bat
 
-# Start Vite Development Server
-npm run dev
+# Option B: Run via Python HTTP server
+.\backend\.venv\Scripts\python.exe -m http.server 5173 --directory kavach-frontend
 ```
 
-- **Frontend Web App URL:** `http://localhost:5173`
-- **3D Showcase Experience:** `http://localhost:5173/showcase`
-- **Public Brand Portal:** `http://localhost:5173/`
-- **SOC Dashboard:** `http://localhost:5173/login`
-
-> **Note:** To build the production bundle, run `npm run build`.
+- **User Dashboard:** `http://localhost:5173/dashboard.html`
+- **SOC Analyst Console:** `http://localhost:5173/soc.html`
+- **Admin Governance Console:** `http://localhost:5173/admin.html`
+- **Brand Landing Portal:** `http://localhost:5173/index.html`
 
 ---
 
-### 3. 📱 Mobile Application (Flutter - Optional)
-
-If running the Flutter mobile application:
+### 3. 🖥️ Windows Companion Desktop Application
 
 ```bash
-# Navigate to mobile directory
-cd c:\Kavach\mobile
+# Option A: 1-click batch launcher
+start_companion.bat
 
-# Get Flutter dependencies
-flutter pub get
-
-# Run on connected device or emulator
-flutter run
+# Option B: Direct Python execution
+.\backend\.venv\Scripts\python.exe backend\app\agent\companion.py
 ```
+
+- **Features:** One-Click Shield toggle, DPAPI Device Enrollment wizard, Account Access Request form, live sensor health for all 16 telemetry collectors, and spool buffer telemetry.
+
+---
+
+### 4. 🔕 Windows System Tray Guardian
+
+```bash
+# Option A: 1-click batch launcher
+start_tray.bat
+
+# Option B: Direct Python execution
+.\backend\.venv\Scripts\pythonw.exe backend\app\agent\tray_companion.py
+```
+
+- **Features:** Native Windows Shell NotifyIcon, dynamic shield status badge, balloon notifications for critical security events, and right-click context menu.
+
+---
+
+### 5. ⚙️ Endpoint Agent Telemetry Service
+
+```bash
+# Option A: 1-click batch launcher
+start_agent_service.bat
+
+# Option B: Direct Python execution
+.\backend\.venv\Scripts\python.exe backend\app\agent\service.py
+```
+
+- **Features:** Background collector orchestrator, 5-tier edge severity classification, disk-backed SQLite resilient spooling, and HTTPS batch shipper with DPAPI credentials.
 
 ---
 
@@ -77,11 +98,14 @@ flutter run
 
 | Service | Technology | Port / URL | Notes |
 | :--- | :--- | :--- | :--- |
-| **Frontend Web App** | React 18 + Vite | `http://localhost:5173` | Main Web Application & 3D Showcase |
-| **3D Showcase** | Three.js WebGL | `http://localhost:5173/showcase` | 3D Interactive Cyber Threat Crystals |
-| **Backend API** | FastAPI + Uvicorn | `http://localhost:8000` | REST API & Threat Telemetry |
-| **API Documentation** | Swagger UI | `http://localhost:8000/docs` | Interactive API Testing |
+| **User Dashboard** | HTML5 / Vanilla CSS | `http://localhost:5173/dashboard.html` | End-user posture, alerts & link scanner |
+| **SOC Analyst Console** | HTML5 / Vanilla CSS | `http://localhost:5173/soc.html` | SOC triage, playbooks & approval queue |
+| **Admin Console** | HTML5 / Vanilla CSS | `http://localhost:5173/admin.html` | User governance, fleet & analyst allocation |
+| **Backend API** | FastAPI + Uvicorn | `http://localhost:8000` | REST API, Ingestion Gateway & Models |
+| **API Documentation** | Swagger UI | `http://localhost:8000/docs` | Interactive OpenAPI Testing |
 | **WebSocket Stream** | FastAPI WebSockets | `ws://localhost:8000/ws` | Real-time Threat Broadcasts |
+| **Windows Companion** | Python Tkinter (Native) | Desktop Application | One-Click Shield, DPAPI Enrollment & Health |
+| **System Tray Guardian** | pywin32 Shell NotifyIcon | Notification Area | Balloon Alerts & Background Status |
 
 ---
 

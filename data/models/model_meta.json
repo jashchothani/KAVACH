@@ -1,8 +1,8 @@
 {
-  "model_id": "isoforest-1789715407",
-  "version": "v1.1789715407",
-  "trained_at": "2026-09-18T07:10:07.199004+00:00",
-  "sample_count": 98383,
+  "model_id": "isoforest-1792214408",
+  "version": "v1.1792214408",
+  "trained_at": "2026-10-17T05:20:08.510022+00:00",
+  "sample_count": 50,
   "contamination": 0.05,
   "feature_schema": [
     "risk_score_norm",

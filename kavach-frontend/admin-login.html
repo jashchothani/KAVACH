@@ -1,0 +1,26 @@
+<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Staff Console — KAVACH</title><meta name="theme-color" content="#05080E"><link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/auth.css"></head>
+<body data-mode="staff" class="staff"><canvas id="gl"></canvas><canvas id="net"></canvas><div class="grain"></div><div class="shade"></div><div class="scan"></div>
+<header class="tb"><a class="brand" href="/" aria-label="KAVACH home"><img class="logo-l" src="assets/logo.png" alt="KAVACH"><img class="logo-d" src="assets/logo-dark.png" alt=""></a>
+<div style="display:flex;align-items:center;gap:12px"><a href="/download" style="display:inline-flex;align-items:center;gap:6px;background:rgba(200,39,45,0.18);border:1px solid rgba(255,77,86,0.6);color:#ff525d;padding:6px 14px;border-radius:9999px;font-size:0.75rem;font-weight:600;text-decoration:none;transition:0.2s"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg> Download</a><button class="theme-btn" id="theme" type="button" aria-label="Toggle light and dark mode">◐</button></div></header>
+<main class="auth"><div class="stage"><div class="rings"><b></b><b></b><b></b><b></b></div>
+<div class="head"><img class="shield" src="assets/kavach-shield-logo.png" alt=""><span class="badge"><i></i>Restricted · Staff access</span>
+<h1><span class="ln"><span>Security operations,</span></span><span class="ln"><span class="grad">under your command.</span></span></h1></div>
+<div class="card" id="card">
+<div class="steps"><i class="on"></i><i></i><i></i></div><div class="err" id="err" role="alert"></div>
+<section class="pane on"><h2>Staff sign-in</h2><p class="sub">Authorised analysts and administrators only. Every session is audited.</p>
+<form id="f1"><div class="field"><input id="ident" placeholder=" " required autocomplete="username"><label for="ident">Staff email or username</label></div>
+<div class="field"><input id="pass" type="password" placeholder=" " required autocomplete="current-password"><label for="pass">Password</label><button class="eye" id="eye" type="button">SHOW</button></div>
+<button class="btn" id="b1" data-mag>Continue →</button></form>
+<div class="alt">Looking for personal protection? <a href="/login">Switch to user sign-in →</a></div></section>
+<section class="pane"><h2>Verify it’s you</h2><p class="sub">Enter the 6-digit code sent to <b id="mail"></b>.</p>
+<form id="f2"><div class="otp" id="otp"></div><button class="btn" id="b2" data-mag disabled>Verify &amp; enter →</button></form>
+<p class="meta"><span id="tm"></span> <button class="lnk" id="resend" type="button" style="display:none">Resend code</button> · <button class="lnk" id="back" type="button">Back</button></p></section>
+<section class="pane"><div class="ok"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="26"/><path d="M16 29l8 8 16-17"/></svg><h2>Access granted</h2><p class="sub" id="who" style="margin:8px 0 0"></p><div class="bar"><i></i></div></div></section>
+<p class="meta" style="margin-top:22px"><a class="lnk" href="/">← Back to website</a></p>
+</div><div class="chips"><span class="chip">16 telemetry engines</span><span class="chip">MITRE ATT&amp;CK mapping</span><span class="chip">SOAR playbooks</span><span class="chip">Mayajaal deception</span></div></div></main>
+<span class="foot">© 2026 KAVACH · Sovereign SOAR-XDR</span>
+<script src="js/api.js"></script><script src="js/auth.js"></script></body></html>
