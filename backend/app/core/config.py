@@ -36,7 +36,11 @@ class AIProviderType(str, Enum):
 _CORE_DIR = Path(__file__).resolve().parent
 _APP_DIR = _CORE_DIR.parent
 _BACKEND_DIR = _APP_DIR.parent
-_ROOT_DIR = _BACKEND_DIR.parent
+# In Docker containers, /app is the project root; on host systems, KAVACH root is parent of backend/
+if _BACKEND_DIR == Path("/app") or _BACKEND_DIR.parent == Path("/"):
+    _ROOT_DIR = _BACKEND_DIR
+else:
+    _ROOT_DIR = _BACKEND_DIR.parent
 
 # Load environment variables
 if (_BACKEND_DIR / ".env").is_file():
@@ -81,9 +85,15 @@ class PathSettings(BaseSettings):
     def ensure_directories(self) -> None:
         """Create essential data directories if not present."""
         for d in [self.data_dir, self.db_dir, self.log_dir, self.model_dir, self.export_dir, self.demo_dir, self.json_log_dir]:
-            d.mkdir(parents=True, exist_ok=True)
+            try:
+                d.mkdir(parents=True, exist_ok=True)
+            except (PermissionError, OSError):
+                pass
         for subdir in self.log_subdirs.values():
-            subdir.mkdir(parents=True, exist_ok=True)
+            try:
+                subdir.mkdir(parents=True, exist_ok=True)
+            except (PermissionError, OSError):
+                pass
 
 
 class DatabaseSettings(BaseSettings):
