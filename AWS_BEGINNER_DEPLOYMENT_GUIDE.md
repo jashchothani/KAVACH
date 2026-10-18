@@ -197,36 +197,44 @@ The `deploy_linux.sh` script will automatically:
 
 ---
 
-# 🔒 How to Add Free HTTPS / SSL (Let's Encrypt)
+# 🔒 How to Connect Your Domain (kavachcybertech.in) & Free HTTPS SSL
 
-Once your server is running, you can connect your domain name (e.g., `kavach.mycompany.com`):
+You have bought **`kavachcybertech.in`**. Follow these two simple steps to point it to your AWS server and activate free SSL encryption:
 
-### Step 1: Point Your Domain DNS to AWS
-1. Go to where you purchased your domain (GoDaddy, Namecheap, Cloudflare, Route 53, etc.).
-2. Go to **DNS Management**.
-3. Add an **A Record**:
-   - **Host / Name:** `@` (or subdomain like `kavach`)
-   - **Points to / Value:** `<Your-AWS-Elastic-IP>`
-   - **TTL:** `300` (5 minutes)
+### Step 1: Add DNS Records at Your Domain Registrar
+Log into the account where you purchased `kavachcybertech.in` (e.g. GoDaddy, Namecheap, Hostinger, BigRock, Cloudflare, etc.):
+1. Go to **DNS Management** / **DNS Records**.
+2. Add the following **A Records** pointing to your AWS **Elastic IP** (copied from CloudFormation Outputs or EC2 Console):
+
+| Type | Name / Host | Value / Points to | TTL |
+|---|---|---|---|
+| **A** | `@` (or leave empty) | `<Your-AWS-Elastic-IP>` | 300 seconds (or 1/2 hour) |
+| **A** | `www` | `<Your-AWS-Elastic-IP>` | 300 seconds |
+| **A** | `api` | `<Your-AWS-Elastic-IP>` | 300 seconds |
+
+> ⏳ DNS changes typically take 2 to 5 minutes to propagate across the internet.
 
 ---
 
 ### Step 2: Run the Automated SSL Script on Your Server
-Back in your EC2 browser terminal, run:
+Once DNS is pointing to your AWS Elastic IP, open your EC2 browser terminal and run this single command:
 
 ```bash
-cd /opt/kavach  # or cd ~/kavach
-sudo bash infra/aws/setup_ssl_certbot.sh yourdomain.com your-email@gmail.com
+cd /opt/kavach
+sudo bash infra/aws/setup_ssl_certbot.sh kavachcybertech.in kavachcybertech@gmail.com
 ```
 
-This script will:
-1. Contact Let's Encrypt.
-2. Validate your domain.
-3. Issue a free, trusted 2048-bit SSL certificate.
-4. Install it into Nginx.
-5. Configure automatic 90-day renewals in `cron`.
+This automated script will:
+1. Contact Let's Encrypt for `kavachcybertech.in`, `www.kavachcybertech.in`, and `api.kavachcybertech.in`.
+2. Issue an official, trusted 2048-bit SSL certificate with Grade A encryption.
+3. Install it into Nginx and enable HTTP/2 and TLS 1.2/1.3.
+4. Set up an automatic weekly cron job so your certificate never expires.
 
-Your site will now be fully encrypted with a green security padlock at **`https://yourdomain.com/`**!
+Your platform is now live and secured at:
+- **Web Console:** **`https://kavachcybertech.in/`**
+- **SOC Operations Center:** **`https://kavachcybertech.in/soc`**
+- **Raksha AI:** **`https://kavachcybertech.in/raksha-ai`**
+- **Backend API:** **`https://kavachcybertech.in/api/v1/health`**
 
 ---
 

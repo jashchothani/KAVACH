@@ -25,6 +25,11 @@ Parameters:
       Email address to subscribe to KAVACH AWS SNS Security Alerts & OTP Notifications.
       You will receive an email confirmation link from AWS to approve the subscription.
 
+  DomainName:
+    Type: String
+    Default: "kavachcybertech.in"
+    Description: Your purchased domain name for KAVACH (e.g. kavachcybertech.in).
+
   KeyName:
     Type: String
     Default: ""
@@ -372,6 +377,18 @@ Outputs:
       - HasNotificationEmail
       - !Sub "Confirmation email sent by AWS to ${NotificationEmail}. Open your inbox and click 'Confirm Subscription'."
       - "No initial email provided. You can subscribe any email to the SNS Topic in the AWS SNS Console."
+
+  DomainWebConsoleURL:
+    Description: Production Web Operations Console (After DNS & SSL setup)
+    Value: !Sub "https://${DomainName}/"
+
+  DomainSOCDashboardURL:
+    Description: Production SOC Dashboard on your Custom Domain
+    Value: !Sub "https://${DomainName}/soc"
+
+  DnsRecordInstructions:
+    Description: DNS A Record Configuration needed at your Domain Registrar
+    Value: !Sub "Add DNS A-Record pointing '${DomainName}' and 'www.${DomainName}' to ${KavachElasticIP}"
 
   SSHConnectInstructions:
     Description: How to connect to your Linux server
