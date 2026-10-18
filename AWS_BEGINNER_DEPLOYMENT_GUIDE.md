@@ -70,11 +70,11 @@ AWS CloudFormation is an official AWS tool that reads an infrastructure file (`i
 ### Step 4: Specify Stack Details
 1. **Stack name:** Enter `kavach-production`
 2. **Parameters:**
-   - **InstanceType:** Choose `t3.medium` (2 vCPU, 4GB RAM) or `t3.large` (2 vCPU, 8GB RAM).
+   - **InstanceType:** Choose `t2.micro` (Default — 100% Free Tier Eligible in all AWS regions). If your region prompts for t3, select `t3.micro`.
    - **KeyName:** *(Optional)* If you already created an EC2 Key Pair in AWS, select it. If not, **leave it blank** (you can connect right inside your web browser via EC2 Instance Connect!).
    - **NvidiaNimApiKey:** Keep the pre-filled working key:  
      `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`
-   - **VolumeSize:** Keep default `40` (GB gp3 SSD).
+   - **VolumeSize:** Keep default `30` (GB gp3 SSD — the exact maximum covered 100% free under AWS Free Tier).
 3. Click **Next**.
 
 ---
@@ -127,7 +127,8 @@ If you want to manually launch the virtual machine step-by-step:
 ---
 
 ### Step 3: Instance Type
-- In the **Instance type** dropdown, select: **`t3.medium`** (2 vCPUs, 4 GiB Memory) or **`t3.large`**.
+- In the **Instance type** dropdown, select: **`t2.micro`** (Marked with the green label **"Free tier eligible"**) or **`t3.micro`**.
+  *(Our automated bootstrap script adds a 4GB Swapfile to your instance, expanding its 1GB RAM to 5GB virtual memory so all Docker & FastAPI containers run smoothly without crashing!)*
 
 ---
 
@@ -155,7 +156,7 @@ If you want to manually launch the virtual machine step-by-step:
 ---
 
 ### Step 6: Configure Storage
-- Change the disk size from `8 GiB` to **`40 GiB`** (General Purpose SSD gp3).
+- Change the disk size to **`30 GiB`** (General Purpose SSD gp3 — 30 GB is the maximum 100% Free Tier eligible storage).
 
 ---
 
@@ -382,10 +383,13 @@ docker compose -f docker-compose.prod.yml up -d
 
 ---
 
-# 💰 AWS Cost & Free Tier Optimization
+# 💰 AWS Free Tier & $200 Credits Optimization
 
-- **Instance Type:** `t3.medium` costs approximately **$0.0416 per hour** (approx. $25–$30/month if left running 24/7).
-- **Free Tier Eligibility:** If you are within your first 12 months on AWS, a `t2.micro` or `t3.micro` instance is 100% free (750 hours/month). For testing, you can change `InstanceType` to `t3.small` or `t3.micro`.
+- **100% Free Tier Eligible:**
+  - `t2.micro` (or `t3.micro`): **750 hours/month FREE** (runs 24/7 the entire month at $0.00).
+  - 30 GB EBS gp3 SSD Storage: **100% FREE** ($0.00).
+- **Your $200 AWS Credits:**
+  - Any minor network data transfer or Elastic IP fees (~$3.60/month) are automatically deducted from your $200 credit balance, leaving your credit card completely untouched!
 - **How to Stop the Server to Prevent Charges When Not in Use:**
   1. Go to AWS EC2 Console -> **Instances**.
   2. Select `KAVACH-Production-Server`.

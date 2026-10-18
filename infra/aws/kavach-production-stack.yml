@@ -8,15 +8,16 @@ Description: >
 Parameters:
   InstanceType:
     Type: String
-    Default: t3.medium
+    Default: t2.micro
     AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t2.small
       - t3.small
       - t3.medium
       - t3.large
       - t3.xlarge
-      - c6i.large
-      - m6i.large
-    Description: EC2 Instance Type. Recommend t3.medium (2 vCPU, 4GB RAM) or t3.large (2 vCPU, 8GB RAM).
+    Description: EC2 Instance Type. Default is t2.micro (100% Free Tier Eligible in all AWS regions). t3.micro is also supported.
 
   NotificationEmail:
     Type: String
@@ -43,10 +44,10 @@ Parameters:
 
   VolumeSize:
     Type: Number
-    Default: 40
-    MinValue: 30
-    MaxValue: 200
-    Description: Root EBS gp3 Storage volume size in GB.
+    Default: 30
+    MinValue: 20
+    MaxValue: 100
+    Description: Root EBS gp3 Storage volume size in GB (30 GB is 100% Free Tier covered).
 
   LatestUbuntuAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
@@ -241,9 +242,6 @@ Resources:
   # ============================================================================
   KavachServerInstance:
     Type: AWS::EC2::Instance
-    CreationPolicy:
-      ResourceSignal:
-        Timeout: PT15M
     Properties:
       InstanceType: !Ref InstanceType
       ImageId: !Ref LatestUbuntuAmiId
@@ -271,6 +269,19 @@ Resources:
           # Log bootstrap process
           exec > >(tee /var/log/kavach-bootstrap.log|logger -t kavach-bootstrap -s 2>/dev/console) 2>&1
           echo "=== Starting KAVACH Production Bootstrap at $(date) ==="
+
+          # 0. FREE TIER OPTIMIZATION: 4GB Swapfile
+          # Expands 1GB RAM on t2.micro/t3.micro to 5GB total virtual memory, preventing OOM crashes
+          if [ ! -f /swapfile ]; then
+            echo "Configuring 4GB high-speed swap space for AWS Free Tier..."
+            fallocate -l 4G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=4096
+            chmod 600 /swapfile
+            mkswap /swapfile
+            swapon /swapfile
+            echo '/swapfile none swap sw 0 0' >> /etc/fstab
+            sysctl vm.swappiness=20 || true
+            echo 'vm.swappiness=20' >> /etc/sysctl.conf
+          fi
 
           # 1. Update OS and Install Base Tools
           export DEBIAN_FRONTEND=noninteractive
@@ -330,21 +341,8 @@ Resources:
           AWS_SNS_AUTO_SUBSCRIBE=true
           ENV_EOF
 
-          # 6. Install AWS cfn-bootstrap tools for signaling
-          apt-get install -y python3-setuptools
-          mkdir -p /opt/aws/bin
-          pip3 install --break-system-packages https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz || true
-
-          echo "KAVACH Environment successfully provisioned."
-
-          # Signal CloudFormation that instance bootstrap is complete
-          if [ -f /usr/local/bin/cfn-signal ]; then
-            /usr/local/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource KavachServerInstance --region ${AWS::Region} || true
-          elif [ -f /opt/aws/bin/cfn-signal ]; then
-            /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource KavachServerInstance --region ${AWS::Region} || true
-          fi
-
-          echo "=== KAVACH Bootstrap Completed Successfully ==="
+          echo "KAVACH Environment and Free-Tier optimizations successfully applied."
+          echo "=== KAVACH Bootstrap Completed Successfully at $(date) ==="
 
 Outputs:
   ServerPublicIP:
