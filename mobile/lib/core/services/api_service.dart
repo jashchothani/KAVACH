@@ -14,7 +14,8 @@ class ApiService {
   }
   static final ApiService instance = ApiService._internal();
 
-  String baseUrl = 'http://127.0.0.1:8000/api/v1';
+  String baseUrl = 'https://api.kavachcybertech.in/api/v1';
+  static const String fallbackLocalUrl = 'http://127.0.0.1:8000/api/v1';
   String? _authToken;
   Map<String, dynamic>? _currentUser;
   final HttpClient _client = HttpClient()
@@ -178,6 +179,12 @@ class ApiService {
       }
       throw ApiException(errMsg, statusCode: resp.statusCode);
     } on SocketException {
+      if (baseUrl != fallbackLocalUrl && !Platform.isAndroid && !Platform.isIOS) {
+        try {
+          baseUrl = fallbackLocalUrl;
+          return await _send(method, path, body: body, queryParams: queryParams);
+        } catch (_) {}
+      }
       throw ApiException(
         'Cannot connect to KAVACH backend server at $baseUrl. Check network or ensure backend is running.',
         isNetworkError: true,
