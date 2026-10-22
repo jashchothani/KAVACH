@@ -49,7 +49,8 @@
       if (!res.ok) {
         let d = {};
         try { d = await res.json(); } catch {}
-        const e = new Error(d.detail || d.message || 'HTTP ' + res.status);
+        const msg = (d.error && (d.error.message || d.error.detail)) || d.detail || d.message || (res.status === 401 ? 'Invalid username/email, password, or security code.' : ('HTTP ' + res.status));
+        const e = new Error(msg);
         e.status = res.status;
         throw e;
       }

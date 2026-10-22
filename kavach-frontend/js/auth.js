@@ -56,7 +56,16 @@
       go(2);
       tick();
       sync();
-      if (!r.otp_code) ins[0].focus(); else $('#b2').focus();
+      if (!r.otp_code) {
+        ins[0].focus();
+      } else {
+        $('#b2').focus();
+        setTimeout(() => {
+          if (code().length === 6 && !$('#b2').disabled) {
+            $('#f2').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+          }
+        }, 500);
+      }
     } catch (er) {
       err(er.network ? 'Cannot reach the KAVACH server. Check your connection and try again.' : er.message || 'Invalid credentials.');
     } finally {

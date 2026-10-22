@@ -57,10 +57,12 @@ class BlockIPAction(PlaybookAction):
             return {"action": "block_ip", "ip": ip, "dry_run": True, "rule_name": rule_name}
 
         try:
+            cflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
             result = subprocess.run(
                 ["netsh", "advfirewall", "firewall", "add", "rule",
                  f"name={rule_name}", "dir=in", "action=block", f"remoteip={ip}"],
                 capture_output=True, text=True, timeout=30,
+                creationflags=cflags,
             )
             success = result.returncode == 0
             return {
@@ -74,9 +76,11 @@ class BlockIPAction(PlaybookAction):
     async def rollback(self, rollback_data: dict[str, Any]) -> dict[str, Any]:
         rule_name = rollback_data.get("rule_name", "")
         try:
+            cflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
             result = subprocess.run(
                 ["netsh", "advfirewall", "firewall", "delete", "rule", f"name={rule_name}"],
                 capture_output=True, text=True, timeout=30,
+                creationflags=cflags,
             )
             return {"action": "unblock_ip", "rule_name": rule_name, "success": result.returncode == 0}
         except Exception as exc:
@@ -148,9 +152,11 @@ class DisableUserAction(PlaybookAction):
             return {"action": "disable_user", "username": username, "dry_run": True}
 
         try:
+            cflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
             result = subprocess.run(
                 ["net", "user", username, "/active:no"],
                 capture_output=True, text=True, timeout=30,
+                creationflags=cflags,
             )
             return {
                 "action": "disable_user", "username": username,
@@ -162,9 +168,11 @@ class DisableUserAction(PlaybookAction):
 
     async def rollback(self, rollback_data: dict[str, Any]) -> dict[str, Any]:
         username = rollback_data["username"]
+        cflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
         result = subprocess.run(
             ["net", "user", username, "/active:yes"],
             capture_output=True, text=True, timeout=30,
+            creationflags=cflags,
         )
         return {"action": "enable_user", "username": username, "success": result.returncode == 0}
 

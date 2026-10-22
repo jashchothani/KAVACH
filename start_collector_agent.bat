@@ -24,6 +24,4 @@ start "" pythonw "%~dp0backend\collector_agent_entry.py" --startup --silent
 :done
 echo [✓] KAVACH 16-Collector Agent dispatched to background.
 echo     Status file: %LOCALAPPDATA%\KAVACH\agent_runtime_status.json
-echo.
-timeout /t 3
 exit /b 0

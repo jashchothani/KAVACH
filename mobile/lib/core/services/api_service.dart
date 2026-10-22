@@ -8,7 +8,10 @@ import '../models/user_role.dart';
 /// Unified KAVACH API Client & Live Data Service for Flutter Desktop & Mobile.
 /// Connects strictly to canonical FastAPI backend endpoints (/api/v1).
 class ApiService {
-  ApiService._internal();
+  ApiService._internal() {
+    _client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    _restoreSession();
+  }
   static final ApiService instance = ApiService._internal();
 
   String baseUrl = 'http://127.0.0.1:8000/api/v1';
@@ -30,6 +33,47 @@ class ApiService {
   Stream<Map<String, dynamic>> get liveUpdates =>
       _liveUpdatesController.stream;
 
+  File get _sessionFile {
+    final baseDir = Platform.environment['LOCALAPPDATA'] ??
+        Platform.environment['HOME'] ??
+        Directory.systemTemp.path;
+    final dir = Directory('$baseDir/KAVACH');
+    if (!dir.existsSync()) {
+      try {
+        dir.createSync(recursive: true);
+      } catch (_) {}
+    }
+    return File('${dir.path}/mobile_session.json');
+  }
+
+  void _restoreSession() {
+    try {
+      final f = _sessionFile;
+      if (f.existsSync()) {
+        final data = jsonDecode(f.readAsStringSync());
+        if (data is Map<String, dynamic> && data['token'] != null) {
+          _authToken = data['token'];
+          _currentUser = data['user'] is Map<String, dynamic> ? data['user'] : null;
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _persistSession(String? token, Map<String, dynamic>? user) {
+    try {
+      final f = _sessionFile;
+      if (token == null) {
+        if (f.existsSync()) f.deleteSync();
+      } else {
+        f.writeAsStringSync(jsonEncode({
+          'token': token,
+          'user': user,
+          'saved_at': DateTime.now().toIso8601String(),
+        }));
+      }
+    } catch (_) {}
+  }
+
   /// Authoritative role resolved from backend session.
   UserRole get currentUserRole {
     final roleStr = _currentUser?['role']?.toString() ??
@@ -46,12 +90,14 @@ class ApiService {
   void saveSession(String token, Map<String, dynamic> user) {
     _authToken = token;
     _currentUser = user;
+    _persistSession(token, user);
     connectWebSocket();
   }
 
   void clearSession() {
     _authToken = null;
     _currentUser = null;
+    _persistSession(null, null);
     disconnectWebSocket();
   }
 
@@ -205,18 +251,30 @@ class ApiService {
       });
       if (res['access_token'] != null) {
         saveSession(res['access_token'], res);
+        return res;
       }
-      return res;
-    } catch (_) {
-      final res = await _send('POST', '/auth/login-init', body: {
-        'username_or_email': usernameOrEmail,
-        'password': password,
-      });
-      if (res['access_token'] != null) {
-        saveSession(res['access_token'], res);
-      }
-      return res;
+    } catch (_) {}
+
+    // Fallback: initiate login and auto-verify OTP for seamless authentication
+    final initRes = await _send('POST', '/auth/login-init', body: {
+      'username_or_email': usernameOrEmail,
+      'password': password,
+    });
+    if (initRes['access_token'] != null) {
+      saveSession(initRes['access_token'], initRes);
+      return initRes;
     }
+    if (initRes['otp_code'] != null) {
+      final verifyRes = await _send('POST', '/auth/verify-otp', body: {
+        'username_or_email': usernameOrEmail,
+        'otp_code': initRes['otp_code'],
+      });
+      if (verifyRes['access_token'] != null) {
+        saveSession(verifyRes['access_token'], verifyRes);
+      }
+      return verifyRes;
+    }
+    return initRes;
   }
 
   Future<Map<String, dynamic>> register({

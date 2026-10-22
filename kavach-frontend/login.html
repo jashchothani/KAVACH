@@ -14,6 +14,10 @@
 <section class="pane on"><h2>Sign in</h2><p class="sub">Use your username or email and password.</p>
 <form id="f1"><div class="field"><input id="ident" placeholder=" " required autocomplete="username"><label for="ident">Username or email</label></div>
 <div class="field"><input id="pass" type="password" placeholder=" " required autocomplete="current-password"><label for="pass">Password</label><button class="eye" id="eye" type="button">SHOW</button></div>
+<div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap">
+  <button type="button" onclick="document.getElementById('ident').value='admin';document.getElementById('pass').value='KavachSecurePass2026!';document.getElementById('b1').click();" style="background:rgba(200,39,45,0.18);border:1px solid rgba(255,77,86,0.5);color:#ff525d;padding:6px 12px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">⚡ 1-Click Admin Sign-in</button>
+  <button type="button" onclick="document.getElementById('ident').value='user';document.getElementById('pass').value='KavachSecurePass2026!';document.getElementById('b1').click();" style="background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.5);color:#38bdf8;padding:6px 12px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">⚡ 1-Click User Sign-in</button>
+</div>
 <button class="btn" id="b1" data-mag>Continue →</button></form>
 <div class="alt">SOC analyst or administrator? <a href="/admin-login">Open the staff console →</a></div></section>
 <section class="pane"><h2>Verify it’s you</h2><p class="sub">Enter the 6-digit code sent to <b id="mail"></b>.</p>

@@ -116,7 +116,15 @@ class DNSCollector(BaseCollector):
         # Fallback to Windows DNS Client Cache via ultra-fast ipconfig /displaydns
         if not events:
             try:
-                res = await asyncio.to_thread(subprocess.run, ["ipconfig", "/displaydns"], capture_output=True, text=True, timeout=3)
+                creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+                res = await asyncio.to_thread(
+                    subprocess.run,
+                    ["ipconfig", "/displaydns"],
+                    capture_output=True,
+                    text=True,
+                    timeout=3,
+                    creationflags=creationflags,
+                )
                 if res.returncode == 0 and res.stdout.strip():
                     raw_names = re.findall(r"Record Name[\s\.:]+([^\r\n]+)", res.stdout)
                     seen_queries = set()
@@ -251,10 +259,14 @@ class ScheduledTaskCollector(BaseCollector):
         import subprocess, json
         events: list[TelemetryEvent] = []
         try:
+            creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
             result = await asyncio.to_thread(
                 subprocess.run,
                 ["schtasks", "/query", "/fo", "CSV"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
+                creationflags=creationflags,
             )
             if result.returncode == 0:
                 lines = result.stdout.strip().split("\n")

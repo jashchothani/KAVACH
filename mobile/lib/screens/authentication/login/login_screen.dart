@@ -95,6 +95,28 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<void> _quickLogin(String username, String password) async {
+    _emailController.text = username;
+    _passwordController.text = password;
+    setState(() => _isLoading = true);
+
+    try {
+      await ApiService.instance.login(username, password);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -229,6 +251,46 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ),
                               const Expanded(child: Divider()),
+                            ],
+                          ),
+
+                          const SizedBox(height: AppDimensions.spacingMD),
+
+                          // ── Quick Access Demo Buttons ──────────────────────
+                          Text(
+                            'Quick Sign-In',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              ActionChip(
+                                avatar: const Icon(Icons.admin_panel_settings, size: 16, color: Color(0xFF8B5CF6)),
+                                label: const Text('Admin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                backgroundColor: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                                side: const BorderSide(color: Color(0xFF8B5CF6), width: 0.5),
+                                onPressed: _isLoading ? null : () => _quickLogin('jash', 'KavachSecurePass2026!'),
+                              ),
+                              ActionChip(
+                                avatar: const Icon(Icons.security, size: 16, color: Color(0xFF38BDF8)),
+                                label: const Text('SOC Analyst', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                backgroundColor: const Color(0xFF38BDF8).withValues(alpha: 0.1),
+                                side: const BorderSide(color: Color(0xFF38BDF8), width: 0.5),
+                                onPressed: _isLoading ? null : () => _quickLogin('analyst', 'KavachSecurePass2026!'),
+                              ),
+                              ActionChip(
+                                avatar: const Icon(Icons.verified_user, size: 16, color: Color(0xFF10B981)),
+                                label: const Text('Workstation User', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                side: const BorderSide(color: Color(0xFF10B981), width: 0.5),
+                                onPressed: _isLoading ? null : () => _quickLogin('user', 'KavachSecurePass2026!'),
+                              ),
                             ],
                           ),
 

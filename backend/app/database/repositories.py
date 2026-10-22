@@ -229,11 +229,22 @@ class DeviceRepository(BaseRepository[Device]):
         result = await self._session.execute(stmt)
         return result.scalars().all()
 
-    async def upsert(self, hostname: str, ip_address: str | None = None, risk_score: float = 0.0) -> Device:
+    async def upsert(
+        self,
+        hostname: str,
+        ip_address: str | None = None,
+        risk_score: float = 0.0,
+        os_name: str | None = None,
+        status: str = "active",
+    ) -> Device:
         device = await self.get_by_hostname(hostname)
         if device:
             if ip_address:
                 device.ip_address = ip_address
+            if os_name:
+                device.os_name = os_name
+            if status:
+                device.status = status
             device.risk_score = max(device.risk_score, risk_score)
             device.last_seen = datetime.now(timezone.utc)
             await self._session.flush()
@@ -241,8 +252,9 @@ class DeviceRepository(BaseRepository[Device]):
         return await self.create(
             hostname=hostname,
             ip_address=ip_address,
+            os_name=os_name,
             risk_score=risk_score,
-            status="active",
+            status=status,
         )
 
 

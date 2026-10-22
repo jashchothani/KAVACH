@@ -209,6 +209,8 @@ def create_app() -> FastAPI:
             status_code=exc.status_code,
             content={
                 "success": False,
+                "detail": str(exc.detail),
+                "message": str(exc.detail),
                 "error": {
                     "code": f"HTTP_{exc.status_code}",
                     "message": str(exc.detail),

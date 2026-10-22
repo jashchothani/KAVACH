@@ -35,18 +35,29 @@ echo "Temporarily pausing web container on port 80..."
 docker compose -f docker-compose.prod.yml stop frontend || true
 
 # 3. Obtain Certificate
-echo "Requesting SSL certificate from Let's Encrypt for ${DOMAIN}..."
+echo "Requesting SSL certificate from Let's Encrypt for ${DOMAIN} and subdomains..."
+CERT_ARGS=("-d" "$DOMAIN")
+if [[ "$DOMAIN" == *"kavachcybertech.in"* ]]; then
+    CERT_ARGS=("-d" "api.kavachcybertech.in" "-d" "kavachcybertech.in" "-d" "www.kavachcybertech.in")
+fi
+
 certbot certonly --standalone \
     --preferred-challenges http \
-    -d "$DOMAIN" \
+    "${CERT_ARGS[@]}" \
     --email "$EMAIL" \
     --agree-tos \
-    --non-interactive
+    --non-interactive \
+    --expand || certbot certonly --standalone --preferred-challenges http -d "$DOMAIN" --email "$EMAIL" --agree-tos --non-interactive --expand
 
 # 4. Copy certificates into KAVACH SSL directory mounted by Nginx
 mkdir -p "${APP_DIR}/kavach-frontend/ssl"
-cp -L "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" "${APP_DIR}/kavach-frontend/ssl/kavach.crt"
-cp -L "/etc/letsencrypt/live/${DOMAIN}/privkey.pem" "${APP_DIR}/kavach-frontend/ssl/kavach.key"
+CERT_DIR="/etc/letsencrypt/live/${DOMAIN}"
+if [ ! -d "$CERT_DIR" ]; then
+    CERT_DIR=$(find /etc/letsencrypt/live -mindepth 1 -maxdepth 1 -type d | head -n 1)
+fi
+
+cp -L "${CERT_DIR}/fullchain.pem" "${APP_DIR}/kavach-frontend/ssl/kavach.crt"
+cp -L "${CERT_DIR}/privkey.pem" "${APP_DIR}/kavach-frontend/ssl/kavach.key"
 chmod 644 "${APP_DIR}/kavach-frontend/ssl/kavach.crt"
 chmod 600 "${APP_DIR}/kavach-frontend/ssl/kavach.key"
 

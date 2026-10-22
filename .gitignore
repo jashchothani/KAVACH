@@ -22,6 +22,7 @@ backend/.env
 *.env
 !.env.example
 !backend/.env.example
+scripts/upload_release_assets.py
 
 # Reference & Scratch Repositories
 ref_repos/
