@@ -14,10 +14,6 @@
 <section class="pane on"><h2>Staff sign-in</h2><p class="sub">Authorised analysts and administrators only. Every session is audited.</p>
 <form id="f1"><div class="field"><input id="ident" placeholder=" " required autocomplete="username"><label for="ident">Staff email or username</label></div>
 <div class="field"><input id="pass" type="password" placeholder=" " required autocomplete="current-password"><label for="pass">Password</label><button class="eye" id="eye" type="button">SHOW</button></div>
-<div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap">
-  <button type="button" onclick="document.getElementById('ident').value='admin';document.getElementById('pass').value='KavachSecurePass2026!';document.getElementById('b1').click();" style="background:rgba(200,39,45,0.18);border:1px solid rgba(255,77,86,0.5);color:#ff525d;padding:6px 12px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">⚡ 1-Click Admin Sign-in</button>
-  <button type="button" onclick="document.getElementById('ident').value='analyst';document.getElementById('pass').value='KavachSecurePass2026!';document.getElementById('b1').click();" style="background:rgba(34,197,94,0.18);border:1px solid rgba(34,197,94,0.5);color:#22c55e;padding:6px 12px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">⚡ 1-Click SOC Analyst</button>
-</div>
 <button class="btn" id="b1" data-mag>Continue →</button></form>
 <div class="alt">Looking for personal protection? <a href="/login">Switch to user sign-in →</a></div></section>
 <section class="pane"><h2>Verify it’s you</h2><p class="sub">Enter the 6-digit code sent to <b id="mail"></b>.</p>

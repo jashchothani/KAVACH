@@ -179,14 +179,8 @@ class ApiService {
       }
       throw ApiException(errMsg, statusCode: resp.statusCode);
     } on SocketException {
-      if (baseUrl != fallbackLocalUrl && !Platform.isAndroid && !Platform.isIOS) {
-        try {
-          baseUrl = fallbackLocalUrl;
-          return await _send(method, path, body: body, queryParams: queryParams);
-        } catch (_) {}
-      }
       throw ApiException(
-        'Cannot connect to KAVACH backend server at $baseUrl. Check network or ensure backend is running.',
+        'Cannot connect to KAVACH backend server at $baseUrl. Check network connection or ensure cloud backend is online.',
         isNetworkError: true,
       );
     } on TimeoutException {

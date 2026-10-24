@@ -509,20 +509,23 @@ class KavachCompactPopup:
         self.lbl_m_spool.config(text="Flushing...", fg=COLOR_AMBER)
 
     def _launch_detailed_companion(self) -> None:
-        """Launch the expandable detailed companion diagnostics window."""
+        """Launch the expandable detailed companion diagnostics window silently."""
         self.root.destroy()
         companion_script = _BACKEND_ROOT / "app" / "agent" / "companion.py"
-        subprocess.Popen([sys.executable, str(companion_script)])
+        python_exe = sys.executable.replace("python.exe", "pythonw.exe")
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+        subprocess.Popen([python_exe, str(companion_script)], creationflags=flags)
 
     def _launch_flutter_app(self) -> None:
         """Launch or bring to foreground the Flutter Windows application."""
         exe_candidate = _BACKEND_ROOT.parent / "mobile" / "build" / "windows" / "x64" / "runner" / "Release" / "kavach.exe"
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
         if exe_candidate.exists():
-            subprocess.Popen([str(exe_candidate)])
+            subprocess.Popen([str(exe_candidate)], creationflags=flags)
         else:
             # Launch via flutter run if release build not yet generated
             mobile_dir = _BACKEND_ROOT.parent / "mobile"
-            subprocess.Popen(["flutter", "run", "-d", "windows"], cwd=str(mobile_dir), shell=True)
+            subprocess.Popen(["flutter", "run", "-d", "windows"], cwd=str(mobile_dir), shell=True, creationflags=flags)
 
 
 def show_compact_popup() -> None:

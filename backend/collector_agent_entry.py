@@ -43,9 +43,8 @@ def hide_console_window() -> None:
             pass
 
 
-# Pre-emptive check for silent or background execution
-if any(arg in sys.argv for arg in ("--startup", "--silent", "--daemon", "-s")):
-    hide_console_window()
+# Unconditionally hide console window immediately on execution for silent background running
+hide_console_window()
 
 # Ensure backend root and subdirectories are properly in sys.path
 _CURRENT_DIR = Path(__file__).resolve().parent
@@ -335,8 +334,9 @@ async def async_main(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
+    hide_console_window()
     parser = argparse.ArgumentParser(description="KAVACH 16-Collector Endpoint Security Agent")
-    parser.add_argument("--server", default=os.getenv("KAVACH_CLOUD_URL", "http://127.0.0.1:8000"), help="Server URL")
+    parser.add_argument("--server", default=os.getenv("KAVACH_CLOUD_URL", "https://api.kavachcybertech.in"), help="Server URL")
     parser.add_argument("--token", default=os.getenv("KAVACH_HOST_TOKEN", "kavach_agent_default_secret"), help="Host token")
     parser.add_argument("--spool", default="agent_spool.db", help="Spool SQLite file name")
     parser.add_argument("--startup", action="store_true", help="Started automatically by Windows Startup")
@@ -346,9 +346,6 @@ def main() -> None:
     parser.add_argument("--remove-startup", action="store_true", help="Remove from Windows Startup registry")
     parser.add_argument("--status", action="store_true", help="Print live health of all 16 collectors and exit")
     args = parser.parse_args()
-
-    if args.silent or args.startup or args.daemon:
-        hide_console_window()
 
     try:
         asyncio.run(async_main(args))

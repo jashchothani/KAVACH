@@ -289,11 +289,15 @@ def create_app() -> FastAPI:
 
     @app.get("/download/extension", include_in_schema=False)
     async def download_browser_extension():
-        return RedirectResponse(url="/releases/kavach-extension.zip", status_code=302)
+        return RedirectResponse(url="https://github.com/jashchothani/KAVACH/releases/download/v2.1.0/kavach-extension.zip", status_code=302)
 
     @app.get("/download/collector", include_in_schema=False)
     async def download_collector_agent():
-        return RedirectResponse(url="/releases/KavachCollectorAgent.exe", status_code=302)
+        return RedirectResponse(url="https://github.com/jashchothani/KAVACH/releases/download/v2.1.0/KAVACH-Setup-2.1.0.exe", status_code=302)
+
+    @app.get("/releases/{filename}", include_in_schema=False)
+    async def redirect_releases(filename: str):
+        return RedirectResponse(url=f"https://github.com/jashchothani/KAVACH/releases/download/v2.1.0/{filename}", status_code=302)
 
     # Serve Pure HTML/CSS/JS Frontend (Zero-build, Cloud-ready kavach-frontend)
     kavach_frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../kavach-frontend"))

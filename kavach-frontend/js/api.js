@@ -1,9 +1,9 @@
 /* KAVACH — API client. REAL DATA ONLY: every call goes to the FastAPI backend (/api/v1). Resilient direct fallback & zero data loss. */
 (function () {
   const isFile = location.protocol === 'file:';
-  const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
-  const directBackend = isLocal ? 'http://127.0.0.1:8000/api/v1' : 'https://api.kavachcybertech.in/api/v1';
-  const defaultBase = isFile ? directBackend : '/api/v1';
+  // Authoritative production backend hosted on AWS EC2
+  const directBackend = 'https://api.kavachcybertech.in/api/v1';
+  const defaultBase = isFile ? directBackend : (location.hostname.endsWith('kavachcybertech.in') ? '/api/v1' : directBackend);
 
   window.KAVACH_CONFIG = Object.assign({
     apiBase: defaultBase,

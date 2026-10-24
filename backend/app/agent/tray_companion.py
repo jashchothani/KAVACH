@@ -224,22 +224,24 @@ class KavachSystemTray:
         win32gui.PostMessage(self.hwnd, win32con.WM_NULL, 0, 0)
 
     def _show_compact_popup(self) -> None:
-        """Launch or bring to foreground the compact native status popup."""
+        """Launch or bring to foreground the compact native status popup without opening a CMD window."""
         if self._compact_process and self._compact_process.poll() is None:
             return  # Already open
 
         popup_script = _BACKEND_ROOT / "app" / "agent" / "compact_popup.py"
-        python_exe = sys.executable
-        self._compact_process = subprocess.Popen([python_exe, str(popup_script)])
+        python_exe = sys.executable.replace("python.exe", "pythonw.exe")
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+        self._compact_process = subprocess.Popen([python_exe, str(popup_script)], creationflags=flags)
 
     def _launch_companion_gui(self) -> None:
-        """Launch or bring to foreground the detailed expandable Companion GUI."""
+        """Launch or bring to foreground the detailed expandable Companion GUI silently."""
         if self._gui_process and self._gui_process.poll() is None:
             return  # Already running
 
         companion_script = _BACKEND_ROOT / "app" / "agent" / "companion.py"
-        python_exe = sys.executable
-        self._gui_process = subprocess.Popen([python_exe, str(companion_script)])
+        python_exe = sys.executable.replace("python.exe", "pythonw.exe")
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+        self._gui_process = subprocess.Popen([python_exe, str(companion_script)], creationflags=flags)
 
     def _launch_flutter_app(self) -> None:
         """Launch or bring to foreground the Flutter Desktop application."""
@@ -248,10 +250,12 @@ class KavachSystemTray:
 
         exe_candidate = _BACKEND_ROOT.parent / "mobile" / "build" / "windows" / "x64" / "runner" / "Release" / "kavach.exe"
         if exe_candidate.exists():
-            self._app_process = subprocess.Popen([str(exe_candidate)])
+            flags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+            self._app_process = subprocess.Popen([str(exe_candidate)], creationflags=flags)
         else:
             mobile_dir = _BACKEND_ROOT.parent / "mobile"
-            self._app_process = subprocess.Popen(["flutter", "run", "-d", "windows"], cwd=str(mobile_dir), shell=True)
+            flags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0
+            self._app_process = subprocess.Popen(["flutter", "run", "-d", "windows"], cwd=str(mobile_dir), shell=True, creationflags=flags)
 
     def _toggle_shield(self) -> None:
         action = "DISABLE_SHIELD" if self._last_shield_state else "ENABLE_SHIELD"

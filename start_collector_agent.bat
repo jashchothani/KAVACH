@@ -6,20 +6,22 @@ echo   Edge Classification + Resilient Spooler + Cloud Shipper
 echo ======================================================================
 echo.
 
+if exist "%~dp0kavach_silent_agent.vbs" (
+    wscript.exe "%~dp0kavach_silent_agent.vbs"
+    goto :done
+)
+
 if exist "%~dp0KavachCollectorAgent.exe" (
-    echo [*] Starting compiled KavachCollectorAgent.exe silently in background...
-    start "" "%~dp0KavachCollectorAgent.exe" --startup --silent
+    start "" /B "%~dp0KavachCollectorAgent.exe" --startup --silent
     goto :done
 )
 
-if exist "%~dp0backend\.venv\Scripts\python.exe" (
-    echo [*] Starting collector agent via venv pythonw...
-    start "" "%~dp0backend\.venv\Scripts\pythonw.exe" "%~dp0backend\collector_agent_entry.py" --startup --silent
+if exist "%~dp0backend\.venv\Scripts\pythonw.exe" (
+    start "" /B "%~dp0backend\.venv\Scripts\pythonw.exe" "%~dp0backend\collector_agent_entry.py" --startup --silent
     goto :done
 )
 
-echo [*] Starting collector agent via system pythonw...
-start "" pythonw "%~dp0backend\collector_agent_entry.py" --startup --silent
+start "" /B pythonw "%~dp0backend\collector_agent_entry.py" --startup --silent
 
 :done
 echo [✓] KAVACH 16-Collector Agent dispatched to background.

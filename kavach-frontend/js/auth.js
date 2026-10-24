@@ -47,25 +47,12 @@
     try {
       const r = await api.auth.loginInit(ident, $('#pass').value);
       const emailDisplay = r.full_email || r.email || ident;
-      if (r.otp_code) {
-        $('#mail').innerHTML = `${K.esc(emailDisplay)} &nbsp;<span style="display:inline-block;padding:2px 8px;background:rgba(56,189,248,0.2);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:0.85rem;font-weight:700">Code: ${K.esc(r.otp_code)}</span>`;
-        r.otp_code.split('').forEach((c, k) => { if (ins[k]) ins[k].value = c; });
-      } else {
-        $('#mail').textContent = emailDisplay;
-      }
+      $('#mail').textContent = emailDisplay;
       go(2);
       tick();
       sync();
-      if (!r.otp_code) {
-        ins[0].focus();
-      } else {
-        $('#b2').focus();
-        setTimeout(() => {
-          if (code().length === 6 && !$('#b2').disabled) {
-            $('#f2').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-          }
-        }, 500);
-      }
+      ins.forEach(i => i.value = '');
+      ins[0].focus();
     } catch (er) {
       err(er.network ? 'Cannot reach the KAVACH server. Check your connection and try again.' : er.message || 'Invalid credentials.');
     } finally {
@@ -100,11 +87,10 @@
 
   $('#resend').onclick = async () => {
     try {
-      const r = await api.auth.requestOtp(ident);
-      if (r && r.otp_code) {
-        r.otp_code.split('').forEach((c, k) => { if (ins[k]) ins[k].value = c; });
-        sync();
-      }
+      await api.auth.requestOtp(ident);
+      ins.forEach(i => i.value = '');
+      sync();
+      ins[0].focus();
       tick();
     } catch (er) { err(er.message); }
   };

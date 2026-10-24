@@ -76,13 +76,24 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isLoading = true);
 
     try {
-      await ApiService.instance.login(
+      final res = await ApiService.instance.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
       if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.of(context).pushReplacementNamed(AppRoutes.protectionDashboard);
+      if (ApiService.instance.isAuthenticated) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.protectionDashboard);
+      } else {
+        // Verification code dispatched strictly to registered email
+        Navigator.of(context).pushNamed(
+          AppRoutes.verifyEmail,
+          arguments: {
+            'email': res['email'] ?? _emailController.text.trim(),
+            'username': res['username'] ?? _emailController.text.trim(),
+          },
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -95,27 +106,6 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  Future<void> _quickLogin(String username, String password) async {
-    _emailController.text = username;
-    _passwordController.text = password;
-    setState(() => _isLoading = true);
-
-    try {
-      await ApiService.instance.login(username, password);
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -168,15 +158,23 @@ class _LoginScreenState extends State<LoginScreen>
 
                           const SizedBox(height: AppDimensions.spacingXL),
 
-                          // ── Email Field ───────────────────────────────────
+                          // ── Username or Email Field ───────────────────────
                           AppTextField(
-                            label: AppStrings.email,
-                            hint: 'Enter your email address',
+                            label: 'Username or Email',
+                            hint: 'Enter your username or email',
                             controller: _emailController,
-                            prefixIcon: Icons.email_outlined,
-                            keyboardType: TextInputType.emailAddress,
-                            validator: ValidationService.validateEmail,
-                            autofillHints: const [AutofillHints.email],
+                            prefixIcon: Icons.person_outline,
+                            keyboardType: TextInputType.text,
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                return 'Please enter your username or email';
+                              }
+                              return null;
+                            },
+                            autofillHints: const [
+                              AutofillHints.username,
+                              AutofillHints.email,
+                            ],
                           ),
 
                           const SizedBox(height: AppDimensions.spacingMD),
@@ -233,65 +231,6 @@ class _LoginScreenState extends State<LoginScreen>
                             text: AppStrings.loginButton,
                             isLoading: _isLoading,
                             onPressed: _handleLogin,
-                          ),
-
-                          const SizedBox(height: AppDimensions.spacingLG),
-
-                          // ── Divider ───────────────────────────────────────
-                          Row(
-                            children: [
-                              const Expanded(child: Divider()),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppDimensions.spacingMD,
-                                ),
-                                child: Text(
-                                  AppStrings.orDivider,
-                                  style: AppTextStyles.bodySmall,
-                                ),
-                              ),
-                              const Expanded(child: Divider()),
-                            ],
-                          ),
-
-                          const SizedBox(height: AppDimensions.spacingMD),
-
-                          // ── Quick Access Demo Buttons ──────────────────────
-                          Text(
-                            'Quick Sign-In',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            alignment: WrapAlignment.center,
-                            children: [
-                              ActionChip(
-                                avatar: const Icon(Icons.admin_panel_settings, size: 16, color: Color(0xFF8B5CF6)),
-                                label: const Text('Admin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                                backgroundColor: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                                side: const BorderSide(color: Color(0xFF8B5CF6), width: 0.5),
-                                onPressed: _isLoading ? null : () => _quickLogin('jash', 'KavachSecurePass2026!'),
-                              ),
-                              ActionChip(
-                                avatar: const Icon(Icons.security, size: 16, color: Color(0xFF38BDF8)),
-                                label: const Text('SOC Analyst', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                                backgroundColor: const Color(0xFF38BDF8).withValues(alpha: 0.1),
-                                side: const BorderSide(color: Color(0xFF38BDF8), width: 0.5),
-                                onPressed: _isLoading ? null : () => _quickLogin('analyst', 'KavachSecurePass2026!'),
-                              ),
-                              ActionChip(
-                                avatar: const Icon(Icons.verified_user, size: 16, color: Color(0xFF10B981)),
-                                label: const Text('Workstation User', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                                backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
-                                side: const BorderSide(color: Color(0xFF10B981), width: 0.5),
-                                onPressed: _isLoading ? null : () => _quickLogin('user', 'KavachSecurePass2026!'),
-                              ),
-                            ],
                           ),
 
                           const SizedBox(height: AppDimensions.spacingLG),
