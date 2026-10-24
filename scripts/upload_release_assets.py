@@ -273,17 +273,19 @@ def main():
         files_to_upload.append(args.file)
 
     if args.upload_all:
+        tag_ver = args.tag.lstrip("v")
+        tag_exe = os.path.join("release", f"KAVACH-Setup-{tag_ver}.exe")
         candidate_paths = [
             os.path.join("release", "kavach-extension.zip"),
             os.path.join("release", "kavach-mobile-release.apk"),
-            os.path.join("release", "KAVACH-Setup-2.1.0.exe"),
         ]
-        if os.path.exists("release"):
+        if os.path.exists(tag_exe):
+            candidate_paths.append(tag_exe)
+        elif os.path.exists("release"):
             for f in os.listdir("release"):
                 if f.startswith("KAVACH-Setup") and f.endswith(".exe"):
-                    p = os.path.join("release", f)
-                    if p not in candidate_paths:
-                        candidate_paths.append(p)
+                    candidate_paths.append(os.path.join("release", f))
+                    break
 
         for p in candidate_paths:
             if os.path.exists(p) and p not in files_to_upload:

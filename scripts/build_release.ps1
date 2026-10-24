@@ -83,10 +83,12 @@ if ($LASTEXITCODE -ne 0) {
 
 $InstallerExe = Join-Path $ReleaseDir "KAVACH-Setup-$Version.exe"
 if (-not (Test-Path $InstallerExe)) {
-    # Check if named with v prefix
+    # Check if named with v prefix or base
     $AltExe = Join-Path $ReleaseDir "KAVACH-Setup-v$Version.exe"
     if (Test-Path $AltExe) {
         $InstallerExe = $AltExe
+    } elseif (Test-Path (Join-Path $ReleaseDir "KAVACH-Setup-2.1.0.exe")) {
+        Copy-Item (Join-Path $ReleaseDir "KAVACH-Setup-2.1.0.exe") $InstallerExe -Force
     }
 }
 

@@ -4,7 +4,9 @@
 ; =====================================================================
 
 #define MyAppName "KAVACH Cyber Defense"
-#define MyAppVersion "2.1.0"
+#ifndef MyAppVersion
+#define MyAppVersion "2.2.1"
+#endif
 #define MyAppPublisher "KAVACH Cybersecurity Technologies"
 #define MyAppURL "https://kavach.cybersecurity"
 #define MyAppExeName "KavachCompanion.exe"
