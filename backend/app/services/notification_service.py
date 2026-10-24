@@ -373,13 +373,15 @@ class NotificationService:
 
     def _resolve_default_provider(self) -> NotificationProvider:
         """Select appropriate provider based on active environment flags."""
-        use_aws_ses = os.environ.get("AWS_SES_ENABLED", "").lower() in ("true", "1", "yes")
-        use_aws_sns = os.environ.get("AWS_SNS_ENABLED", "").lower() in ("true", "1", "yes")
+        use_aws_sns = (
+            os.environ.get("AWS_SNS_ENABLED", "").lower() in ("true", "1", "yes")
+            or bool(os.environ.get("AWS_SNS_TOPIC_ARN"))
+        )
 
-        if use_aws_ses:
-            return AwsSesNotificationProvider()
         if use_aws_sns:
             return AwsSnsNotificationProvider()
+        if use_aws_ses:
+            return AwsSesNotificationProvider()
 
         # Default: Local mock provider (Zero AWS cost, safe for local development & CI)
         return MockNotificationProvider()

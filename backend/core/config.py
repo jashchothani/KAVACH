@@ -149,6 +149,9 @@ class NotificationSettings(BaseSettings):
     use_tls: bool = Field(default=True, description="Use TLS")
     soc_email: str = Field(default="kavachcybertech@gmail.com", alias="SOC_EMAIL")
     soc_phone: str = Field(default="", alias="SOC_PHONE")
+    sns_topic_arn: str = Field(default="", alias="AWS_SNS_TOPIC_ARN")
+    sns_auto_subscribe: bool = Field(default=True, alias="AWS_SNS_AUTO_SUBSCRIBE")
+    aws_region: str = Field(default="ap-south-1", alias="AWS_DEFAULT_REGION")
 
 
 class PathSettings(BaseSettings):

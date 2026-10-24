@@ -55,13 +55,28 @@ class EmailService:
         settings = self._settings.notification
         target_email = recipient or settings.soc_email or settings.username
 
-        # Check AWS SNS Topic configuration
+        # Check AWS SNS Topic configuration (Primary delivery channel)
         sns_topic_arn = os.environ.get("AWS_SNS_TOPIC_ARN") or getattr(settings, "sns_topic_arn", None)
-        if sns_topic_arn:
-            try:
-                import boto3
-                region = os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
-                sns_client = boto3.client("sns", region_name=region)
+        region = os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
+        try:
+            import boto3
+            sns_client = boto3.client("sns", region_name=region)
+            if not sns_topic_arn:
+                try:
+                    topics_resp = sns_client.list_topics()
+                    for t in topics_resp.get("Topics", []):
+                        if "kavach" in t.get("TopicArn", "").lower():
+                            sns_topic_arn = t.get("TopicArn")
+                            break
+                    if not sns_topic_arn and topics_resp.get("Topics"):
+                        sns_topic_arn = topics_resp["Topics"][0].get("TopicArn")
+                    if not sns_topic_arn:
+                        created = sns_client.create_topic(Name="kavach-security-alerts")
+                        sns_topic_arn = created.get("TopicArn")
+                except Exception:
+                    pass
+
+            if sns_topic_arn:
                 clean_subj = f"{'[KAVACH ALERT] ' if is_alert else '[KAVACH] '}{subject}"
                 clean_subj = clean_subj[:97] + "..." if len(clean_subj) > 100 else clean_subj
                 sns_msg = (
@@ -86,10 +101,9 @@ class EmailService:
                     }
                 )
                 logger.info("email_notification_sent_via_sns", topic=sns_topic_arn, subject=clean_subj)
-                if not settings.server or not settings.username or not settings.password:
-                    return True
-            except Exception as sns_err:
-                logger.warning("sns_publish_error_in_email_service", error=str(sns_err))
+                return True
+        except Exception as sns_err:
+            logger.warning("sns_publish_error_in_email_service", error=str(sns_err))
 
         if not settings.server or not settings.username or not settings.password:
             logger.warning("email_service_not_configured")

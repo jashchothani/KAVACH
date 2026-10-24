@@ -175,3 +175,34 @@ async def test_smtp_send_retries_and_dead_letter():
     smtp_settings.server = original_server
     smtp_settings.username = original_username
     smtp_settings.password = original_password
+
+
+@pytest.mark.asyncio
+async def test_aws_sns_email_dispatch_primary():
+    """Verify that AWS SNS is invoked first as primary provider and succeeds."""
+    settings = get_settings()
+    email_svc = EmailService()
+    
+    mock_boto3 = MagicMock()
+    mock_boto3_client = MagicMock()
+    mock_boto3.client.return_value = mock_boto3_client
+    mock_boto3_client.publish.return_value = {"MessageId": "sns-otp-99999"}
+    mock_boto3_client.subscribe.return_value = {"SubscriptionArn": "pending"}
+
+    with patch.dict(os.environ, {"AWS_SNS_TOPIC_ARN": "arn:aws:sns:ap-south-1:123456789012:kavach-alerts"}), \
+         patch.dict("sys.modules", {"boto3": mock_boto3}):
+        
+        success = await email_svc.send_email(
+            to="analyst@kavachcybertech.in",
+            template_name="verify_email.html",
+            subject="Security Verification",
+            context={"username": "jash", "verification_code": "777888"}
+        )
+        assert success is True
+        assert mock_boto3_client.publish.called
+        kwargs = mock_boto3_client.publish.call_args.kwargs
+        assert kwargs["TopicArn"] == "arn:aws:sns:ap-south-1:123456789012:kavach-alerts"
+        assert "777888" in kwargs["Subject"] or "777888" in kwargs["Message"]
+        assert kwargs["MessageAttributes"]["OtpCode"]["StringValue"] == "777888"
+
+

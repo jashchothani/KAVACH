@@ -92,86 +92,120 @@ class EmailService:
             except Exception as e:
                 logger.warning("could_not_read_logo_attachment", error=str(e))
 
-        # Check for Resend API key first
-        resend_api_key = os.environ.get("RESEND_API_KEY") or getattr(self.settings.notification, "resend_api_key", None)
-        if resend_api_key:
-            try:
-                import httpx
-                from_email = os.environ.get("RESEND_FROM_EMAIL", "KAVACH Security <onboarding@resend.dev>")
-                if "@gmail.com" in from_email.lower():
-                    from_email = "KAVACH Security <onboarding@resend.dev>"
-                resend_payload: dict[str, Any] = {
-                    "from": from_email,
-                    "to": [to],
-                    "subject": subject,
-                    "html": html_content,
-                }
-                if logo_b64:
-                    resend_payload["attachments"] = [
-                        {
-                            "filename": "kavach_logo.png",
-                            "content": logo_b64,
-                            "content_type": "image/png",
-                        }
-                    ]
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    resp = await client.post(
-                        "https://api.resend.com/emails",
-                        headers={
-                            "Authorization": f"Bearer {resend_api_key}",
-                            "Content-Type": "application/json",
-                        },
-                        json=resend_payload,
-                    )
-                    if resp.status_code in (200, 201):
-                        logger.info("email_sent_via_resend", recipient=to, subject=subject)
-                        return True
-                    else:
-                        logger.warning("resend_api_returned_error", status_code=resp.status_code, body=resp.text)
-            except Exception as exc:
-                logger.warning("resend_send_failed", error=str(exc))
+        # 1. PRIMARY: AWS SNS (User-mandated primary delivery for emails & OTP notifications)
+        aws_sns_topic_arn = (
+            os.environ.get("AWS_SNS_TOPIC_ARN")
+            or getattr(self.settings.notification, "sns_topic_arn", None)
+        )
+        region = (
+            os.environ.get("AWS_DEFAULT_REGION")
+            or getattr(self.settings.notification, "aws_region", None)
+            or "ap-south-1"
+        )
+        try:
+            import boto3
+            sns_client = boto3.client("sns", region_name=region)
 
-        # Check for AWS SNS configuration
-        aws_sns_topic_arn = os.environ.get("AWS_SNS_TOPIC_ARN") or getattr(self.settings.notification, "sns_topic_arn", None)
-        if aws_sns_topic_arn:
-            try:
-                import boto3
-                region = os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
-                sns_client = boto3.client("sns", region_name=region)
+            # Auto-discover or create topic if ARN not explicitly hardcoded
+            if not aws_sns_topic_arn:
+                try:
+                    topics_resp = sns_client.list_topics()
+                    for t in topics_resp.get("Topics", []):
+                        if "kavach" in t.get("TopicArn", "").lower():
+                            aws_sns_topic_arn = t.get("TopicArn")
+                            break
+                    if not aws_sns_topic_arn and topics_resp.get("Topics"):
+                        aws_sns_topic_arn = topics_resp["Topics"][0].get("TopicArn")
+                    if not aws_sns_topic_arn:
+                        created = sns_client.create_topic(Name="kavach-security-alerts")
+                        aws_sns_topic_arn = created.get("TopicArn")
+                except Exception as disc_err:
+                    logger.debug("sns_topic_discovery_skipped", error=str(disc_err))
 
-                plain_summary = self._build_plaintext_summary(subject, template_name, context)
+            if aws_sns_topic_arn:
+                otp_code = context.get("verification_code") or context.get("otp")
                 clean_subject = (subject if len(subject) <= 100 else subject[:97] + "...")
+                if otp_code and ("verify" in template_name.lower() or "otp" in template_name.lower()):
+                    clean_subject = f"[KAVACH] OTP: {otp_code} - Security Verification"
 
-                # Auto-subscribe recipient if enabled
-                auto_sub = os.environ.get("AWS_SNS_AUTO_SUBSCRIBE", "false").lower() in ("true", "1", "yes")
+                plain_summary = self._build_plaintext_summary(clean_subject, template_name, context)
+
+                # Auto-subscribe recipient if enabled and valid email
+                auto_sub = os.environ.get("AWS_SNS_AUTO_SUBSCRIBE", "true").lower() in ("true", "1", "yes")
                 if auto_sub and to and "@" in to:
                     try:
                         sns_client.subscribe(
                             TopicArn=aws_sns_topic_arn,
                             Protocol="email",
                             Endpoint=to,
-                            ReturnSubscriptionArn=True
+                            ReturnSubscriptionArn=True,
                         )
                     except Exception as sub_err:
                         logger.debug("sns_auto_subscribe_skipped", error=str(sub_err))
 
-                publish_payload = {
+                publish_payload: dict[str, Any] = {
                     "TopicArn": aws_sns_topic_arn,
-                    "Subject": clean_subject,
+                    "Subject": clean_subject[:100],
                     "Message": plain_summary,
                     "MessageAttributes": {
                         "Recipient": {"DataType": "String", "StringValue": to},
                         "Template": {"DataType": "String", "StringValue": template_name},
-                        "Platform": {"DataType": "String", "StringValue": "KAVACH"}
-                    }
+                        "Platform": {"DataType": "String", "StringValue": "KAVACH"},
+                    },
                 }
+                if otp_code:
+                    publish_payload["MessageAttributes"]["OtpCode"] = {
+                        "DataType": "String",
+                        "StringValue": str(otp_code),
+                    }
 
                 resp = await asyncio.to_thread(sns_client.publish, **publish_payload)
                 msg_id = resp.get("MessageId", "unknown")
                 logger.info("email_sent_via_aws_sns", msg_id=msg_id, recipient=to, topic=aws_sns_topic_arn)
                 return True
-            except Exception as sns_exc:
-                logger.warning("aws_sns_publish_failed", error=str(sns_exc))
+        except Exception as sns_exc:
+            logger.warning("aws_sns_dispatch_unavailable", error=str(sns_exc))
+
+        # 2. Resend (Disabled by default per explicit user mandate: "emails should come from sns not resend")
+        enable_resend = os.environ.get("ENABLE_RESEND", "false").lower() in ("true", "1", "yes")
+        if enable_resend:
+            resend_api_key = os.environ.get("RESEND_API_KEY") or getattr(self.settings.notification, "resend_api_key", None)
+            if resend_api_key:
+                try:
+                    import httpx
+                    from_email = os.environ.get("RESEND_FROM_EMAIL", "KAVACH Security <onboarding@resend.dev>")
+                    if "@gmail.com" in from_email.lower():
+                        from_email = "KAVACH Security <onboarding@resend.dev>"
+                    resend_payload: dict[str, Any] = {
+                        "from": from_email,
+                        "to": [to],
+                        "subject": subject,
+                        "html": html_content,
+                    }
+                    if logo_b64:
+                        resend_payload["attachments"] = [
+                            {
+                                "filename": "kavach_logo.png",
+                                "content": logo_b64,
+                                "content_type": "image/png",
+                            }
+                        ]
+                    async with httpx.AsyncClient(timeout=10.0) as client:
+                        resp = await client.post(
+                            "https://api.resend.com/emails",
+                            headers={
+                                "Authorization": f"Bearer {resend_api_key}",
+                                "Content-Type": "application/json",
+                            },
+                            json=resend_payload,
+                        )
+                        if resp.status_code in (200, 201):
+                            logger.info("email_sent_via_resend", recipient=to, subject=subject)
+                            return True
+                        else:
+                            logger.warning("resend_api_returned_error", status_code=resp.status_code, body=resp.text)
+                except Exception as exc:
+                    logger.warning("resend_send_failed", error=str(exc))
 
         # If in test/development and not testing SMTP error retries, or if SMTP is unconfigured, log as mock
         # Check if SMTP is configured with real credentials
@@ -255,14 +289,22 @@ class EmailService:
             ""
         ]
         t_lower = template_name.lower()
-        if "verify" in t_lower:
+        if "verify" in t_lower or "otp" in t_lower:
             code = context.get("verification_code") or context.get("otp", "N/A")
-            mins = context.get("expires_in_minutes", 10)
+            mins = context.get("expires_in_minutes", 5)
             lines.extend([
-                f"Your KAVACH verification security code is: {code}",
+                "**************************************************",
+                f"   SECURITY VERIFICATION CODE: {code}",
+                "**************************************************",
                 "",
+                f"Hello {context.get('username', 'User')},",
+                "",
+                f"Your single-use KAVACH MFA verification code is: {code}",
                 f"This code will expire in {mins} minutes.",
-                "If you did not request this verification, please contact your SOC administrator immediately.",
+                "",
+                "Enter this 6-digit code in the KAVACH application to complete your authentication.",
+                "",
+                "SECURITY WARNING: Never share this OTP with anyone. KAVACH Security will never ask for your code.",
             ])
         elif "alert" in t_lower:
             lines.extend([

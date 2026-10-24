@@ -375,7 +375,7 @@ async def register(req: RegisterRequest) -> TokenResponse:
 async def login_init(req: LoginRequest) -> dict[str, Any]:
     """
     Step 1 of login: Validate username/email and password, then generate
-    and dispatch a 6-digit OTP code to the user's email via Resend.
+    and dispatch a 6-digit OTP code to the user's email via AWS SNS.
     """
     identifier = req.username_or_email or req.username or req.email or ""
     identifier = identifier.strip().lower()
@@ -448,7 +448,7 @@ async def login_init(req: LoginRequest) -> dict[str, Any]:
         if user.email:
             OTP_STORE[user.email.lower()] = OTP_STORE[key]
 
-        # Send Email notification via Resend
+        # Send Email notification via AWS SNS
         try:
             from email_notifications.service import get_email_service
             email_svc = get_email_service()
@@ -625,7 +625,7 @@ OTP_STORE: dict[str, dict[str, Any]] = {}
 
 @api_v1_router.post("/auth/request-otp", tags=["Authentication"])
 async def request_otp(req: RequestOTPRequest) -> dict[str, Any]:
-    """Request a 6-digit OTP code sent via Email for MFA login using Resend."""
+    """Request a 6-digit OTP code sent via Email for MFA login using AWS SNS."""
     import random
     query_str = req.username_or_email.strip().lower()
     if not query_str:
@@ -657,7 +657,7 @@ async def request_otp(req: RequestOTPRequest) -> dict[str, Any]:
             "role": user.role,
         }
 
-        # Send Email notification via EmailService (Resend / SMTP)
+        # Send Email notification via EmailService (AWS SNS Primary)
         try:
             from email_notifications.service import get_email_service
             email_svc = get_email_service()
