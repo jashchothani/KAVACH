@@ -132,9 +132,7 @@ class MainActivity : FlutterActivity() {
 
                 "dismissFloatingOverlay" -> {
                     try {
-                        val dismissIntent = Intent(this, FloatingCallerOverlayService::class.java).apply {
-                            action = "ACTION_DISMISS"
-                        }
+                        val dismissIntent = Intent(this, FloatingCallerOverlayService::class.java).setAction("ACTION_DISMISS")
                         startService(dismissIntent)
                         result.success(true)
                     } catch (e: Exception) {

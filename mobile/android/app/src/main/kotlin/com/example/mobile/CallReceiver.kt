@@ -74,9 +74,7 @@ class CallReceiver : BroadcastReceiver() {
             }
         } else if (state == TelephonyManager.EXTRA_STATE_IDLE || state == TelephonyManager.EXTRA_STATE_OFFHOOK) {
             // Dismiss overlay when call is answered, rejected, or ends
-            val dismissIntent = Intent(context, FloatingCallerOverlayService::class.java).apply {
-                action = "ACTION_DISMISS"
-            }
+            val dismissIntent = Intent(context, FloatingCallerOverlayService::class.java).setAction("ACTION_DISMISS")
             try {
                 context.startService(dismissIntent)
             } catch (e: Exception) {
