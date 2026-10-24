@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/google_prompt_modal.dart';
 import '../security/app_lock_pin_screen.dart';
 
 /// KAVACH Mobile User Dashboard.
@@ -34,6 +35,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   bool _isPinActive = ApiService.instance.isPinEnabled();
   Map<String, dynamic>? _pendingMobileChallenge;
   Timer? _challengePollTimer;
+  bool _isModalShowing = false;
+  String? _lastPromptedChallengeId;
 
   // Scanning animation state
   bool _isFullScanning = false;
@@ -105,7 +108,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
 
   void _startChallengePolling() {
     _checkPendingLoginChallenge();
-    _challengePollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    _challengePollTimer?.cancel();
+    _challengePollTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) {
       if (mounted) _checkPendingLoginChallenge();
     });
   }
@@ -116,28 +120,63 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
       if (!mounted) return;
       if (res['has_pending'] == true) {
         setState(() => _pendingMobileChallenge = res);
-      } else if (_pendingMobileChallenge != null) {
-        setState(() => _pendingMobileChallenge = null);
+        final chId = res['challenge_id']?.toString() ?? '';
+        if (!_isModalShowing && chId.isNotEmpty && chId != _lastPromptedChallengeId) {
+          _lastPromptedChallengeId = chId;
+          _showGooglePromptModal(res);
+        }
+      } else {
+        if (_pendingMobileChallenge != null) {
+          setState(() => _pendingMobileChallenge = null);
+        }
+        _lastPromptedChallengeId = null;
       }
     } catch (_) {}
   }
 
+  void _showGooglePromptModal(Map<String, dynamic> challenge) {
+    if (!mounted || _isModalShowing) return;
+    _isModalShowing = true;
+
+    GooglePromptModal.show(
+      context: context,
+      challenge: challenge,
+      onNumberSelected: (n) => _handleApproveChallenge(n),
+      onReject: () => _handleApproveChallenge(-1),
+    ).then((_) {
+      if (mounted) _isModalShowing = false;
+    });
+  }
+
   Future<void> _handleApproveChallenge(int numVal) async {
-    final chId = _pendingMobileChallenge?['challenge_id']?.toString() ?? '';
+    final chId = _pendingMobileChallenge?['challenge_id']?.toString() ?? _lastPromptedChallengeId ?? '';
     try {
       final res = await _api.verifyMobileChallenge(challengeId: chId, chosenNumber: numVal);
       if (!mounted) return;
       final ok = res['success'] == true;
-      setState(() => _pendingMobileChallenge = null);
+      setState(() {
+        _pendingMobileChallenge = null;
+        _isModalShowing = false;
+      });
+      final msg = res['message']?.toString() ??
+          (numVal == -1
+              ? 'Desktop sign-in attempt blocked.'
+              : ok
+                  ? '✓ Desktop Sign-in Approved! Your computer is now signed in.'
+                  : 'Incorrect match number. Sign-in denied.');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res['message']?.toString() ?? (ok ? '✓ Desktop Sign-in Approved!' : 'Incorrect match number.')),
+          content: Text(msg),
           backgroundColor: ok ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+          duration: const Duration(seconds: 4),
         ),
       );
     } catch (e) {
       if (mounted) {
-        setState(() => _pendingMobileChallenge = null);
+        setState(() {
+          _pendingMobileChallenge = null;
+          _isModalShowing = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Challenge verification error: $e'), backgroundColor: const Color(0xFFEF4444)),
         );
@@ -995,7 +1034,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF38BDF8),
                   foregroundColor: const Color(0xFF0F172A),
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   elevation: 2,
                 ),
@@ -1003,6 +1042,18 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                 child: Text('$n', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
               );
             }).toList(),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFF87171),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              ),
+              onPressed: () => _handleApproveChallenge(-1),
+              icon: const Icon(Icons.block_rounded, size: 14),
+              label: const Text("Deny / Not Me", style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+            ),
           ),
         ],
       ),

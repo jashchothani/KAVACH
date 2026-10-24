@@ -46,6 +46,8 @@ void main() {
   runApp(const KavachApp());
 }
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 /// Root widget for the KAVACH application.
 class KavachApp extends StatelessWidget {
   const KavachApp({super.key});
@@ -53,6 +55,7 @@ class KavachApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: rootNavigatorKey,
       title: 'KAVACH',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

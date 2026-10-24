@@ -121,6 +121,8 @@
           const metaP = pane2.querySelector('p.meta');
           const switchToEm = $('#btn-switch-to-email');
 
+          let emailOtpDispatched = false;
+
           const showMob = () => {
             tabMob.style.background = 'rgba(56,189,248,0.22)';
             tabMob.style.color = '#38bdf8';
@@ -131,7 +133,7 @@
             if (metaP) metaP.style.display = 'none';
           };
 
-          const showEm = () => {
+          const showEm = async () => {
             tabEm.style.background = 'rgba(56,189,248,0.22)';
             tabEm.style.color = '#38bdf8';
             tabMob.style.background = 'transparent';
@@ -140,13 +142,34 @@
             f2.style.display = 'block';
             if (metaP) metaP.style.display = 'block';
             ins[0].focus();
+
+            // Strictly send email OTP ONLY when the user chooses Email OTP
+            if (!emailOtpDispatched) {
+              emailOtpDispatched = true;
+              try {
+                let note = $('#email-otp-notice');
+                if (!note) {
+                  f2.insertAdjacentHTML('afterbegin', '<div id="email-otp-notice" style="font-size:0.8rem;color:#38bdf8;text-align:center;margin-bottom:12px;font-weight:600;padding:6px 12px;background:rgba(56,189,248,0.1);border-radius:8px;border:1px solid rgba(56,189,248,0.25)">Sending verification code…</div>');
+                  note = $('#email-otp-notice');
+                }
+                note.style.color = '#38bdf8';
+                note.textContent = 'Sending verification code to ' + emailDisplay + '…';
+                await api.auth.requestOtp(ident);
+                note.style.color = '#34d399';
+                note.textContent = '✓ Verification code sent to ' + emailDisplay;
+                tick();
+              } catch (ex) {
+                emailOtpDispatched = false;
+                err(ex.message || 'Failed to dispatch email verification code.');
+              }
+            }
           };
 
           tabMob.onclick = showMob;
           tabEm.onclick = showEm;
           if (switchToEm) switchToEm.onclick = showEm;
 
-          // Default to mobile prompt tab
+          // Default strictly to mobile prompt tab
           showMob();
         } else {
           twoFaWrap.style.display = 'block';
@@ -160,10 +183,8 @@
       }
 
       go(2);
-      tick();
       sync();
       ins.forEach(i => i.value = '');
-      ins[0].focus();
     } catch (er) {
       err(er.network ? 'Cannot reach the KAVACH server. Check your connection and try again.' : er.message || 'Invalid credentials.');
     } finally {

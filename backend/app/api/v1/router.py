@@ -463,24 +463,9 @@ async def login_init(req: LoginRequest) -> dict[str, Any]:
         if user.email:
             OTP_STORE[user.email.lower()] = OTP_STORE[key]
 
-        # Send Email notification via AWS SNS / SMTP
-        try:
-            from email_notifications.service import get_email_service
-            email_svc = get_email_service()
-            subject = "Your KAVACH Login Verification Code"
-            sent_ok = await email_svc.send_email(
-                to=user.email,
-                template_name="verify_email.html",
-                subject=subject,
-                context={
-                    "username": user.username,
-                    "verification_code": otp_code,
-                    "verification_url": f"Verification Code: {otp_code}",
-                }
-            )
-            logger.info("login_init_email_sent", recipient=user.email, success=sent_ok, otp=otp_code)
-        except Exception as exc:
-            logger.warning("email_dispatch_error", error=str(exc))
+        # Email is NOT sent automatically during initial password submission.
+        # It is dispatched strictly on-demand if the user explicitly chooses "Email OTP" on desktop.
+        logger.info("login_init_challenge_created", username=user.username, email=user.email)
 
         masked_email = user.email
         if "@" in masked_email:
@@ -523,7 +508,8 @@ async def login_init(req: LoginRequest) -> dict[str, Any]:
         settings = get_settings()
         response_data: dict[str, Any] = {
             "status": "otp_required",
-            "message": f"Security verification code dispatched to {masked_email}.",
+            "requires_2fa": True,
+            "message": "Approve sign-in on your KAVACH Mobile App or select Email OTP.",
             "username": user.username,
             "email": masked_email,
             "full_email": user.email,
@@ -711,27 +697,25 @@ async def request_otp(req: RequestOTPRequest) -> dict[str, Any]:
             "role": user.role,
         }
 
-        # Send Email notification via EmailService (AWS SNS Primary)
+        # Send Email notification via EmailService (Gmail SMTP Primary / AWS SNS Fallback)
         try:
             from email_notifications.service import get_email_service
             email_svc = get_email_service()
             subject = "Your KAVACH Login Verification Code"
-            asyncio.create_task(
-                email_svc.send_email(
-                    to=user.email,
-                    template_name="verify_email.html",
-                    subject=subject,
-                    context={
-                        "username": user.username,
-                        "verification_code": otp_code,
-                        "verification_url": f"Verification Code: {otp_code}",
-                    }
-                )
+            sent_ok = await email_svc.send_email(
+                to=user.email,
+                template_name="verify_email.html",
+                subject=subject,
+                context={
+                    "username": user.username,
+                    "verification_code": otp_code,
+                    "verification_url": f"Verification Code: {otp_code}",
+                }
             )
+            logger.info("request_otp_email_sent", recipient=user.email, success=sent_ok, otp=otp_code)
         except Exception as exc:
             logger.warning("email_dispatch_skipped", error=str(exc))
 
-        masked_email = user.email
         masked_email = user.email
         if "@" in masked_email:
             parts = masked_email.split("@")
@@ -854,26 +838,57 @@ async def get_pending_mobile_challenge(request: Request) -> dict[str, Any]:
             except Exception:
                 pass
 
-    if not user_ident:
-        return {"has_pending": False, "message": "No identifier provided"}
+    # If identifier is provided, search for matching challenge first
+    if user_ident:
+        ch_id = PENDING_USER_CHALLENGES.get(user_ident.lower())
+        if ch_id and ch_id in MOBILE_CHALLENGES:
+            ch = MOBILE_CHALLENGES[ch_id]
+            if time.time() <= ch.get("expires_at", 0) and ch.get("status") == "PENDING":
+                return {
+                    "has_pending": True,
+                    "challenge_id": ch["challenge_id"],
+                    "username": ch.get("username", ""),
+                    "email": ch.get("email", ""),
+                    "device": ch.get("device", "Desktop PC"),
+                    "ip": ch.get("ip", "192.168.1.105"),
+                    "options": ch.get("options", []),
+                    "expires_in": max(0, int(ch.get("expires_at", 0) - time.time())),
+                }
+            else:
+                PENDING_USER_CHALLENGES.pop(user_ident.lower(), None)
 
-    ch_id = PENDING_USER_CHALLENGES.get(user_ident.lower())
-    if not ch_id or ch_id not in MOBILE_CHALLENGES:
-        return {"has_pending": False}
+        for ch in reversed(list(MOBILE_CHALLENGES.values())):
+            if (
+                ch.get("username", "").lower() == user_ident.lower()
+                or ch.get("email", "").lower() == user_ident.lower()
+            ) and ch.get("status") == "PENDING" and time.time() <= ch.get("expires_at", 0):
+                return {
+                    "has_pending": True,
+                    "challenge_id": ch["challenge_id"],
+                    "username": ch.get("username", ""),
+                    "email": ch.get("email", ""),
+                    "device": ch.get("device", "Desktop PC"),
+                    "ip": ch.get("ip", "192.168.1.105"),
+                    "options": ch.get("options", []),
+                    "expires_in": max(0, int(ch.get("expires_at", 0) - time.time())),
+                }
 
-    ch = MOBILE_CHALLENGES[ch_id]
-    if time.time() > ch["expires_at"] or ch["status"] != "PENDING":
-        PENDING_USER_CHALLENGES.pop(user_ident.lower(), None)
-        return {"has_pending": False}
+    # Fallback: return the latest active unexpired PENDING challenge across all users
+    # This allows mobile devices to immediately receive the Google Prompt challenge
+    for ch in reversed(list(MOBILE_CHALLENGES.values())):
+        if ch.get("status") == "PENDING" and time.time() <= ch.get("expires_at", 0):
+            return {
+                "has_pending": True,
+                "challenge_id": ch["challenge_id"],
+                "username": ch.get("username", ""),
+                "email": ch.get("email", ""),
+                "device": ch.get("device", "Desktop PC"),
+                "ip": ch.get("ip", "192.168.1.105"),
+                "options": ch.get("options", []),
+                "expires_in": max(0, int(ch.get("expires_at", 0) - time.time())),
+            }
 
-    return {
-        "has_pending": True,
-        "challenge_id": ch["challenge_id"],
-        "device": ch["device"],
-        "ip": ch["ip"],
-        "options": ch["options"],
-        "expires_in": max(0, int(ch["expires_at"] - time.time())),
-    }
+    return {"has_pending": False}
 
 
 @api_v1_router.post("/auth/mobile-challenge/verify", tags=["Authentication"])
@@ -886,6 +901,14 @@ async def verify_mobile_challenge(req: VerifyMobileChallengeRequest) -> dict[str
     if time.time() > ch["expires_at"]:
         ch["status"] = "EXPIRED"
         raise HTTPException(status_code=400, detail="Challenge has expired")
+
+    if req.chosen_number == -1:
+        ch["status"] = "REJECTED"
+        return {
+            "success": False,
+            "status": "REJECTED",
+            "message": "Sign-in attempt denied by user.",
+        }
 
     if req.chosen_number == ch["match_number"]:
         ch["status"] = "APPROVED"

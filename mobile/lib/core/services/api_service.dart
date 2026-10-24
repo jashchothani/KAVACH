@@ -511,8 +511,17 @@ class ApiService {
   // Google-Style Mobile Match Challenge (Desktop/Web Login Approval)
   // ---------------------------------------------------------------------------
 
-  Future<Map<String, dynamic>> getPendingMobileChallenge() async {
-    return await _send('GET', '/auth/mobile-challenge/pending');
+  Future<Map<String, dynamic>> getPendingMobileChallenge({String? usernameOrEmail}) async {
+    final ident = usernameOrEmail ??
+        _currentUser?['username']?.toString() ??
+        _currentUser?['email']?.toString() ??
+        _currentUser?['user']?['username']?.toString() ??
+        _currentUser?['user']?['email']?.toString();
+    final params = <String, String>{};
+    if (ident != null && ident.isNotEmpty) {
+      params['username_or_email'] = ident;
+    }
+    return await _send('GET', '/auth/mobile-challenge/pending', queryParams: params.isNotEmpty ? params : null);
   }
 
   Future<Map<String, dynamic>> verifyMobileChallenge({
