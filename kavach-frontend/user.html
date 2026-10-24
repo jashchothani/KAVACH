@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -42,6 +42,10 @@
         <a href="#overview" class="nav-item active" data-section="overview">
           <span class="nav-icon">📊</span>
           <span class="nav-label">Overview</span>
+        </a>
+        <a href="#weekly-reports" class="nav-item" data-section="weekly-reports">
+          <span class="nav-icon">📑</span>
+          <span class="nav-label">Weekly Reports</span>
         </a>
         <a href="#protection" class="nav-item" data-section="protection">
           <span class="nav-icon">🛡️</span>
@@ -121,7 +125,7 @@
           <!-- Live Status Pills -->
           <span class="pill ok" id="conn-status"><i class="status-dot"></i> Live Connected</span>
           <span class="pill info" id="u-device-pill">Endpoint: Enrolled</span>
-          <div id="u-elevated-links" style="display:flex;gap:6px"></div>
+          <span class="pill safe" id="u-soc-certified-pill"><i class="status-dot"></i> SOC Certified &amp; Active</span>
 
           <!-- Controls -->
           <button class="ib" id="theme" title="Toggle Light/Dark Theme" aria-label="Toggle theme">◐</button>
@@ -492,6 +496,32 @@
       </div>
       <div class="collectors-grid" id="collectors-grid">
         <div class="empty">Loading daemon registry…</div>
+      </div>
+    </section>
+
+    <!-- SECTION 11: Weekly Security PDF Reports -->
+    <section class="card rise" id="weekly-reports">
+      <div class="card-head">
+        <h3><span>📑</span> Weekly Security PDF Digests &amp; Audit Reports</h3>
+        <span class="pill ok" id="user-reports-count-pill">● SYNCHRONIZED</span>
+      </div>
+      <span class="cap">Comprehensive weekly cyber protection reports generated and signed by your assigned SOC Analyst, detailing blocked threats, cross-device resource posture, and executive security score. Automatically emailed to your inbox.</span>
+
+      <div class="table-wrap" style="margin-top:14px">
+        <table class="data-table" id="user-weekly-reports-table">
+          <thead>
+            <tr>
+              <th>Report Title</th>
+              <th>Period</th>
+              <th>Generated At</th>
+              <th>Status</th>
+              <th style="text-align:right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="user-weekly-reports-body">
+            <tr><td colspan="5" class="empty">Loading weekly security reports…</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
   </main>

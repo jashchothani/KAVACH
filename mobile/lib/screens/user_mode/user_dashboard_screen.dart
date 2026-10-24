@@ -32,6 +32,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   Map<String, dynamic> _posture = {};
   List<dynamic> _events = [];
   List<dynamic> _enrolledDevices = [];
+  bool _socActivated = true;
+  List<dynamic> _userWeeklyReports = [];
   bool _isPinActive = ApiService.instance.isPinEnabled();
   Map<String, dynamic>? _pendingMobileChallenge;
   Timer? _challengePollTimer;
@@ -375,6 +377,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
         _api.getDashboardSummary().catchError((_) => <String, dynamic>{}),
         _api.getLivePosture().catchError((_) => <String, dynamic>{}),
         _api.getSecurityEvents(limit: 15).catchError((_) => <dynamic>[]),
+        _api.getActivationStatus().catchError((_) => <String, dynamic>{}),
+        _api.getWeeklyReports().catchError((_) => <dynamic>[]),
       ]);
 
       if (!mounted) return;
@@ -382,6 +386,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
         _summary = results[0] as Map<String, dynamic>;
         _posture = results[1] as Map<String, dynamic>;
         _events = results[2] as List<dynamic>;
+        final act = results[3] as Map<String, dynamic>;
+        _socActivated = act['activated'] == true;
+        _userWeeklyReports = results[4] as List<dynamic>;
         _notifications.clear();
         for (final ev in _events) {
           final map = ev is Map ? ev : <String, dynamic>{};
@@ -1142,6 +1149,54 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       children: [
+        // SOC Analyst Activation & Protection Clearance Status Banner
+        Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: _socActivated
+                ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                : const Color(0xFFF59E0B).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _socActivated ? const Color(0xFF10B981).withValues(alpha: 0.4) : const Color(0xFFF59E0B).withValues(alpha: 0.5),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                _socActivated ? Icons.verified_user_rounded : Icons.hourglass_top_rounded,
+                color: _socActivated ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _socActivated ? 'SOC ANALYST CERTIFIED & ACTIVATED' : 'AWAITING SOC ANALYST ACTIVATION',
+                      style: TextStyle(
+                        color: _socActivated ? const Color(0xFF047857) : const Color(0xFFB45309),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _socActivated
+                          ? 'Dashboard operational · Enterprise endpoint protection shield granted by SOC team'
+                          : 'User dashboard authorization pending verification by lead SOC analyst',
+                      style: const TextStyle(color: Color(0xFF475569), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
         // Hero Score Card
         Container(
           padding: const EdgeInsets.all(20),
@@ -1331,6 +1386,126 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           color: const Color(0xFFF59E0B),
           isActive: _appPrivacyEnabled,
           onChanged: (val) => setState(() => _appPrivacyEnabled = val),
+        ),
+
+        const SizedBox(height: 18),
+
+        // Section Title: Weekly Security PDF Reports
+        const Text(
+          'Weekly Security Reports',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+        ),
+        const SizedBox(height: 10),
+
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFEF4444), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Automated Weekly Security PDF Digest',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                        Text(
+                          'Prepared by SOC Analyst · Dispatched to jashthakkar77@gmail.com',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (_userWeeklyReports.isEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: const Text(
+                    'No weekly reports generated yet. Your assigned SOC Analyst will compile your weekly digest with cross-device workload metrics.',
+                    style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                  ),
+                )
+              else
+                Column(
+                  children: _userWeeklyReports.map((rep) {
+                    final title = rep['title'] ?? 'Weekly Security Report';
+                    final repId = rep['id'] ?? 'REP-001';
+                    final date = rep['created_at']?.toString().split('T').first ?? 'Recent';
+                    return Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '$title',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$repId · Date: $date · Email Delivered ✓',
+                                  style: const TextStyle(fontSize: 10, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.download_rounded, color: Colors.white, size: 14),
+                                SizedBox(width: 4),
+                                Text('PDF', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+            ],
+          ),
         ),
       ],
     );

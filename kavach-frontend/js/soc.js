@@ -16,6 +16,19 @@
   $('#logout').onclick = () => api.auth.logout();
   $('#menu').onclick = () => $('#side').classList.toggle('open');
 
+  // Light mode default theme
+  const root = document.documentElement;
+  let th = 'light';
+  try { th = localStorage.getItem('kavach-theme') || 'light'; } catch(e){}
+  root.dataset.theme = th;
+  const themeBtn = $('#theme-btn');
+  if (themeBtn) {
+    themeBtn.onclick = () => {
+      th = root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem('kavach-theme', th); } catch(e){}
+    };
+  }
+
   const toast = m => {
     const t = $('#toast');
     t.textContent = m;
@@ -111,8 +124,145 @@
   }
   $$('.nv[data-v]').forEach(b => b.onclick = () => show(b.dataset.v));
 
+  /* ── Multi-Device Fleet Telemetry Monitor ── */
+  let activeFleetDevice = 'desktop';
+  let fleetMetricsCache = null;
+
+  function renderCpuSparkline(history) {
+    const el = $('#dev-cpu-chart');
+    if (!el || !history || !history.length) return;
+    const w = 220, h = 40, p = 4;
+    const vals = history.map(h => h.cpu || 20);
+    const mx = Math.max(100, ...vals), mn = 0;
+    const step = (w - 2 * p) / (vals.length - 1);
+    const pts = vals.map((v, i) => [p + i * step, h - p - ((v - mn) / (mx - mn)) * (h - 2 * p)]);
+    let d = `M${pts[0][0]},${pts[0][1]}`;
+    for (let i = 1; i < pts.length; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+      const cx = (x0 + x1) / 2;
+      d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`;
+    }
+    const area = `${d} L${pts[pts.length - 1][0]},${h} L${pts[0][0]},${h} Z`;
+    el.innerHTML = `
+      <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:100%;overflow:visible">
+        <defs>
+          <linearGradient id="cpu-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="${area}" fill="url(#cpu-grad)"/>
+        <path d="${d}" fill="none" stroke="#3b82f6" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="${pts[pts.length - 1][0]}" cy="${pts[pts.length - 1][1]}" r="3.5" fill="#3b82f6" stroke="#fff" stroke-width="1.5">
+          <animate attributeName="r" values="3.5;5;3.5" dur="1.8s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    `;
+  }
+
+  async function updateFleetMetrics() {
+    try {
+      const res = await fetch('/api/v1/devices/fleet-metrics');
+      if (!res.ok) return;
+      fleetMetricsCache = await res.json();
+      renderFleetDevice(activeFleetDevice);
+    } catch (e) {
+      console.warn('Fleet metrics fetch error:', e);
+    }
+  }
+
+  function renderFleetDevice(deviceKey) {
+    if (!fleetMetricsCache || !fleetMetricsCache[deviceKey]) return;
+    const m = fleetMetricsCache[deviceKey];
+
+    // Update tab button styles
+    const btnDesk = $('#btn-dev-desktop');
+    const btnMob = $('#btn-dev-mobile');
+    if (btnDesk && btnMob) {
+      if (deviceKey === 'desktop') {
+        btnDesk.style.background = 'var(--accent-primary)';
+        btnDesk.style.color = '#fff';
+        btnMob.style.background = 'transparent';
+        btnMob.style.color = 'var(--text-main)';
+      } else {
+        btnMob.style.background = 'var(--accent-primary)';
+        btnMob.style.color = '#fff';
+        btnDesk.style.background = 'transparent';
+        btnDesk.style.color = 'var(--text-main)';
+      }
+    }
+
+    // Metadata
+    if ($('#dev-host-name')) $('#dev-host-name').textContent = m.hostname || m.name;
+    if ($('#dev-os-name')) $('#dev-os-name').textContent = m.os;
+    if ($('#dev-ip-addr')) $('#dev-ip-addr').textContent = m.ip;
+    if ($('#dev-sync-time')) $('#dev-sync-time').textContent = new Date().toLocaleTimeString();
+
+    // CPU
+    if ($('#dev-cpu-tag')) $('#dev-cpu-tag').textContent = m.cpu_pct.toFixed(1) + '%';
+    if ($('#dev-cpu-val')) $('#dev-cpu-val').textContent = m.cpu_pct.toFixed(1);
+    if ($('#dev-cpu-bar')) $('#dev-cpu-bar').style.width = Math.min(100, Math.max(5, m.cpu_pct)) + '%';
+    renderCpuSparkline(m.history || []);
+
+    // RAM
+    if ($('#dev-ram-tag')) $('#dev-ram-tag').textContent = m.ram_pct.toFixed(1) + '%';
+    if ($('#dev-ram-val')) $('#dev-ram-val').textContent = m.ram_pct.toFixed(1);
+    if ($('#dev-ram-bar')) $('#dev-ram-bar').style.width = Math.min(100, Math.max(5, m.ram_pct)) + '%';
+    if ($('#dev-ram-used')) $('#dev-ram-used').textContent = m.ram_used_gb + ' GB';
+    if ($('#dev-ram-total')) $('#dev-ram-total').textContent = m.ram_total_gb + ' GB';
+
+    // Disk
+    if ($('#dev-disk-tag')) $('#dev-disk-tag').textContent = m.disk_pct.toFixed(1) + '%';
+    if ($('#dev-disk-val')) $('#dev-disk-val').textContent = m.disk_pct.toFixed(1);
+    if ($('#dev-disk-bar')) $('#dev-disk-bar').style.width = Math.min(100, Math.max(5, m.disk_pct)) + '%';
+    if ($('#dev-disk-used')) $('#dev-disk-used').textContent = m.disk_used_gb + ' GB';
+    if ($('#dev-disk-total')) $('#dev-disk-total').textContent = m.disk_total_gb + ' GB';
+
+    // Network & Hardware
+    if ($('#dev-net-rx')) $('#dev-net-rx').textContent = m.net_rx_kbps.toFixed(1) + ' KB/s';
+    if ($('#dev-net-tx')) $('#dev-net-tx').textContent = m.net_tx_kbps.toFixed(1) + ' KB/s';
+
+    if (deviceKey === 'mobile') {
+      if ($('#dev-extra-title')) $('#dev-extra-title').textContent = 'Battery & Thermal Sensors';
+      if ($('#dev-aux-label')) $('#dev-aux-label').textContent = 'Battery & Temp:';
+      if ($('#dev-aux-val')) $('#dev-aux-val').innerHTML = `<span style="color:#10b981">⚡ ${m.battery_pct || 84}%</span> · ${m.temp_c || 32.8} °C`;
+    } else {
+      if ($('#dev-extra-title')) $('#dev-extra-title').textContent = 'Network & Hardware';
+      if ($('#dev-aux-label')) $('#dev-aux-label').textContent = 'Core Temp:';
+      if ($('#dev-aux-val')) $('#dev-aux-val').textContent = (m.temp_c || 44.5) + ' °C';
+    }
+  }
+
+  function initFleetControls() {
+    const btnDesk = $('#btn-dev-desktop');
+    const btnMob = $('#btn-dev-mobile');
+    if (btnDesk) {
+      btnDesk.onclick = () => {
+        activeFleetDevice = 'desktop';
+        renderFleetDevice('desktop');
+      };
+    }
+    if (btnMob) {
+      btnMob.onclick = () => {
+        activeFleetDevice = 'mobile';
+        renderFleetDevice('mobile');
+      };
+    }
+  }
+  initFleetControls();
+  setInterval(updateFleetMetrics, 4000);
+
   /* ── 2. Overview Loader ── */
-  async function loadOverview() { try { await window.SOCOverview.load(); } catch (e) { toast('Failed to load overview: ' + e.message); } }
+  async function loadOverview() {
+    try {
+      await Promise.all([
+        window.SOCOverview ? window.SOCOverview.load() : Promise.resolve(),
+        updateFleetMetrics()
+      ]);
+    } catch (e) {
+      toast('Failed to load overview: ' + e.message);
+    }
+  }
 
   /* ── 3. Alerts Center ── */
   let ALERTS = [];
@@ -230,6 +380,63 @@
 
     async approvals() {
       try {
+        // Check Endpoint Protection Activation Status
+        try {
+          const actRes = await fetch('/api/v1/account/activation-status');
+          if (actRes.ok) {
+            const actData = await actRes.json();
+            const actPill = $('#soc-activation-state-pill');
+            const actBtn = $('#btn-activate-user-dashboard');
+            if (actData.activated) {
+              if (actPill) {
+                actPill.className = 'pill safe mono';
+                actPill.textContent = '● SOC CERTIFIED & ACTIVE';
+              }
+              if (actBtn) actBtn.innerHTML = '<span>⚡</span> Re-certify & Refresh Protection Shield';
+            } else {
+              if (actPill) {
+                actPill.className = 'pill warning mono';
+                actPill.textContent = '⏳ PENDING SOC ACTIVATION';
+              }
+              if (actBtn) actBtn.innerHTML = '<span>⚡</span> Activate User Dashboard & Grant Shield';
+            }
+          }
+        } catch (e) {
+          console.warn('Activation status check failed:', e);
+        }
+
+        const btnActDash = $('#btn-activate-user-dashboard');
+        if (btnActDash && !btnActDash.dataset.bound) {
+          btnActDash.dataset.bound = '1';
+          btnActDash.onclick = async () => {
+            btnActDash.disabled = true;
+            btnActDash.innerHTML = '<span>⏳</span> Activating Protection Shield…';
+            try {
+              const res = await fetch('/api/v1/account/activate-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  user_email: 'jashthakkar77@gmail.com',
+                  activated: true,
+                  notes: 'SOC Analyst Verified and Granted Shield'
+                })
+              });
+              const r = await res.json();
+              toast('⚡ User Dashboard & Mobile App protection shield certified & activated! ✓');
+              const actPill = $('#soc-activation-state-pill');
+              if (actPill) {
+                actPill.className = 'pill safe mono';
+                actPill.textContent = '● SOC CERTIFIED & ACTIVE';
+              }
+              btnActDash.innerHTML = '<span>⚡</span> Re-certify & Refresh Protection Shield';
+            } catch (err) {
+              toast('Activation failed: ' + err.message);
+            } finally {
+              btnActDash.disabled = false;
+            }
+          };
+        }
+
         const reqs = await api.account.analystQueue();
         const badge = $('#nb-approvals');
         if (badge) {
@@ -585,20 +792,63 @@
       }
     },
 
-    /* Forensic Reports */
-    reports() {
-      const b1 = $('#btn-exp-handover');
-      if (b1) {
-        b1.onclick = () => {
-          toast('Assembling Shift Handover Digest…');
-          setTimeout(() => toast('Downloaded: SOC_Shift_Handover_Alpha.pdf ✓'), 1100);
-        };
-      }
-      const b2 = $('#btn-exp-cert');
-      if (b2) {
-        b2.onclick = () => {
-          toast('Packaging 180-day forensic log archive…');
-          setTimeout(() => toast('Downloaded: CERT_In_Forensic_Archive_180d.csv ✓'), 1100);
+    /* Forensic & Weekly User Reports */
+    async reports() {
+      const renderReportsVault = async () => {
+        try {
+          const res = await fetch('/api/v1/reports');
+          const data = res.ok ? await res.json() : [];
+          rows('#t-reports-vault', data.map((r, i) => `
+            <tr style="animation-delay:${i * 0.04}s">
+              <td class="mono"><b>${esc(r.id)}</b></td>
+              <td><b>${esc(r.title)}</b></td>
+              <td>${esc(r.user_name || 'Jash Thakkar')}</td>
+              <td class="mono" style="font-size:0.8rem">${esc(r.user_email || 'jashthakkar77@gmail.com')}</td>
+              <td class="mono" style="font-size:0.8rem">${new Date(r.created_at).toLocaleString()}</td>
+              <td><span class="pill safe mono" style="font-size:0.72rem">DELIVERED &amp; EMAILED ✓</span></td>
+              <td style="text-align:right">
+                <a href="${esc(r.download_url)}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.75rem">
+                  📥 Download PDF
+                </a>
+              </td>
+            </tr>
+          `).join(''), 7, 'No reports generated yet. Click Generate & Email Weekly PDF Report above.');
+        } catch (e) {
+          console.warn('Failed to load reports vault:', e);
+        }
+      };
+
+      await renderReportsVault();
+
+      const btnGen = $('#btn-generate-weekly-pdf');
+      if (btnGen && !btnGen.dataset.bound) {
+        btnGen.dataset.bound = '1';
+        btnGen.onclick = async () => {
+          btnGen.disabled = true;
+          btnGen.innerHTML = '<span class="dots"><i></i><i></i><i></i></span> Generating Charts & Compiling PDF…';
+          try {
+            const res = await fetch('/api/v1/reports/generate-weekly', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                user_name: 'Jash Thakkar',
+                user_email: 'jashthakkar77@gmail.com',
+                analyst_name: user.username || 'SOC Lead Analyst'
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              toast('Weekly PDF report generated & dispatched to jashthakkar77@gmail.com with PDF attached! ✓');
+              await renderReportsVault();
+            } else {
+              toast('Report generation error: ' + (data.detail || 'Failed'));
+            }
+          } catch (e) {
+            toast('Failed to generate report: ' + e.message);
+          } finally {
+            btnGen.disabled = false;
+            btnGen.innerHTML = '<span>⚡</span> Generate &amp; Email Weekly PDF Report';
+          }
         };
       }
     },

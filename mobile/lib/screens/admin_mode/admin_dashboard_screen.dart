@@ -423,59 +423,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             ),
           ),
           const SizedBox(width: 16),
-          // Mode Switcher Popup
-          PopupMenuButton<String>(
-            tooltip: 'Switch Operating Mode',
-            icon: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDC2626).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.3)),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.swap_horiz, color: Color(0xFFF87171), size: 16),
-                  SizedBox(width: 4),
-                  Text('Mode', style: TextStyle(color: Color(0xFFFCA5A5), fontSize: 11, fontWeight: FontWeight.bold)),
-                ],
-              ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFDC2626).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.3)),
             ),
-            onSelected: (mode) {
-              if (mode == 'user') {
-                Navigator.pushReplacementNamed(context, AppRoutes.userDashboard);
-              } else if (mode == 'soc') {
-                Navigator.pushReplacementNamed(context, AppRoutes.socDashboard);
-              }
-            },
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(
-                enabled: false,
-                child: Text('Active: Admin Command Center', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem(
-                value: 'user',
-                child: Row(
-                  children: [
-                    Icon(Icons.shield_outlined, color: Color(0xFF10B981), size: 18),
-                    SizedBox(width: 8),
-                    Text('User Protection Mode'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'soc',
-                child: Row(
-                  children: [
-                    Icon(Icons.security, color: Color(0xFF3B82F6), size: 18),
-                    SizedBox(width: 8),
-                    Text('SOC Analyst War Room'),
-                  ],
-                ),
-              ),
-            ],
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.admin_panel_settings, color: Color(0xFFF87171), size: 16),
+                SizedBox(width: 5),
+                Text('Admin Console', style: TextStyle(color: Color(0xFFFCA5A5), fontSize: 11, fontWeight: FontWeight.bold)),
+              ],
+            ),
           ),
           const SizedBox(width: 8),
           // Refresh

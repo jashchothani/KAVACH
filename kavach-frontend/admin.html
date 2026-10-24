@@ -1,4 +1,4 @@
-<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Admin Console — KAVACH</title><link rel="icon" type="image/png" href="assets/logo.png"><meta name="theme-color" content="#05080E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
@@ -10,7 +10,7 @@
 <div class="grp">Governance</div><button class="nv" data-v="audit">📜 Audit trail</button>
 <div class="me"><b id="uname">—</b><span id="urole"></span><button class="sb" style="width:100%;margin-top:12px" id="logout">Sign out</button></div></aside>
 <div class="cont"><div class="top"><div style="display:flex;gap:12px;align-items:center"><button class="ib menu" id="menu" aria-label="Menu">☰</button><div><h1 id="ttl">Overview</h1><p id="sub"></p></div></div>
-<div class="tools"><a href="/soc" class="btn" style="padding:6px 12px;font-size:0.75rem;text-decoration:none;background:rgba(229,72,77,0.18);border:1px solid rgba(229,72,77,0.45);color:#fff;border-radius:8px">🛡 SOC Command</a><a href="/dashboard" class="btn" style="padding:6px 12px;font-size:0.75rem;text-decoration:none;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:8px">🖥 My Workstation</a><span class="live"><i></i><span id="upd">Loading…</span></span><button class="ib" id="rf" title="Refresh">↻</button><button class="ib" id="theme" aria-label="Theme">◐</button></div></div>
+<div class="tools"><span class="live"><i></i><span id="upd">Loading…</span></span><button class="ib" id="rf" title="Refresh">↻</button><button class="ib" id="theme" aria-label="Theme">◐</button></div></div>
 <div class="err" id="err"></div>
 <section class="view on" id="v-overview"><div class="kp" id="kp"></div><div class="gr"><div class="card c4"><h3>Fleet status</h3><div class="cap">Endpoints by state</div><div id="d-fleet"></div></div><div class="card c4"><h3>Accounts by role</h3><div class="cap">All platform users</div><div id="d-role"></div></div><div class="card c4"><h3>Account security</h3><div class="cap">MFA and status</div><div id="d-sec"></div></div></div>
 <div class="gr"><div class="card c6"><h3>Endpoint security scores</h3><div class="cap">Lowest scores first</div><div id="b-score"></div></div><div class="card c6"><h3>Operating systems</h3><div class="cap">Fleet composition</div><div id="b-os"></div></div></div>

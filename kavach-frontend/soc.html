@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -73,7 +73,6 @@
         </div>
         <button class="btn btn-ghost btn-sm" id="logout" title="Sign out" style="padding:4px 8px;font-size:0.75rem">⏻</button>
       </div>
-      <a href="/dashboard" style="display:block;text-align:center;padding:5px 8px;font-size:0.75rem;text-decoration:none;color:#cbd5e1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px">🖥 My Workstation Protection</a>
       <a href="mailto:kavachcybertech@gmail.com" title="Emergency SOC Escalation" style="display:block;text-align:center;padding:5px 8px;font-size:0.75rem;text-decoration:none;color:#38bdf8;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2);border-radius:8px">✉️ kavachcybertech@gmail.com</a>
     </div>
   </aside>
@@ -104,6 +103,9 @@
 
         <!-- Audio Alert Chime Toggle -->
 
+        <!-- Theme Toggle -->
+        <button class="btn btn-ghost btn-sm" id="theme-btn" title="Toggle Theme" aria-label="Toggle theme" style="font-size:1.05rem;padding:4px 8px">◐</button>
+
         <!-- Notification Bell -->
         <div style="position:relative;cursor:pointer" onclick="location.hash='#alerts'">
           <span style="font-size:1.25rem;display:block">🔔</span>
@@ -128,6 +130,117 @@
         <div class="ov-k"><span>Devices</span><b id="k-dev">—</b></div>
         <div class="ov-k"><span>Collectors up</span><b id="k-col">—</b></div>
         <div class="ov-k"><span>Security score</span><b id="k-score">—</b></div>
+      </div>
+
+      <!-- MULTI-DEVICE FLEET HARDWARE & RESOURCE TELEMETRY -->
+      <div class="ov-c s12 fleet-resource-card" style="margin-top:16px;padding:20px;border-radius:14px;background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:1.3rem">⚡</span>
+              <h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-main)">Multi-Device Hardware &amp; Live Resource Telemetry</h3>
+              <span class="pill safe mono" style="font-size:0.7rem;animation:pulse 2s infinite">● KERNEL STREAM LIVE</span>
+            </div>
+            <div class="cap" style="margin-top:2px">Real-time CPU %, RAM allocation, storage, network throughput &amp; thermal metrics across enrolled endpoints</div>
+          </div>
+          <!-- Device Selector Segmented Control -->
+          <div class="device-tab-group" style="display:flex;background:rgba(0,0,0,0.06);border:1px solid var(--border-card);border-radius:10px;padding:3px;gap:4px">
+            <button class="device-tab-btn active" id="btn-dev-desktop" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:none;background:var(--accent-primary);color:#fff;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s">
+              <span>💻</span> Desktop PC (Windows 11)
+            </button>
+            <button class="device-tab-btn" id="btn-dev-mobile" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:none;background:transparent;color:var(--text-main);font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s">
+              <span>📱</span> Redmi Note 9 Pro Max (Android 12)
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Device Metadata Banner -->
+        <div class="device-meta-strip" id="device-meta-strip" style="display:flex;flex-wrap:wrap;gap:16px;padding:10px 14px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:10px;margin-bottom:16px;font-size:0.82rem">
+          <div><span style="color:var(--text-dim)">Host:</span> <b id="dev-host-name">DESKTOP-KAVACH-PRO</b></div>
+          <div><span style="color:var(--text-dim)">OS / Kernel:</span> <b id="dev-os-name">Windows 11 Pro 23H2 (Build 22631)</b></div>
+          <div><span style="color:var(--text-dim)">IP Address:</span> <b class="mono" id="dev-ip-addr">192.168.1.104</b></div>
+          <div><span style="color:var(--text-dim)">Endpoint Security:</span> <span class="pill safe" id="dev-sec-badge">100/100 · Certified</span></div>
+          <div style="margin-left:auto"><span style="color:var(--text-dim)">Updated:</span> <b class="mono" id="dev-sync-time">Just now</b></div>
+        </div>
+
+        <!-- 4 Grid Resource Gauges with Animation -->
+        <div class="grid g4" style="gap:16px" id="fleet-gauges-grid">
+          <!-- 1. CPU Load Card -->
+          <div class="metric-card" style="padding:16px;background:var(--bg-app);border:1px solid var(--border-card);border-radius:12px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:0.82rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">CPU Utilization</span>
+              <span class="pill info mono" id="dev-cpu-tag">28.4%</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-size:2rem;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent-primary)" id="dev-cpu-val">28.4</span>
+              <span style="font-size:1rem;color:var(--text-dim);font-weight:600">%</span>
+            </div>
+            <div class="meter" style="margin:0;height:7px;background:rgba(0,0,0,0.08);border-radius:99px;overflow:hidden">
+              <div class="bar" style="height:100%"><i id="dev-cpu-bar" style="display:block;height:100%;width:28.4%;background:linear-gradient(90deg,#3b82f6,#2563eb);border-radius:99px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1)"></i></div>
+            </div>
+            <div id="dev-cpu-chart" style="height:44px;margin-top:4px"></div>
+          </div>
+
+          <!-- 2. RAM Memory Card -->
+          <div class="metric-card" style="padding:16px;background:var(--bg-app);border:1px solid var(--border-card);border-radius:12px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:0.82rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">RAM Memory</span>
+              <span class="pill safe mono" id="dev-ram-tag">46.2%</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-size:2rem;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--safe)" id="dev-ram-val">46.2</span>
+              <span style="font-size:1rem;color:var(--text-dim);font-weight:600">%</span>
+            </div>
+            <div class="meter" style="margin:0;height:7px;background:rgba(0,0,0,0.08);border-radius:99px;overflow:hidden">
+              <div class="bar" style="height:100%"><i id="dev-ram-bar" style="display:block;height:100%;width:46.2%;background:linear-gradient(90deg,#10b981,#059669);border-radius:99px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1)"></i></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-dim);margin-top:auto" class="mono">
+              <span>Used: <b id="dev-ram-used">7.4 GB</b></span>
+              <span>Total: <b id="dev-ram-total">16.0 GB</b></span>
+            </div>
+          </div>
+
+          <!-- 3. Disk Storage Card -->
+          <div class="metric-card" style="padding:16px;background:var(--bg-app);border:1px solid var(--border-card);border-radius:12px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:0.82rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">NVMe / Storage</span>
+              <span class="pill info mono" id="dev-disk-tag">52.1%</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-size:2rem;font-weight:800;font-family:'JetBrains Mono',monospace;color:#8b5cf6" id="dev-disk-val">52.1</span>
+              <span style="font-size:1rem;color:var(--text-dim);font-weight:600">%</span>
+            </div>
+            <div class="meter" style="margin:0;height:7px;background:rgba(0,0,0,0.08);border-radius:99px;overflow:hidden">
+              <div class="bar" style="height:100%"><i id="dev-disk-bar" style="display:block;height:100%;width:52.1%;background:linear-gradient(90deg,#8b5cf6,#6d28d9);border-radius:99px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1)"></i></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-dim);margin-top:auto" class="mono">
+              <span>Used: <b id="dev-disk-used">248.5 GB</b></span>
+              <span>Total: <b id="dev-disk-total">512.0 GB</b></span>
+            </div>
+          </div>
+
+          <!-- 4. Network & Mobile Sensor Card -->
+          <div class="metric-card" style="padding:16px;background:var(--bg-app);border:1px solid var(--border-card);border-radius:12px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:0.82rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px" id="dev-extra-title">Network &amp; Hardware</span>
+              <span class="pill safe mono" id="dev-extra-tag">NOMINAL</span>
+            </div>
+            <div id="dev-extra-body" style="display:flex;flex-direction:column;gap:8px;font-size:0.8rem">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="color:var(--text-dim)">Network In (RX):</span>
+                <b class="mono" style="color:var(--accent-primary)" id="dev-net-rx">420.5 KB/s</b>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="color:var(--text-dim)">Network Out (TX):</span>
+                <b class="mono" style="color:var(--accent-primary)" id="dev-net-tx">118.2 KB/s</b>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="color:var(--text-dim)" id="dev-aux-label">Core Temp:</span>
+                <b class="mono" style="color:var(--safe)" id="dev-aux-val">44.5 °C</b>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="ov-grid">
         <div class="ov-c s8"><h3>Alert volume</h3><div class="cap">Alerts raised per hour, last 24 hours</div><div id="ov-line"></div></div>
@@ -244,6 +357,47 @@
          VIEW: ASSIGNED ACCOUNT ACTIVATIONS (SOC ANALYST TECHNICAL REVIEW)
          ==================================================================== -->
     <section class="view" id="v-approvals">
+      <!-- ENDPOINT PROTECTION & USER DASHBOARD SOC ACTIVATION PANEL -->
+      <div class="hud-card" style="margin-bottom:20px;border:1px solid var(--border-card);border-radius:14px;background:var(--bg-card)">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:1.25rem">🛡️</span>
+              <h3 style="margin:0;font-size:1.05rem">Endpoint &amp; User Dashboard SOC Authorization Clearance</h3>
+            </div>
+            <span style="font-size:0.84rem;color:var(--text-muted)">Grant technical authorization and activate the enterprise protection shield across mobile and workstation dashboards.</span>
+          </div>
+          <span class="pill safe mono" id="soc-activation-state-pill" style="font-size:0.8rem;padding:6px 12px">● SOC CERTIFIED &amp; ACTIVE</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px">
+          <div style="padding:14px;background:var(--bg-app);border:1px solid var(--border-card);border-radius:10px">
+            <b style="display:block;margin-bottom:6px;color:var(--text-main)">Assigned User Identity</b>
+            <div style="font-size:0.85rem;line-height:1.6">
+              <div>Name: <b id="soc-act-username">Jash Thakkar</b></div>
+              <div>Email: <b class="mono" id="soc-act-email">jashthakkar77@gmail.com</b></div>
+              <div>Role: <span class="pill info" style="font-size:0.7rem">STANDARD USER</span></div>
+            </div>
+          </div>
+
+          <div style="padding:14px;background:var(--bg-app);border:1px solid var(--border-card);border-radius:10px">
+            <b style="display:block;margin-bottom:6px;color:var(--text-main)">Registered Endpoints</b>
+            <div style="font-size:0.85rem;line-height:1.6">
+              <div>💻 <b>Desktop PC</b> (Windows 11 Enterprise)</div>
+              <div>📱 <b>Redmi Note 9 Pro Max</b> (Android 12 Mobile)</div>
+              <div>Shield Posture: <b style="color:var(--safe)">100% Protected</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btn-activate-user-dashboard" style="display:flex;align-items:center;gap:6px">
+            <span>⚡</span> Activate User Dashboard &amp; Grant Shield
+          </button>
+          <span style="font-size:0.82rem;color:var(--text-muted)" id="soc-activation-notes">Instantly certifies mobile app &amp; desktop client with live SOC authorization.</span>
+        </div>
+      </div>
+
       <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px">
         <div class="hud-card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -468,23 +622,53 @@
       </div>
     </section>
 
-    <!-- FORENSIC REPORTS -->
+    <!-- FORENSIC & WEEKLY USER REPORTS -->
     <section class="view" id="v-reports">
-      <div class="hud-card" style="max-width:960px">
-        <h3>Forensic &amp; Operational SOC Reports <small>AUTOMATED DISPATCH</small></h3>
-        <p style="margin-bottom:18px;color:var(--text-muted);font-size:0.88rem">Download regulatory compliance packages, shift handover summaries, or forensic incident exports.</p>
-        
-        <div class="grid g2" style="gap:16px">
-          <div class="card" data-notilt>
-            <h3>Shift Handover &amp; Triage Digest</h3>
-            <p>Complete record of alerts triaged, MTTR statistics, open war room investigations, and pending mitigations.</p>
-            <button class="btn btn-primary btn-sm" style="margin-top:14px" id="btn-exp-handover">📥 Export Shift Handover (PDF)</button>
+      <div class="hud-card" style="max-width:1080px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:1.3rem">📑</span>
+              <h3 style="margin:0;font-size:1.1rem">Automated Weekly Security PDF Report Dispatch Engine</h3>
+            </div>
+            <p style="margin:4px 0 0;color:var(--text-muted);font-size:0.86rem">Generate cryptographic PDF executive security digests for assigned users with cross-device charts. Reports are automatically emailed via SMTP with the PDF attached and reflected across the user's mobile app, desktop app, and web dashboard.</p>
           </div>
-          <div class="card" data-notilt>
-            <h3>CERT-In Regulatory Log Archive</h3>
-            <p>180-day forensic immutable log export formatted specifically for Indian national cyber audits.</p>
-            <button class="btn btn-ghost btn-sm" style="margin-top:14px" id="btn-exp-cert">📥 Export CSV Log Archive</button>
+        </div>
+
+        <!-- Weekly Dispatch Trigger Card -->
+        <div style="padding:18px;background:var(--bg-app);border:1px solid var(--border-card);border-radius:12px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:0.82rem;color:var(--text-dim);font-weight:600;text-transform:uppercase">Assigned User Target</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <select class="input" id="report-target-user" style="min-width:320px;padding:8px 12px">
+                <option value="jashthakkar77@gmail.com">Jash Thakkar (jashthakkar77@gmail.com) — Active Endpoint</option>
+              </select>
+            </div>
           </div>
+          <button class="btn btn-primary" id="btn-generate-weekly-pdf" style="padding:10px 20px;font-weight:700;display:flex;align-items:center;gap:8px">
+            <span>⚡</span> Generate &amp; Email Weekly PDF Report
+          </button>
+        </div>
+
+        <!-- Generated Reports History Table -->
+        <h4 style="margin:0 0 10px;font-size:0.95rem;color:var(--text-main)">Generated Executive PDF Reports Vault</h4>
+        <div class="tbl-wrap">
+          <table class="t">
+            <thead>
+              <tr>
+                <th>Report ID</th>
+                <th>Report Title</th>
+                <th>Assigned User</th>
+                <th>Delivery Recipient</th>
+                <th>Generated</th>
+                <th>Status</th>
+                <th style="text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="t-reports-vault">
+              <tr><td colspan="7" class="empty">Loading weekly forensic reports…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>

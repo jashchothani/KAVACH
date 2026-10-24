@@ -2,7 +2,7 @@
 (function () {
   const K = window.KAVACH, api = K.api, esc = K.esc, $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)], lc = s => String(s || '').toLowerCase();
   const user = K.session.require('admin'); if (!user) return;
-  const root = document.documentElement; let th = 'dark'; try { th = localStorage.getItem('kavach-theme') || th; } catch (e) {} root.dataset.theme = th;
+  const root = document.documentElement; let th = 'light'; try { th = localStorage.getItem('kavach-theme') || th; } catch (e) {} root.dataset.theme = th;
   $('#theme').onclick = () => { th = root.dataset.theme = th === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('kavach-theme', th); } catch (e) {} };
   $('#uname').textContent = user.username; $('#urole').textContent = user.role_name; $('#logout').onclick = () => api.auth.logout(); $('#menu').onclick = () => $('#side').classList.toggle('open');
   const cv = $('#net'), x = cv.getContext('2d'); let W, H, P = []; const size = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; P = Array.from({ length: Math.min(50, W * H / 30000 | 0) }, () => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .3, vy: (Math.random() - .5) * .3 })); }; size(); addEventListener('resize', size);

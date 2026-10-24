@@ -25,7 +25,7 @@
   // 1. Theme, Header Chrome & Mobile Navigation
   // -------------------------------------------------------------------------
   const root = document.documentElement;
-  let currentTheme = 'dark';
+  let currentTheme = 'light';
   try {
     currentTheme = localStorage.getItem('kavach-theme') || currentTheme;
   } catch (e) {}
@@ -61,24 +61,34 @@
   const outBtn = $('#out');
   if (outBtn) outBtn.onclick = () => api.auth.logout();
 
-  // Role Badges & Elevated Links
+  // Role Badges & Status
   const rPill = $('#u-role-pill');
   const sPill = $('#u-status-pill');
   const dPill = $('#u-device-pill');
-  const elevatedLinksEl = $('#u-elevated-links');
 
   if (rPill) rPill.textContent = 'Role: ' + (user.role_name || user.role || 'User');
   if (sPill) sPill.textContent = 'Account: ' + (user.status || 'Active');
 
-  if (elevatedLinksEl) {
-    let links = '';
-    if (K.isAdminRole(user.role)) {
-      links += `<a href="/admin" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:4px 8px">Admin Console</a>`;
-      links += `<a href="/soc" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:4px 8px">SOC Command</a>`;
-    } else if (K.isAnalystRole(user.role)) {
-      links += `<a href="/soc" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:4px 8px">SOC Command</a>`;
+  // Check SOC Analyst Technical Activation Status
+  async function checkSocActivation() {
+    try {
+      const res = await fetch('/api/v1/account/activation-status');
+      if (res.ok) {
+        const d = await res.json();
+        const pill = $('#u-soc-certified-pill');
+        if (pill) {
+          if (d.activated) {
+            pill.className = 'pill safe';
+            pill.innerHTML = '<i class="status-dot"></i> SOC Certified &amp; Active';
+          } else {
+            pill.className = 'pill warning';
+            pill.innerHTML = '<i class="status-dot"></i> Awaiting SOC Activation';
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('SOC activation check failed:', e);
     }
-    elevatedLinksEl.innerHTML = links;
   }
 
   // Sidebar Collapse / Expand Toggle
@@ -1097,16 +1107,53 @@
     };
   });
 
+  // Weekly Security Reports Loader
+  async function loadWeeklyReports() {
+    const tbody = $('#user-weekly-reports-body');
+    if (!tbody) return;
+    try {
+      const res = await fetch('/api/v1/reports');
+      if (!res.ok) throw new Error('Failed to fetch reports');
+      const reports = await res.json();
+      if (!reports.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">No weekly reports have been generated yet. Your assigned SOC Analyst will compile your first weekly digest.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = reports.map((r, i) => `
+        <tr style="animation-delay:${i * 0.05}s">
+          <td>
+            <b style="color:var(--text-primary)">${esc(r.title)}</b>
+            <div class="mono" style="font-size:0.75rem;color:var(--text-muted)">${esc(r.id)} • Prepared by ${esc(r.analyst_name || 'SOC Analyst')}</div>
+          </td>
+          <td>${esc(r.period || 'Last 7 Days')}</td>
+          <td class="mono" style="font-size:0.8rem">${new Date(r.created_at).toLocaleString()}</td>
+          <td><span class="pill ok mono" style="font-size:0.72rem">CERTIFIED &amp; EMAILED ✓</span></td>
+          <td style="text-align:right">
+            <a href="${esc(r.download_url)}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.75rem">
+              📥 Download PDF
+            </a>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty">Error loading reports: ${esc(e.message)}</td></tr>`;
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Initialization & Polling
   // -------------------------------------------------------------------------
+  checkSocActivation();
   loadDashboardData();
   loadUrlHistory();
+  loadWeeklyReports();
 
   // Auto-refresh every 30 seconds when window is active
   setInterval(() => {
     if (!document.hidden) {
+      checkSocActivation();
       loadDashboardData();
+      loadWeeklyReports();
     }
   }, 30000);
 

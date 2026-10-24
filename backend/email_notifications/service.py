@@ -43,7 +43,8 @@ class EmailService:
         to: str,
         template_name: str,
         subject: str,
-        context: dict[str, Any]
+        context: dict[str, Any],
+        attachment_path: str | Path | None = None,
     ) -> bool:
         """
         Send an email utilizing a Jinja2 HTML template with retry backoff.
@@ -284,6 +285,17 @@ class EmailService:
                         logo_part.add_header("Content-ID", "<kavach_logo>")
                         logo_part.add_header("Content-Disposition", "inline", filename="kavach_logo.png")
                         msg.attach(logo_part)
+
+                    if attachment_path and Path(attachment_path).exists():
+                        try:
+                            from email.mime.application import MIMEApplication
+                            with open(attachment_path, "rb") as f:
+                                att_data = f.read()
+                            att_part = MIMEApplication(att_data, _subtype="pdf")
+                            att_part.add_header("Content-Disposition", "attachment", filename=Path(attachment_path).name)
+                            msg.attach(att_part)
+                        except Exception as att_err:
+                            logger.warning("email_attachment_attach_failed", error=str(att_err))
                     
                     with smtplib.SMTP(smtp_server, smtp_port, timeout=12) as server:
                         if smtp_use_tls:

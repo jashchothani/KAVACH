@@ -31,6 +31,92 @@
   --radius-pill: 12px;
 }
 
+[data-theme="light"], html[data-theme="light"], body[data-theme="light"] {
+  --bg-app: #F4F6F9 !important;
+  --bg-sidebar: #FFFFFF !important;
+  --bg-card: #FFFFFF !important;
+  --bg-card-hover: #F8FAFC !important;
+  --bg-card-subtle: #F1F5F9 !important;
+  --border-card: #E2E8F0 !important;
+  --border-card-active: rgba(99, 102, 241, 0.4) !important;
+  
+  --text-main: #0F172A !important;
+  --text-muted: #475569 !important;
+  --text-dim: #64748B !important;
+}
+
+[data-theme="light"] .hud-card,
+[data-theme="light"] .card,
+[data-theme="light"] .ov-c,
+[data-theme="light"] .ov-k {
+  background: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .side {
+  background: #FFFFFF !important;
+  border-right-color: #E2E8F0 !important;
+}
+
+[data-theme="light"] .side .grp {
+  color: #64748B !important;
+}
+
+[data-theme="light"] .side button.nv {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .side button.nv:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .side button.nv.on {
+  background: rgba(99, 102, 241, 0.12) !important;
+  color: #6366F1 !important;
+}
+
+[data-theme="light"] .topbar {
+  border-bottom-color: #E2E8F0 !important;
+}
+
+[data-theme="light"] .topbar-search-box {
+  background: #F1F5F9 !important;
+  border-color: #CBD5E1 !important;
+}
+
+[data-theme="light"] .topbar-search-box input {
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .t th {
+  background: #F8FAFC !important;
+  color: #475569 !important;
+  border-bottom-color: #E2E8F0 !important;
+}
+
+[data-theme="light"] .t td {
+  border-bottom-color: #F1F5F9 !important;
+  color: #1E293B !important;
+}
+
+[data-theme="light"] .t tr:hover td {
+  background: #F8FAFC !important;
+}
+
+[data-theme="light"] .input {
+  background: #FFFFFF !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+}
+
+[data-theme="light"] #bg-canvas,
+[data-theme="light"] .vignette {
+  opacity: 0.15 !important;
+}
+
 /* ── App Shell & Reset Overrides ────────────────────────────────────────── */
 body {
   background-color: var(--bg-app) !important;
