@@ -12,4 +12,5 @@ class AppRoutes {
   static const String socDashboard = '/soc-dashboard';
   static const String adminDashboard = '/admin-dashboard';
   static const String home = '/home';
+  static const String appLockPin = '/app-lock-pin';
 }

@@ -27,8 +27,39 @@
     requestAnimationFrame(loop);
   })();
   /* flow */
-  let ident = '', timer;
-  const go = n => { document.querySelectorAll('.pane').forEach((p, i) => p.classList.toggle('on', i === n - 1)); document.querySelectorAll('.steps i').forEach((b, i) => b.classList.toggle('on', i < n)); $('#err').classList.remove('show'); };
+  let ident = '', timer, pollTimer = null;
+  const pollMobileApproval = (chId) => {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      try {
+        const ch = await api.auth.mobileChallengeStatus(chId);
+        if (ch && ch.status === 'APPROVED' && ch.access_token) {
+          clearInterval(pollTimer);
+          clearInterval(timer);
+          if (staff && !K.isAnalystRole(ch.role)) {
+            err('Access denied: this portal is for SOC analysts and administrators.');
+            return;
+          }
+          K.session.save(ch);
+          const u = K.session.user();
+          $('#who').textContent = 'Signed in as ' + u.username + ' · ' + u.role_name;
+          go(3);
+          setTimeout(() => location.href = home(u.role), 1000);
+        } else if (ch && (ch.status === 'EXPIRED' || ch.status === 'REJECTED')) {
+          clearInterval(pollTimer);
+          const mb = $('#mobile-prompt-box');
+          if (mb) mb.style.display = 'none';
+        }
+      } catch (e) {}
+    }, 1500);
+  };
+
+  const go = n => {
+    if (n === 1 && pollTimer) clearInterval(pollTimer);
+    document.querySelectorAll('.pane').forEach((p, i) => p.classList.toggle('on', i === n - 1));
+    document.querySelectorAll('.steps i').forEach((b, i) => b.classList.toggle('on', i < n));
+    $('#err').classList.remove('show');
+  };
   const err = m => { const e = $('#err'); e.textContent = m; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); };
   const busy = (b, on, t) => { b.dataset.t = b.dataset.t || b.innerHTML; b.disabled = on; b.innerHTML = on ? '<span class="sp"></span>' + t : b.dataset.t; };
   $('#eye').onclick = () => { const p = $('#pass'); p.type = p.type === 'password' ? 'text' : 'password'; $('#eye').textContent = p.type === 'password' ? 'SHOW' : 'HIDE'; };
@@ -48,6 +79,28 @@
       const r = await api.auth.loginInit(ident, $('#pass').value);
       const emailDisplay = r.full_email || r.email || ident;
       $('#mail').textContent = emailDisplay;
+
+      if (r.match_number && r.challenge_id) {
+        let mb = $('#mobile-prompt-box');
+        if (!mb) {
+          const sec = document.querySelectorAll('.pane')[1];
+          sec.insertAdjacentHTML('afterbegin', `
+            <div id="mobile-prompt-box" style="margin-bottom:16px;padding:14px;background:rgba(56,189,248,0.08);border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;text-align:center">
+              <div style="font-size:0.75rem;color:#38bdf8;font-weight:700;letter-spacing:0.5px">📲 GOOGLE-STYLE MOBILE APPROVAL</div>
+              <div style="font-size:0.85rem;color:#f8fafc;margin:4px 0 2px">Confirm on your <b>KAVACH Mobile App</b></div>
+              <div style="font-size:0.75rem;color:#94a3b8">Tap the matching number on your phone:</div>
+              <div id="mobile-match-num" style="font-size:2.8rem;font-weight:900;color:#38bdf8;letter-spacing:4px;margin:6px 0;line-height:1;text-shadow:0 0 16px rgba(56,189,248,0.5)">--</div>
+              <div style="font-size:0.75rem;color:#94a3b8">Or enter the 6-digit OTP code below:</div>
+            </div>
+          `);
+        } else {
+          mb.style.display = 'block';
+        }
+        const mn = $('#mobile-match-num');
+        if (mn) mn.textContent = r.match_number;
+        pollMobileApproval(r.challenge_id);
+      }
+
       go(2);
       tick();
       sync();

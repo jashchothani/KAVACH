@@ -136,7 +136,11 @@ class _SplashScreenState extends State<SplashScreen>
     Future.delayed(const Duration(milliseconds: 2900), () {
       if (!mounted) return;
       if (ApiService.instance.isAuthenticated) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        if (ApiService.instance.isPinEnabled()) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.appLockPin);
+        } else {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        }
       } else {
         Navigator.of(context).pushReplacementNamed(AppRoutes.login);
       }

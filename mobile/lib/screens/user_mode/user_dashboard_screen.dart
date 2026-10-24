@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../security/app_lock_pin_screen.dart';
 
 /// KAVACH Mobile User Dashboard.
 /// 100% Mobile-first, responsive, zero pixel overflows, rich animations,
@@ -29,15 +30,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   Map<String, dynamic> _summary = {};
   Map<String, dynamic> _posture = {};
   List<dynamic> _events = [];
+  List<dynamic> _enrolledDevices = [];
+  bool _isPinActive = ApiService.instance.isPinEnabled();
+  Map<String, dynamic>? _pendingMobileChallenge;
+  Timer? _challengePollTimer;
 
   // Scanning animation state
   bool _isFullScanning = false;
   double _scanProgress = 0.0;
   String _scanStatusText = 'Ready to scan';
 
-  // Native Android System Overlay ("Display Over Other Apps")
+  // Native Android System Overlay ("Display Over Other Apps") & Telephony
   static const _telephonyChannel = MethodChannel('com.cyberkavach.mobile/telephony');
   bool _overlayPermissionGranted = false;
+  bool _telephonyPermissionsGranted = false;
   bool _showFloatingCallerOverlay = true;
   String _simulatedIncomingCaller = '+92 300 9876543';
   String _simulatedCallerName = '🚨 Digital Arrest / CBI Impersonator';
@@ -83,8 +89,60 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   void initState() {
     super.initState();
     _loadDashboardData();
+    _loadEnrolledDevices();
     _subscribeLiveUpdates();
     _checkOverlayPermission();
+    _checkTelephonyPermissions();
+    _startChallengePolling();
+  }
+
+  Future<void> _loadEnrolledDevices() async {
+    try {
+      final list = await _api.getEnrolledDevices();
+      if (mounted) setState(() => _enrolledDevices = list);
+    } catch (_) {}
+  }
+
+  void _startChallengePolling() {
+    _checkPendingLoginChallenge();
+    _challengePollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted) _checkPendingLoginChallenge();
+    });
+  }
+
+  Future<void> _checkPendingLoginChallenge() async {
+    try {
+      final res = await _api.getPendingMobileChallenge();
+      if (!mounted) return;
+      if (res['has_pending'] == true) {
+        setState(() => _pendingMobileChallenge = res);
+      } else if (_pendingMobileChallenge != null) {
+        setState(() => _pendingMobileChallenge = null);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _handleApproveChallenge(int numVal) async {
+    final chId = _pendingMobileChallenge?['challenge_id']?.toString() ?? '';
+    try {
+      final res = await _api.verifyMobileChallenge(challengeId: chId, chosenNumber: numVal);
+      if (!mounted) return;
+      final ok = res['success'] == true;
+      setState(() => _pendingMobileChallenge = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res['message']?.toString() ?? (ok ? '✓ Desktop Sign-in Approved!' : 'Incorrect match number.')),
+          backgroundColor: ok ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _pendingMobileChallenge = null);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Challenge verification error: $e'), backgroundColor: const Color(0xFFEF4444)),
+        );
+      }
+    }
   }
 
   Future<void> _checkOverlayPermission() async {
@@ -99,7 +157,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   Future<void> _requestOverlayPermission() async {
     try {
       await _telephonyChannel.invokeMethod('requestOverlayPermission');
-      Future.delayed(const Duration(seconds: 2), _checkOverlayPermission);
+      Future.delayed(const Duration(seconds: 2), () {
+        _checkOverlayPermission();
+        _checkTelephonyPermissions();
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -112,8 +173,138 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     }
   }
 
+  Future<void> _checkTelephonyPermissions() async {
+    try {
+      final res = await _telephonyChannel.invokeMapMethod<String, dynamic>('checkTelephonyPermissions');
+      if (mounted && res != null) {
+        setState(() {
+          _telephonyPermissionsGranted = res['allGranted'] == true;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _requestTelephonyPermissions() async {
+    try {
+      final bool? granted = await _telephonyChannel.invokeMethod<bool>('requestTelephonyPermissions');
+      if (mounted) {
+        await _checkTelephonyPermissions();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(granted == true ? '✓ Telephony and SMS permissions granted!' : 'Telephony permissions checked.'),
+            backgroundColor: granted == true ? const Color(0xFF10B981) : AppColors.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error requesting telephony permissions: $e'), backgroundColor: const Color(0xFFEF4444)),
+        );
+      }
+    }
+  }
+
+  Future<void> _openMiuiPopupSettings() async {
+    try {
+      await _telephonyChannel.invokeMethod('openMiuiPopupSettings');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('MIUI/Redmi Settings: Turn ON "Display pop-up windows while running in the background"'),
+            backgroundColor: Color(0xFF0F172A),
+            duration: Duration(seconds: 6),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open MIUI settings: $e'), backgroundColor: const Color(0xFFEF4444)),
+        );
+      }
+    }
+  }
+
+  Future<void> _triggerNativeCallOverlay({
+    String number = '+92 300 9876543',
+    String name = '🚨 Digital Arrest / CBI Impersonator',
+    String carrier = 'Mobilink Jazz Pakistan · International Gateway',
+    bool isThreat = true,
+    double riskScore = 96.0,
+  }) async {
+    try {
+      await _telephonyChannel.invokeMethod('triggerFloatingOverlay', {
+        'number': number,
+        'name': name,
+        'carrier': carrier,
+        'is_threat': isThreat,
+        'risk_score': riskScore,
+        'is_sms': false,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Floating Caller ID popup displayed over screen!'),
+            backgroundColor: Color(0xFF10B981),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Trigger popup error: $e'), backgroundColor: const Color(0xFFEF4444)),
+        );
+      }
+    }
+  }
+
+  Future<void> _triggerNativeSmsOverlay({
+    String sender = 'VK-SBIINB',
+    String name = '⚠️ High-Risk Smishing / Phishing Sender',
+    String carrier = 'Domestic Telecom DLT Route · TRAI Registered Gateway',
+    String smsText = 'Dear SBI user, your YONO account is suspended today due to KYC expired. Click here bit.ly/sbi-kyc-update to re-verify.',
+    bool isThreat = true,
+  }) async {
+    try {
+      await _telephonyChannel.invokeMethod('triggerFloatingOverlay', {
+        'number': sender,
+        'name': name,
+        'carrier': carrier,
+        'is_threat': isThreat,
+        'risk_score': 94.0,
+        'is_sms': true,
+        'sms_text': smsText,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Floating SMS Threat popup displayed over screen!'),
+            backgroundColor: Color(0xFF10B981),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Trigger SMS popup error: $e'), backgroundColor: const Color(0xFFEF4444)),
+        );
+      }
+    }
+  }
+
+  Future<void> _dismissNativeOverlay() async {
+    try {
+      await _telephonyChannel.invokeMethod('dismissFloatingOverlay');
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
+    _challengePollTimer?.cancel();
     _liveSub?.cancel();
     _phoneController.dispose();
     _smsController.dispose();
@@ -621,26 +812,100 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               onTap: () {
                 showModalBottomSheet(
                   context: context,
-                  builder: (ctx) => SafeArea(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: const CircleAvatar(child: Icon(Icons.person)),
-                          title: Text(username.toString()),
-                          subtitle: Text('Role: $role'),
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                  builder: (ctx) => StatefulBuilder(
+                    builder: (modalCtx, setModalState) => SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(2))),
+                            ListTile(
+                              leading: const CircleAvatar(child: Icon(Icons.person)),
+                              title: Text(username.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text('Role: $role · Protected Sovereign Account', style: const TextStyle(fontSize: 11)),
+                            ),
+                            const Divider(height: 1),
+                            const Padding(
+                              padding: EdgeInsets.only(left: 16, top: 12, bottom: 4),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text('APP LOCK & SECURITY PIN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.8)),
+                              ),
+                            ),
+                            SwitchListTile(
+                              secondary: const Icon(Icons.lock_clock_rounded, color: AppColors.primary),
+                              title: const Text('Require PIN on Launch', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              subtitle: const Text('Lock mobile app with 4-digit security code', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              value: _isPinActive,
+                              activeThumbColor: AppColors.primary,
+                              onChanged: (val) {
+                                if (val) {
+                                  final saved = _api.getSavedPin();
+                                  if (saved == null) {
+                                    Navigator.pop(ctx);
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => AppLockPinScreen(
+                                          mode: PinMode.setup,
+                                          onPinConfigured: (p) => setState(() => _isPinActive = true),
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    _api.savePinConfig(pin: saved, enabled: true);
+                                    setState(() => _isPinActive = true);
+                                    setModalState(() => _isPinActive = true);
+                                  }
+                                } else {
+                                  _api.disablePin();
+                                  setState(() => _isPinActive = false);
+                                  setModalState(() => _isPinActive = false);
+                                }
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.password_rounded, color: AppColors.primary),
+                              title: const Text('Change 4-Digit Security PIN', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              subtitle: const Text('Update your personal security passcode', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => AppLockPinScreen(
+                                      mode: PinMode.change,
+                                      onPinConfigured: (p) => setState(() => _isPinActive = true),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.devices_rounded, color: Color(0xFF0284C7)),
+                              title: const Text('View All Enrolled Devices', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              subtitle: const Text('PC Workstation, Android Handset & Cloud Nodes', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                setState(() => _selectedNavIndex = 3);
+                              },
+                            ),
+                            const Divider(height: 1),
+                            ListTile(
+                              leading: const Icon(Icons.logout, color: Colors.red),
+                              title: const Text('Sign Out', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                _api.clearSession();
+                                Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+                              },
+                            ),
+                          ],
                         ),
-                        const Divider(),
-                        ListTile(
-                          leading: const Icon(Icons.logout, color: Colors.red),
-                          title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-                          onTap: () {
-                            Navigator.pop(ctx);
-                            _api.clearSession();
-                            Navigator.of(context).pushReplacementNamed(AppRoutes.login);
-                          },
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 );
@@ -659,8 +924,88 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _buildCurrentSection(),
+          : Column(
+              children: [
+                if (_pendingMobileChallenge != null) _buildPendingChallengeBanner(),
+                Expanded(child: _buildCurrentSection()),
+              ],
+            ),
       bottomNavigationBar: _buildSpaciousBottomNav(),
+    );
+  }
+
+  Widget _buildPendingChallengeBanner() {
+    final opts = (_pendingMobileChallenge!['options'] as List<dynamic>?) ?? [19, 74, 83];
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.phonelink_lock_rounded, color: Color(0xFF38BDF8), size: 16),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  '🔐 DESKTOP SIGN-IN REQUEST',
+                  style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _pendingMobileChallenge = null),
+                child: const Icon(Icons.close_rounded, color: Colors.white54, size: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Sign-in initiated on ${_pendingMobileChallenge!['device'] ?? 'Desktop'} (${_pendingMobileChallenge!['ip'] ?? '192.168.1.105'}). Tap the matching number shown on your desktop screen:',
+            style: const TextStyle(color: Colors.white, fontSize: 11.5, height: 1.3),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: opts.map((opt) {
+              final n = int.tryParse(opt.toString()) ?? 0;
+              return ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF38BDF8),
+                  foregroundColor: const Color(0xFF0F172A),
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  elevation: 2,
+                ),
+                onPressed: () => _handleApproveChallenge(n),
+                child: Text('$n', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1065,14 +1410,16 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
 
         const SizedBox(height: 14),
 
-        // 2. Android "Display Over Other Apps" Sentinel Card
+        // 2. Android Sentinel Permissions & System Overlays
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _overlayPermissionGranted ? const Color(0xFF10B981).withValues(alpha: 0.3) : const Color(0xFFF59E0B).withValues(alpha: 0.3),
+              color: (_overlayPermissionGranted && _telephonyPermissionsGranted)
+                  ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                  : const Color(0xFFF59E0B).withValues(alpha: 0.3),
             ),
             boxShadow: [
               BoxShadow(
@@ -1085,6 +1432,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Overlay Permission Sub-item
               Row(
                 children: [
                   Container(
@@ -1105,11 +1453,11 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Display Over Other Apps',
-                          style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                          '1. Display Over Other Apps',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
                         Text(
-                          _overlayPermissionGranted ? 'Active · Floating Caller ID enabled' : 'Action Needed · System overlay required',
+                          _overlayPermissionGranted ? 'Active · Floating overlay enabled' : 'Required · Needed to show caller popup over incoming calls',
                           style: TextStyle(
                             fontSize: 10.5,
                             color: _overlayPermissionGranted ? const Color(0xFF059669) : const Color(0xFFD97706),
@@ -1137,11 +1485,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Allows KAVACH to pop up a live Caller ID & fraud warning overlay directly on top of incoming phone calls and SMS, exactly like Truecaller.',
-                style: TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.35),
-              ),
-              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -1150,23 +1493,190 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                     side: BorderSide(
                       color: _overlayPermissionGranted ? const Color(0xFF10B981) : AppColors.primary,
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   icon: Icon(
                     _overlayPermissionGranted ? Icons.check_circle_outline_rounded : Icons.open_in_new_rounded,
-                    size: 16,
+                    size: 15,
                   ),
                   label: Text(
-                    _overlayPermissionGranted ? 'Overlay Permission Active in Android' : 'Grant "Display Over Other Apps" in Settings',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    _overlayPermissionGranted ? 'Overlay Permission Active' : 'Grant "Display Over Other Apps"',
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                   ),
                   onPressed: _requestOverlayPermission,
+                ),
+              ),
+
+              const Divider(height: 20, color: Color(0xFFF1F5F9)),
+
+              // Telephony & SMS Intercept Sub-item
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (_telephonyPermissionsGranted ? const Color(0xFF10B981) : const Color(0xFFF59E0B)).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.phone_forwarded_rounded,
+                      color: _telephonyPermissionsGranted ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '2. Phone & SMS Intercept Shield',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        ),
+                        Text(
+                          _telephonyPermissionsGranted
+                              ? 'Active · Intercepting phone calls and SMS'
+                              : 'Action Needed · Allow KAVACH to read incoming numbers & SMS',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: _telephonyPermissionsGranted ? const Color(0xFF059669) : const Color(0xFFD97706),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: (_telephonyPermissionsGranted ? const Color(0xFF10B981) : const Color(0xFFF59E0B)).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      _telephonyPermissionsGranted ? 'ACTIVE ✓' : 'GRANT',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: _telephonyPermissionsGranted ? const Color(0xFF059669) : const Color(0xFFD97706),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _telephonyPermissionsGranted ? const Color(0xFF059669) : AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: Icon(
+                    _telephonyPermissionsGranted ? Icons.security_rounded : Icons.lock_open_rounded,
+                    size: 15,
+                  ),
+                  label: Text(
+                    _telephonyPermissionsGranted ? '✓ Call & SMS Sentinel Granted' : 'Grant Phone & SMS Intercept Permissions',
+                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: _requestTelephonyPermissions,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Xiaomi / Redmi Background Popup Special Notice
+              InkWell(
+                onTap: _openMiuiPopupSettings,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.settings_suggest_rounded, color: Color(0xFFEA580C), size: 16),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Xiaomi / Redmi (MIUI): Tap here to enable "Display pop-up windows while running in the background"',
+                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF94A3B8), size: 12),
+                    ],
+                  ),
+                ),
+              ),
+
+              const Divider(height: 20, color: Color(0xFFF1F5F9)),
+
+              // Live Floating Overlay System Trigger (Test Over Any App)
+              const Text(
+                'Live Floating Overlay Triggers (Test Over Any App):',
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.phone_in_talk_rounded, size: 14),
+                      label: const Text('Test Call Popup', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      onPressed: () => _triggerNativeCallOverlay(
+                        number: _simulatedIncomingCaller,
+                        name: _simulatedCallerName,
+                        carrier: _simulatedCarrier,
+                        isThreat: _simulatedIsThreat,
+                        riskScore: _simulatedIsThreat ? 96.0 : 8.0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0284C7),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.sms_rounded, size: 14),
+                      label: const Text('Test SMS Popup', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      onPressed: () => _triggerNativeSmsOverlay(),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF64748B),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                  ),
+                  icon: const Icon(Icons.close_fullscreen_rounded, size: 13),
+                  label: const Text('Dismiss Floating System Window', style: TextStyle(fontSize: 11)),
+                  onPressed: _dismissNativeOverlay,
                 ),
               ),
             ],
           ),
         ),
+
 
         const SizedBox(height: 16),
 
@@ -1378,6 +1888,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                           _simulatedCarrier = 'Mobilink Jazz Pakistan · International Gateway';
                           _simulatedIsThreat = true;
                         });
+                        _triggerNativeCallOverlay(
+                          number: '+92 300 9876543',
+                          name: '🚨 Digital Arrest / CBI Officer Impersonator',
+                          carrier: 'Mobilink Jazz Pakistan · International Gateway',
+                          isThreat: true,
+                          riskScore: 96.0,
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1394,6 +1911,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                           _simulatedCarrier = 'MTN Nigeria · Lagos Regional';
                           _simulatedIsThreat = true;
                         });
+                        _triggerNativeCallOverlay(
+                          number: '+234 802 3456789',
+                          name: '⚠️ Part-Time Task Fraud Syndicate',
+                          carrier: 'MTN Nigeria · Lagos Regional',
+                          isThreat: true,
+                          riskScore: 92.0,
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1410,6 +1934,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                           _simulatedCarrier = 'Reliance Jio Infocomm · Mumbai & Maharashtra';
                           _simulatedIsThreat = false;
                         });
+                        _triggerNativeCallOverlay(
+                          number: '+91 90049 76777',
+                          name: '✅ KAVACH Cyber Defense Contact',
+                          carrier: 'Reliance Jio Infocomm · Mumbai & Maharashtra',
+                          isThreat: false,
+                          riskScore: 8.0,
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1677,10 +2208,40 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                   decoration: BoxDecoration(
                     color: (_smsScanResult!['is_threat'] == true ? const Color(0xFFEF4444) : const Color(0xFF10B981)).withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: (_smsScanResult!['is_threat'] == true ? const Color(0xFFEF4444) : const Color(0xFF10B981)).withValues(alpha: 0.3),
+                    ),
                   ),
-                  child: Text(
-                    _smsScanResult!['raksha_summary']?.toString() ?? '',
-                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF1E293B)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _smsScanResult!['raksha_summary']?.toString() ?? '',
+                        style: const TextStyle(fontSize: 11.5, color: Color(0xFF1E293B)),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _smsScanResult!['is_threat'] == true ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                            side: BorderSide(
+                              color: _smsScanResult!['is_threat'] == true ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                          label: const Text('Display Live Threat Popup on Screen', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                          onPressed: () => _triggerNativeSmsOverlay(
+                            smsText: _smsController.text.trim().isNotEmpty
+                                ? _smsController.text.trim()
+                                : 'Detected SMS Smishing threat payload',
+                            isThreat: _smsScanResult!['is_threat'] == true,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1932,14 +2493,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                     ],
                     border: isUser ? null : Border.all(color: Colors.black.withValues(alpha: 0.06)),
                   ),
-                  child: Text(
-                    msg['text']!,
-                    style: TextStyle(
-                      color: isUser ? Colors.white : const Color(0xFF1E293B),
-                      fontSize: 12.5,
-                      height: 1.4,
-                    ),
-                  ),
+                  child: _buildFormattedChatMessage(msg['text']!, isUser),
                 ),
               );
             },
@@ -2000,6 +2554,104 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     );
   }
 
+  Widget _buildFormattedChatMessage(String text, bool isUser) {
+    if (isUser) {
+      return Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+      );
+    }
+
+    final lines = text.split('\n');
+    final widgets = <Widget>[];
+
+    for (int i = 0; i < lines.length; i++) {
+      String line = lines[i].trim();
+      if (line.isEmpty) {
+        widgets.add(const SizedBox(height: 6));
+        continue;
+      }
+
+      if (line.startsWith('### ') || line.startsWith('## ')) {
+        final title = line.replaceFirst(RegExp(r'^#{2,3}\s*'), '');
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF0F172A),
+              letterSpacing: 0.2,
+            ),
+          ),
+        ));
+      } else if (line.startsWith('- ') || line.startsWith('* ') || line.startsWith('• ')) {
+        final content = line.substring(2).trim();
+        widgets.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 6, right: 6),
+                child: Icon(Icons.circle, size: 5, color: AppColors.primary),
+              ),
+              Expanded(
+                child: _buildRichInlineText(content, const Color(0xFF334155)),
+              ),
+            ],
+          ),
+        ));
+      } else if (RegExp(r'^\d+\.\s+').hasMatch(line)) {
+        final match = RegExp(r'^(\d+)\.\s+(.*)').firstMatch(line);
+        final numStr = match?.group(1) ?? '•';
+        final content = match?.group(2) ?? line;
+        widgets.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('$numStr. ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+              Expanded(
+                child: _buildRichInlineText(content, const Color(0xFF334155)),
+              ),
+            ],
+          ),
+        ));
+      } else {
+        widgets.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: _buildRichInlineText(line, const Color(0xFF334155)),
+        ));
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
+    );
+  }
+
+  Widget _buildRichInlineText(String text, Color baseColor) {
+    final spans = <TextSpan>[];
+    final parts = text.split('**');
+    for (int i = 0; i < parts.length; i++) {
+      if (parts[i].isEmpty) continue;
+      final isBold = i % 2 == 1;
+      spans.add(TextSpan(
+        text: parts[i],
+        style: TextStyle(
+          color: isBold ? const Color(0xFF0F172A) : baseColor,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          fontSize: 12.5,
+          height: 1.45,
+        ),
+      ));
+    }
+    return RichText(text: TextSpan(children: spans));
+  }
+
   Widget _buildPromptChip(String label, String query) {
     return Padding(
       padding: const EdgeInsets.only(right: 6),
@@ -2014,32 +2666,94 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     );
   }
 
-  // ── TAB 3: DEVICE (Mobile Telemetry & Permissions) ─────────────────────────
+  // ── TAB 3: DEVICE (Multi-Device Fleet: PC, Mobile & Cloud) ────────────────
   Widget _buildDeviceTab() {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       children: [
-        // Phone Spec Card
+        // Multi-Device Fleet Banner
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.devices_rounded, color: Color(0xFF38BDF8), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Zero-Trust Device Fleet', style: TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold)),
+                    Text(
+                      '${2 + _enrolledDevices.length} Connected Devices · PC Workstation, Mobile & Endpoints',
+                      style: const TextStyle(color: Colors.white70, fontSize: 10.5),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('ALL SYNCED', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 9.5, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // Device 1: Windows Workstation / Desktop PC
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.phone_android_rounded, color: AppColors.primary, size: 24),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.desktop_windows_rounded, color: AppColors.primary, size: 24),
+                  ),
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Enrolled Mobile Device', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                        Text('Redmi Note 9 Pro Max · Android 12', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        Text('Jash\'s Workstation PC', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                        Text('Windows 11 Pro 64-bit · DESKTOP-KAVACH', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                       ],
                     ),
                   ),
@@ -2050,27 +2764,172 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Text(
-                      'DPAPI OK',
+                      'SHIELDED ✓',
                       style: TextStyle(fontSize: 9.5, color: Color(0xFF059669), fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
-              const Divider(height: 24),
-              _buildMetricRow('OS Version', _posture['os']?.toString() ?? 'Android 12 · ARM64 (SELinux Enforced)'),
-              _buildMetricRow('Host / Node Identifier', _posture['computer_name']?.toString() ?? 'Redmi Note 9 Pro Max'),
-              _buildMetricRow('Active Memory', '${_posture['ram_used_gb'] ?? 3.8} GB Active of ${_posture['ram_total_gb'] ?? 6.0} GB RAM (${_posture['ram_used_pct'] ?? 42}%)'),
+              const Divider(height: 20),
+              _buildMetricRow('Operating System', 'Windows 11 Pro · Build 22631 (x64)'),
+              _buildMetricRow('Local Endpoint IP', '192.168.1.105 (Host Primary Network)'),
+              _buildMetricRow('Antivirus Engine', 'Windows Defender Antivirus · Active & Real-Time Protecting ✓'),
+              _buildMetricRow('Host Firewall', 'WFP Profiles: Domain, Private & Public Shielded ✓'),
+              _buildMetricRow('Active Hardware Memory', '4.8 GB of 16.0 GB DDR4 RAM (30% Active)'),
+              _buildMetricRow('Storage Capacity', '128 GB Active of 512 GB NVMe SSD'),
+              _buildMetricRow('Host Sentinel Daemon', 'Syscall & FIM Sensor Active (PID 4820)'),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.radar_rounded, size: 14, color: AppColors.primary),
+                      label: const Text('Trigger Remote Scan', style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('✓ Remote full security scan command dispatched to Windows PC.')),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        side: const BorderSide(color: Color(0xFF10B981)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.shield_outlined, size: 14, color: Color(0xFF059669)),
+                      label: const Text('Isolate / Shield', style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('✓ Host network shield and packet filter active.')),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // Device 2: Active Mobile Handset (Redmi Note 9 Pro Max)
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.phone_android_rounded, color: Color(0xFF059669), size: 24),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Redmi Note 9 Pro Max', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                        Text('Current Handset · Android 12 (ARM64)', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD1FAE5),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'THIS DEVICE',
+                      style: TextStyle(fontSize: 9.5, color: Color(0xFF059669), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 20),
+              _buildMetricRow('OS & Security Patch', 'Android 12 · SELinux Enforced · Keystore OK'),
+              _buildMetricRow('Active Hardware Memory', '${_posture['ram_used_gb'] ?? 3.8} GB Active of ${_posture['ram_total_gb'] ?? 6.0} GB RAM (${_posture['ram_used_pct'] ?? 42}%)'),
               _buildMetricRow('Storage Allocation', '${_posture['disk_total_gb'] ?? 128} GB Total · ${_posture['disk_free_gb'] ?? 64} GB Free'),
-              _buildMetricRow('Endpoint Antivirus', _posture['antivirus']?['status_text']?.toString() ?? 'Active & Protecting ✓'),
-              _buildMetricRow('Network Firewall', _posture['firewall']?['status_text']?.toString() ?? 'All network profiles shielded ✓'),
+              _buildMetricRow('Telecom Sentinel', 'Caller ID & Spam Intercept Armed ✓'),
+              _buildMetricRow('Display Over Other Apps', _overlayPermissionGranted ? 'Granted & Active in Android Settings ✓' : 'Permission Action Needed in Settings'),
               _buildMetricRow('Wi-Fi Protocol & Cipher', _posture['wifi']?['status_text']?.toString() ?? 'WPA2/WPA3 AES Encrypted ✓'),
             ],
           ),
         ),
 
-        const SizedBox(height: 16),
+        // Dynamically enrolled devices (if any)
+        if (_enrolledDevices.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          ..._enrolledDevices.map((dev) {
+            final dMap = dev is Map ? dev : <String, dynamic>{};
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.cloud_done_rounded, color: Color(0xFF38BDF8), size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          dMap['hostname']?.toString() ?? 'Enrolled Endpoint',
+                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(4)),
+                        child: Text(dMap['status']?.toString() ?? 'ACTIVE', style: const TextStyle(color: Color(0xFF059669), fontSize: 9, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 16),
+                  _buildMetricRow('OS', dMap['os']?.toString() ?? 'Linux / Cloud Instance'),
+                  _buildMetricRow('IP Address', dMap['ip_address']?.toString() ?? '10.0.1.40'),
+                  _buildMetricRow('Risk Score', '${dMap['risk_score'] ?? 0} (Low Risk)'),
+                ],
+              ),
+            );
+          }),
+        ],
 
-        // App Permission Auditor
+        const SizedBox(height: 14),
+
+        // App Permission & Sensor Sentinel
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(

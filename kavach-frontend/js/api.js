@@ -96,6 +96,9 @@
       loginInit: (id, pw) => post('/auth/login-init', { username_or_email: id, password: pw }),
       requestOtp: id => post('/auth/request-otp', { username_or_email: id }),
       verifyOtp: (id, code) => post('/auth/verify-otp', { username_or_email: id, otp_code: code }),
+      mobileChallengeStatus: id => get('/auth/mobile-challenge/status/' + encodeURIComponent(id)),
+      forgotPassword: email => post('/auth/forgot-password', { email }),
+      resetPassword: (email, code, pw) => post('/auth/reset-password', { email, reset_code: code, new_password: pw }),
       logout: async () => { try { await post('/auth/logout'); } catch {} const u = session.user(); session.clear(); location.href = u && isAnalystRole(u.role) ? '/admin-login' : '/login'; }
     },
     dashboard: { summary: () => get('/dashboard/summary'), scan: () => post('/dashboard/scan') },

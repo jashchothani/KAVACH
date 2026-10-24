@@ -165,6 +165,21 @@ class VerifyOTPRequest(BaseModel):
     otp: str | None = None
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    reset_code: str
+    new_password: str
+
+
+class VerifyMobileChallengeRequest(BaseModel):
+    challenge_id: str
+    chosen_number: int
+
+
 class AlertUpdateRequest(BaseModel):
     status: str | None = None
     analyst_notes: str | None = None
@@ -474,6 +489,38 @@ async def login_init(req: LoginRequest) -> dict[str, Any]:
             masked_email = parts[0][:2] + "***@" + parts[1]
         OTP_STORE[masked_email.lower()] = OTP_STORE[key]
 
+        # Generate 2-digit Google-style Number Match challenge for desktop/web
+        match_number = random.randint(10, 99)
+        d1 = random.randint(10, 99)
+        while d1 == match_number:
+            d1 = random.randint(10, 99)
+        d2 = random.randint(10, 99)
+        while d2 == match_number or d2 == d1:
+            d2 = random.randint(10, 99)
+        match_options = [match_number, d1, d2]
+        random.shuffle(match_options)
+
+        import secrets
+        challenge_id = f"mc-{secrets.token_hex(12)}"
+        MOBILE_CHALLENGES[challenge_id] = {
+            "challenge_id": challenge_id,
+            "user_id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role,
+            "match_number": match_number,
+            "options": match_options,
+            "status": "PENDING",
+            "device": "Desktop / Web Browser",
+            "ip": "192.168.1.105",
+            "token_response": None,
+            "created_at": time.time(),
+            "expires_at": time.time() + 300,
+        }
+        PENDING_USER_CHALLENGES[user.username.lower()] = challenge_id
+        if user.email:
+            PENDING_USER_CHALLENGES[user.email.lower()] = challenge_id
+
         settings = get_settings()
         response_data: dict[str, Any] = {
             "status": "otp_required",
@@ -481,6 +528,9 @@ async def login_init(req: LoginRequest) -> dict[str, Any]:
             "username": user.username,
             "email": masked_email,
             "full_email": user.email,
+            "challenge_id": challenge_id,
+            "match_number": match_number,
+            "match_options": match_options,
         }
 
         return response_data
@@ -622,6 +672,11 @@ async def logout(current_user: TokenPayload | None = Depends(get_current_user_op
 # In-memory OTP storage for rapid OTP authentication
 OTP_STORE: dict[str, dict[str, Any]] = {}
 
+# Google-Style Mobile Match Challenge Store for Desktop/Web Sign-in
+# Maps challenge_id -> {challenge_id, user_id, username, email, role, match_number, options, status, device, ip, token, created_at, expires_at}
+MOBILE_CHALLENGES: dict[str, dict[str, Any]] = {}
+PENDING_USER_CHALLENGES: dict[str, str] = {}
+
 
 @api_v1_router.post("/auth/request-otp", tags=["Authentication"])
 async def request_otp(req: RequestOTPRequest) -> dict[str, Any]:
@@ -749,6 +804,235 @@ async def verify_otp(req: VerifyOTPRequest) -> TokenResponse:
         email=record.get("email"),
         permissions=perm_strings,
     )
+
+
+# ---------------------------------------------------------------------------
+# Mobile Challenge & Number-Match Sign-in (Google Prompt Style)
+# ---------------------------------------------------------------------------
+
+@api_v1_router.get("/auth/mobile-challenge/status/{challenge_id}", tags=["Authentication"])
+async def get_mobile_challenge_status(challenge_id: str) -> dict[str, Any]:
+    """Poll status of a pending Google-style mobile login challenge."""
+    ch = MOBILE_CHALLENGES.get(challenge_id)
+    if not ch:
+        raise HTTPException(status_code=404, detail="Challenge expired or not found")
+
+    if time.time() > ch["expires_at"]:
+        ch["status"] = "EXPIRED"
+        MOBILE_CHALLENGES.pop(challenge_id, None)
+        return {"status": "EXPIRED", "message": "Sign-in challenge timed out."}
+
+    if ch["status"] == "APPROVED" and ch.get("token_response"):
+        resp = ch["token_response"]
+        MOBILE_CHALLENGES.pop(challenge_id, None)
+        return {
+            "status": "APPROVED",
+            "access_token": resp.access_token,
+            "token_type": resp.token_type,
+            "role": resp.role,
+            "username": resp.username,
+            "email": resp.email,
+            "permissions": resp.permissions,
+        }
+
+    return {
+        "status": ch["status"],
+        "match_number": ch["match_number"],
+        "expires_in": max(0, int(ch["expires_at"] - time.time())),
+    }
+
+
+@api_v1_router.get("/auth/mobile-challenge/pending", tags=["Authentication"])
+async def get_pending_mobile_challenge(request: Request) -> dict[str, Any]:
+    """Retrieve active sign-in challenge for the current user or endpoint."""
+    user_ident = request.query_params.get("username_or_email")
+    if not user_ident:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            try:
+                payload = decode_access_token(auth_header.split(" ", 1)[1])
+                user_ident = payload.username
+            except Exception:
+                pass
+
+    if not user_ident:
+        return {"has_pending": False, "message": "No identifier provided"}
+
+    ch_id = PENDING_USER_CHALLENGES.get(user_ident.lower())
+    if not ch_id or ch_id not in MOBILE_CHALLENGES:
+        return {"has_pending": False}
+
+    ch = MOBILE_CHALLENGES[ch_id]
+    if time.time() > ch["expires_at"] or ch["status"] != "PENDING":
+        PENDING_USER_CHALLENGES.pop(user_ident.lower(), None)
+        return {"has_pending": False}
+
+    return {
+        "has_pending": True,
+        "challenge_id": ch["challenge_id"],
+        "device": ch["device"],
+        "ip": ch["ip"],
+        "options": ch["options"],
+        "expires_in": max(0, int(ch["expires_at"] - time.time())),
+    }
+
+
+@api_v1_router.post("/auth/mobile-challenge/verify", tags=["Authentication"])
+async def verify_mobile_challenge(req: VerifyMobileChallengeRequest) -> dict[str, Any]:
+    """Approve or reject a desktop sign-in attempt from the mobile app."""
+    ch = MOBILE_CHALLENGES.get(req.challenge_id)
+    if not ch:
+        raise HTTPException(status_code=404, detail="Challenge expired or not found")
+
+    if time.time() > ch["expires_at"]:
+        ch["status"] = "EXPIRED"
+        raise HTTPException(status_code=400, detail="Challenge has expired")
+
+    if req.chosen_number == ch["match_number"]:
+        ch["status"] = "APPROVED"
+        token = create_access_token(ch["user_id"], ch["username"], ch["role"])
+        perms = ROLE_PERMISSIONS.get(ch["role"], [])
+        perm_strings = [p.value if hasattr(p, "value") else str(p) for p in perms]
+        ch["token_response"] = TokenResponse(
+            access_token=token,
+            role=ch["role"],
+            username=ch["username"],
+            email=ch.get("email"),
+            permissions=perm_strings,
+        )
+        return {
+            "success": True,
+            "status": "APPROVED",
+            "message": "Desktop sign-in approved successfully! Your desktop is now logged in.",
+        }
+    else:
+        ch["status"] = "REJECTED"
+        return {
+            "success": False,
+            "status": "REJECTED",
+            "message": "Incorrect match number. Sign-in attempt denied.",
+        }
+
+
+# ---------------------------------------------------------------------------
+# Password Reset Endpoints (Dispatches via AWS SNS / Email Service)
+# ---------------------------------------------------------------------------
+
+@api_v1_router.post("/auth/forgot-password", tags=["Authentication"])
+async def forgot_password(req: ForgotPasswordRequest) -> dict[str, Any]:
+    """Generate and dispatch a 6-digit password reset OTP to user's email via AWS SNS."""
+    clean_email = req.email.strip().lower()
+    if not clean_email:
+        raise HTTPException(status_code=400, detail="Email address is required")
+
+    async with get_session() as session:
+        user_repo = UserRepository(session)
+        user = await user_repo.get_by_email(clean_email)
+        if not user:
+            user = await user_repo.get_by_username(clean_email)
+
+        import secrets
+        reset_code = f"{secrets.randbelow(1000000):06d}"
+
+        if user:
+            if hasattr(user, "password_reset_token"):
+                user.password_reset_token = reset_code
+                user.password_reset_expires = datetime.now(timezone.utc) + timedelta(minutes=15)
+                await session.flush()
+
+            OTP_STORE[f"reset:{clean_email}"] = {
+                "otp_code": reset_code,
+                "expires_at": time.time() + 900,
+                "user_id": user.id,
+                "username": user.username,
+                "email": user.email,
+            }
+            if user.email:
+                OTP_STORE[f"reset:{user.email.lower()}"] = OTP_STORE[f"reset:{clean_email}"]
+            OTP_STORE[f"reset:{user.username.lower()}"] = OTP_STORE[f"reset:{clean_email}"]
+
+            try:
+                from email_notifications.service import get_email_service
+                email_svc = get_email_service()
+                asyncio.create_task(
+                    email_svc.send_email(
+                        to=user.email,
+                        template_name="password_reset.html",
+                        subject="Reset Your KAVACH Password",
+                        context={
+                            "username": user.username,
+                            "reset_code": reset_code,
+                            "verification_code": reset_code,
+                            "otp": reset_code,
+                            "expires_in_minutes": 15,
+                        }
+                    )
+                )
+            except Exception as exc:
+                logger.warning("password_reset_email_dispatch_error", error=str(exc))
+
+    return {
+        "success": True,
+        "message": f"If an account with {clean_email} exists, a password reset code has been sent via email.",
+    }
+
+
+@api_v1_router.post("/auth/reset-password", tags=["Authentication"])
+async def reset_password(req: ResetPasswordRequest) -> dict[str, Any]:
+    """Verify reset OTP and update user account password."""
+    clean_email = req.email.strip().lower()
+    code = req.reset_code.strip()
+    is_valid, msg = validate_password_strength(req.new_password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=msg)
+
+    cached = OTP_STORE.get(f"reset:{clean_email}")
+    is_verified = False
+    user_id = None
+
+    if cached and cached.get("otp_code") == code:
+        if time.time() <= cached.get("expires_at", 0):
+            is_verified = True
+            user_id = cached.get("user_id")
+
+    async with get_session() as session:
+        user_repo = UserRepository(session)
+        user = None
+        if user_id:
+            user = await user_repo.get_by_id(user_id)
+        if not user:
+            user = await user_repo.get_by_email(clean_email)
+            if not user:
+                user = await user_repo.get_by_username(clean_email)
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User account not found")
+
+        if not is_verified:
+            db_token = getattr(user, "password_reset_token", None)
+            db_exp = getattr(user, "password_reset_expires", None)
+            if db_token and db_token == code:
+                now_utc = datetime.now(timezone.utc)
+                if db_exp is None or db_exp > now_utc:
+                    is_verified = True
+
+        if not is_verified:
+            raise HTTPException(status_code=400, detail="Invalid or expired password reset code")
+
+        user.password_hash = hash_password(req.new_password)
+        if hasattr(user, "password_reset_token"):
+            user.password_reset_token = None
+            user.password_reset_expires = None
+        await session.commit()
+
+        OTP_STORE.pop(f"reset:{clean_email}", None)
+        if user.email:
+            OTP_STORE.pop(f"reset:{user.email.lower()}", None)
+
+    return {
+        "success": True,
+        "message": "Password successfully reset. You may now sign in with your new password.",
+    }
 
 
 # ---------------------------------------------------------------------------

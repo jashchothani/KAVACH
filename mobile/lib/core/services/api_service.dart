@@ -506,6 +506,89 @@ class ApiService {
     final res = await _send('GET', '/audit/logs', queryParams: {'limit': limit.toString()});
     return res['items'] is List ? res['items'] : (res['logs'] is List ? res['logs'] : []);
   }
+
+  // ---------------------------------------------------------------------------
+  // Google-Style Mobile Match Challenge (Desktop/Web Login Approval)
+  // ---------------------------------------------------------------------------
+
+  Future<Map<String, dynamic>> getPendingMobileChallenge() async {
+    return await _send('GET', '/auth/mobile-challenge/pending');
+  }
+
+  Future<Map<String, dynamic>> verifyMobileChallenge({
+    required String challengeId,
+    required int chosenNumber,
+  }) async {
+    return await _send('POST', '/auth/mobile-challenge/verify', body: {
+      'challenge_id': challengeId,
+      'chosen_number': chosenNumber,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Local Security App Lock PIN Management
+  // ---------------------------------------------------------------------------
+
+  File get _pinFile {
+    final baseDir = Platform.environment['LOCALAPPDATA'] ??
+        Platform.environment['HOME'] ??
+        Directory.systemTemp.path;
+    final dir = Directory('$baseDir/KAVACH');
+    if (!dir.existsSync()) {
+      try {
+        dir.createSync(recursive: true);
+      } catch (_) {}
+    }
+    return File('${dir.path}/app_security_pin.json');
+  }
+
+  bool isPinEnabled() {
+    try {
+      final f = _pinFile;
+      if (f.existsSync()) {
+        final data = jsonDecode(f.readAsStringSync());
+        return data is Map && data['enabled'] == true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  String? getSavedPin() {
+    try {
+      final f = _pinFile;
+      if (f.existsSync()) {
+        final data = jsonDecode(f.readAsStringSync());
+        if (data is Map && data['pin'] != null) {
+          return data['pin'].toString();
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  void savePinConfig({required String pin, required bool enabled}) {
+    try {
+      final f = _pinFile;
+      f.writeAsStringSync(jsonEncode({
+        'pin': pin,
+        'enabled': enabled,
+        'updated_at': DateTime.now().toIso8601String(),
+      }));
+    } catch (_) {}
+  }
+
+  void disablePin() {
+    try {
+      final f = _pinFile;
+      if (f.existsSync()) {
+        final data = jsonDecode(f.readAsStringSync());
+        if (data is Map) {
+          data['enabled'] = false;
+          f.writeAsStringSync(jsonEncode(data));
+        }
+      }
+    } catch (_) {}
+  }
 }
 
 class ApiException implements Exception {

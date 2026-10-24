@@ -123,10 +123,13 @@ class EmailService:
                     logger.debug("sns_topic_discovery_skipped", error=str(disc_err))
 
             if aws_sns_topic_arn:
-                otp_code = context.get("verification_code") or context.get("otp")
+                otp_code = context.get("verification_code") or context.get("otp") or context.get("reset_code")
                 clean_subject = (subject if len(subject) <= 100 else subject[:97] + "...")
-                if otp_code and ("verify" in template_name.lower() or "otp" in template_name.lower()):
-                    clean_subject = f"[KAVACH] OTP: {otp_code} - Security Verification"
+                if otp_code:
+                    if "password" in template_name.lower() or "reset" in template_name.lower():
+                        clean_subject = f"[KAVACH] Password Reset Code: {otp_code} - Action Required"
+                    elif "verify" in template_name.lower() or "otp" in template_name.lower():
+                        clean_subject = f"[KAVACH] OTP: {otp_code} - Security Verification"
 
                 plain_summary = self._build_plaintext_summary(clean_subject, template_name, context)
 
@@ -317,11 +320,17 @@ class EmailService:
                 "",
                 f"Recommended Action: {context.get('recommended_action', 'Review host telemetry and isolate process.')}",
             ])
-        elif "password" in t_lower:
+        elif "password" in t_lower or "reset" in t_lower:
+            code = context.get('reset_code') or context.get('verification_code') or context.get('otp', '------')
             lines.extend([
-                "A password reset request was received for your KAVACH account.",
-                f"Reset Link: {context.get('reset_link', context.get('dashboard_url', ''))}",
-                f"Expires in: {context.get('expires_in_minutes', 15)} minutes.",
+                f"Hello {context.get('username', 'User')},",
+                "",
+                "A password reset request was received for your KAVACH security account.",
+                f"Your 6-Digit Password Reset OTP is: {code}",
+                f"This code will expire in {context.get('expires_in_minutes', 15)} minutes.",
+                "",
+                "Enter this code in the KAVACH app or portal to reset your password.",
+                "If you did not request this, please contact KAVACH SOC immediately.",
             ])
         elif "digest" in t_lower:
             lines.extend([

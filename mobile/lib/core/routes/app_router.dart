@@ -6,6 +6,7 @@ import '../../screens/authentication/login/login_screen.dart';
 import '../../screens/authentication/signup/signup_screen.dart';
 import '../../screens/authentication/forgot_password/forgot_password_screen.dart';
 import '../../screens/authentication/verify_email/verify_email_screen.dart';
+import '../../screens/security/app_lock_pin_screen.dart';
 import '../../screens/user_mode/user_dashboard_screen.dart';
 
 /// Centralized route generation with role-based dashboard resolution.
@@ -24,6 +25,16 @@ class AppRouter {
         return _buildSlideRoute(const ForgotPasswordScreen(), settings);
       case AppRoutes.verifyEmail:
         return _buildFadeRoute(const VerifyEmailScreen(), settings);
+      case AppRoutes.appLockPin:
+        return _buildFadeRoute(
+          Builder(
+            builder: (ctx) => AppLockPinScreen(
+              mode: PinMode.unlock,
+              onUnlocked: () => Navigator.of(ctx).pushReplacementNamed(AppRoutes.home),
+            ),
+          ),
+          settings,
+        );
       case AppRoutes.userDashboard:
       case AppRoutes.protectionDashboard:
       case AppRoutes.home:
