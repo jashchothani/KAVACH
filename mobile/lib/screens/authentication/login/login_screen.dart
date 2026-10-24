@@ -89,8 +89,9 @@ class _LoginScreenState extends State<LoginScreen>
         Navigator.of(context).pushNamed(
           AppRoutes.verifyEmail,
           arguments: {
-            'email': res['email'] ?? _emailController.text.trim(),
+            'email': _emailController.text.trim(),
             'username': res['username'] ?? _emailController.text.trim(),
+            'masked_email': res['email'] ?? _emailController.text.trim(),
           },
         );
       }
@@ -192,25 +193,43 @@ class _LoginScreenState extends State<LoginScreen>
 
                           // ── Remember Me + Forgot Password ─────────────────
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              SizedBox(
-                                height: 24,
-                                width: 24,
-                                child: Checkbox(
-                                  value: _rememberMe,
-                                  onChanged: (value) {
+                              Flexible(
+                                child: InkWell(
+                                  onTap: () {
                                     setState(() {
-                                      _rememberMe = value ?? false;
+                                      _rememberMe = !_rememberMe;
                                     });
                                   },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: Checkbox(
+                                          value: _rememberMe,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _rememberMe = value ?? false;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          AppStrings.rememberMe,
+                                          style: AppTextStyles.labelSmall,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                AppStrings.rememberMe,
-                                style: AppTextStyles.labelSmall,
-                              ),
-                              const Spacer(),
                               GestureDetector(
                                 onTap: () {
                                   Navigator.of(context)

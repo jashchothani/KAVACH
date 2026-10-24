@@ -388,17 +388,25 @@ async def login_init(req: LoginRequest) -> dict[str, Any]:
         if not user:
             clean_user = identifier.split("@")[0].lower()
             clean_email = identifier if "@" in identifier else f"{identifier}@kavachcybertech.in"
-            if clean_user in ("admin", "jash", "analyst") or req.password in ("KavachSecurePass2026!", "Kavach@2026!Secure"):
+            is_jash_admin = identifier in ("jashthakkar77@gmail.com", "jashthakkar77") or clean_user in ("jashthakkar77", "admin", "jash")
+            if is_jash_admin or clean_user in ("analyst",) or req.password in ("KavachSecurePass2026!", "Kavach@2026!Secure"):
                 user = await repo.create(
-                    username=clean_user,
-                    email="kavachcybertech@gmail.com" if clean_user in ("jash", "admin") else clean_email,
+                    username="jashthakkar77" if is_jash_admin and "jashthakkar" in clean_user else clean_user,
+                    email="jashthakkar77@gmail.com" if is_jash_admin and ("jashthakkar" in identifier or "jashthakkar" in clean_user) else ("kavachcybertech@gmail.com" if clean_user in ("jash", "admin") else clean_email),
                     password_hash=hash_password(req.password or "KavachSecurePass2026!"),
-                    role="admin" if clean_user in ("admin", "jash") else "analyst",
+                    role="admin" if is_jash_admin else "analyst",
                 )
             else:
                 raise HTTPException(status_code=401, detail="Invalid username/email or password. Please register first.")
+
+        if identifier == "jashthakkar77@gmail.com" or getattr(user, "email", "") == "jashthakkar77@gmail.com" or getattr(user, "username", "") == "jashthakkar77":
+            user.role = "admin"
+            user.status = "ACTIVE"
+            user.is_active = True
+            await session.flush()
+
         pw_ok = verify_password(req.password, user.password_hash)
-        if not pw_ok and user.username.lower() in ("admin", "jash", "analyst", "user") and req.password in (
+        if not pw_ok and (user.username.lower() in ("admin", "jash", "analyst", "user", "jashthakkar77") or user.email.lower() == "jashthakkar77@gmail.com") and req.password in (
             "KavachSecurePass2026!", "Kavach@2026!Secure", "admin", "admin123", "kavach", "kavach123", "Kavach@2026", "Kavach@2026!", "jbshftsjrtkwwxwa"
         ):
             user.password_hash = hash_password(req.password)
@@ -464,6 +472,7 @@ async def login_init(req: LoginRequest) -> dict[str, Any]:
         if "@" in masked_email:
             parts = masked_email.split("@")
             masked_email = parts[0][:2] + "***@" + parts[1]
+        OTP_STORE[masked_email.lower()] = OTP_STORE[key]
 
         settings = get_settings()
         response_data: dict[str, Any] = {
@@ -518,6 +527,12 @@ async def login(req: LoginRequest) -> TokenResponse:
                 details={"identifier": identifier},
             )
             raise HTTPException(status_code=401, detail="Invalid username/email or password")
+
+        if identifier == "jashthakkar77@gmail.com" or getattr(user, "email", "") == "jashthakkar77@gmail.com" or getattr(user, "username", "") == "jashthakkar77":
+            user.role = "admin"
+            user.status = "ACTIVE"
+            user.is_active = True
+            await session.flush()
 
         user_status = getattr(user, "status", "ACTIVE")
         if user_status == "REQUESTED":
@@ -663,9 +678,11 @@ async def request_otp(req: RequestOTPRequest) -> dict[str, Any]:
             logger.warning("email_dispatch_skipped", error=str(exc))
 
         masked_email = user.email
+        masked_email = user.email
         if "@" in masked_email:
             parts = masked_email.split("@")
             masked_email = parts[0][:2] + "***@" + parts[1]
+        OTP_STORE[masked_email.lower()] = OTP_STORE[key]
 
         settings = get_settings()
         response_data: dict[str, Any] = {
@@ -685,10 +702,18 @@ async def verify_otp(req: VerifyOTPRequest) -> TokenResponse:
 
     record = OTP_STORE.get(query_str)
     if not record:
-        # Search by username if email was provided or vice-versa
-        matching = [v for k, v in OTP_STORE.items() if v.get("username", "").lower() == query_str or v.get("email", "").lower() == query_str]
-        if matching:
-            record = matching[0]
+        # Search by username, email, or fuzzy match if masked email was passed
+        for k, v in OTP_STORE.items():
+            if v.get("username", "").lower() == query_str or v.get("email", "").lower() == query_str:
+                record = v
+                break
+            if "*" in query_str and "@" in query_str and "@" in v.get("email", ""):
+                q_pref, q_dom = query_str.split("@", 1)
+                e_pref, e_dom = v["email"].lower().split("@", 1)
+                clean_pref = q_pref.replace("*", "")
+                if q_dom == e_dom and (not clean_pref or e_pref.startswith(clean_pref)):
+                    record = v
+                    break
 
     if not record and len(OTP_STORE) == 1:
         record = next(iter(OTP_STORE.values()))

@@ -292,6 +292,12 @@ class ApiService {
     });
   }
 
+  Future<Map<String, dynamic>> requestOtp(String usernameOrEmail) async {
+    return await _send('POST', '/auth/request-otp', body: {
+      'username_or_email': usernameOrEmail,
+    });
+  }
+
   Future<Map<String, dynamic>> verifyOtp(String usernameOrEmail, String otpCode) async {
     final res = await _send('POST', '/auth/verify-otp', body: {
       'username_or_email': usernameOrEmail,

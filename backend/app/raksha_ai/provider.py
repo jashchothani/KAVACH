@@ -51,11 +51,12 @@ class NvidiaNimProvider(BaseLLMProvider):
     def __init__(self, api_key: str, base_url: str, model: str) -> None:
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")
-        # If model is slow vision model, default to high-speed diffusiongemma
-        if not model or "llama-3.2-11b-vision" in model:
-            self._model = "google/diffusiongemma-26b-a4b-it"
+        # Fast, high-throughput chat completion model on NVIDIA NIM
+        if not model or "vision" in model or "diffusion" in model:
+            self._model = "meta/llama-3.1-8b-instruct"
         else:
             self._model = model
+        self._circuit_broken_until = 0.0
 
     @property
     def provider_name(self) -> str:
@@ -63,15 +64,21 @@ class NvidiaNimProvider(BaseLLMProvider):
 
     async def generate_response(self, prompt: str, system_prompt: str = SYSTEM_PROMPT) -> str:
         """Call NVIDIA NIM Chat Completions endpoint with fast timeout and fallback models."""
+        import time
+        now = time.time()
+        if now < self._circuit_broken_until:
+            local_engine = LocalFallbackProvider()
+            return await local_engine.generate_response(prompt, system_prompt)
+
         url = f"{self._base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
 
-        # Sequence of fast models to try
+        # Sequence of fast, highly-capable chat models to try
         candidate_models = [self._model]
-        for fallback_m in ["google/diffusiongemma-26b-a4b-it", "nvidia/nemotron-3.5-lightning-30b-a3b"]:
+        for fallback_m in ["meta/llama-3.1-8b-instruct", "mistralai/mistral-7b-instruct-v0.3", "meta/llama-3.3-70b-instruct"]:
             if fallback_m not in candidate_models:
                 candidate_models.append(fallback_m)
 
@@ -87,22 +94,23 @@ class NvidiaNimProvider(BaseLLMProvider):
                 "max_tokens": 800,
             }
             try:
-                # 5.5s timeout per candidate to prevent hanging the client
-                async with httpx.AsyncClient(timeout=httpx.Timeout(5.5, connect=2.5)) as client:
+                # 3.0s timeout per candidate to prevent hanging the client
+                async with httpx.AsyncClient(timeout=httpx.Timeout(3.0, connect=1.5)) as client:
                     response = await client.post(url, headers=headers, json=payload)
                     if response.status_code == 200:
                         data = response.json()
                         text = data["choices"][0]["message"]["content"].strip()
                         if text:
+                            self._circuit_broken_until = 0.0
                             return text
                     logger.warning("nim_model_candidate_failed", model=m, status=response.status_code)
             except Exception as exc:
                 last_error = exc
-                logger.warning("nim_model_timeout_or_error", model=m, error=str(exc))
-                continue
-
-        logger.error("all_nvidia_nim_candidates_failed", error=str(last_error))
-        raise RuntimeError(f"NVIDIA NIM API request failed: {last_error}")
+        # Circuit break for 5 minutes so subsequent queries return in milliseconds
+        self._circuit_broken_until = time.time() + 300.0
+        logger.warning("nvidia_nim_circuit_broken_falling_back_to_local_engine", error=str(last_error))
+        local_engine = LocalFallbackProvider()
+        return await local_engine.generate_response(prompt, system_prompt)
 
 
 class LocalFallbackProvider(BaseLLMProvider):
@@ -114,7 +122,58 @@ class LocalFallbackProvider(BaseLLMProvider):
 
     async def generate_response(self, prompt: str, system_prompt: str = SYSTEM_PROMPT) -> str:
         """Provide structured deterministic security explanations."""
+        user_q = prompt.strip()
+        if "User Question:" in prompt:
+            user_q = prompt.split("User Question:")[1].split("\n")[0].strip()
         lower_prompt = prompt.lower()
+
+        if any(w in lower_prompt for w in ("call", "caller id", "phone", "spam call", "number", "truecaller", "+92", "+234", "+855", "+44", "telecom", "who is", "incoming")):
+            return """### 1. Caller ID & Telecom Scam Evaluation
+KAVACH Telecom Sentinel analyzed the communication indicators for potential cyber fraud.
+
+### 2. Evidence Observed & Syndicate Patterns
+- **Spoofing Assessment:** International VoIP gateway masking (+92, +234, +855, +44) often circumvents carrier origin authentication.
+- **Syndicate Modus Operandi:** Common vectors include fake electricity bill disconnections, lottery claims, credit card reward redemption, and delivery parcel holds.
+- **Telemetry Verification:** No authorized government agency or banking institution demands immediate UPI fund transfers over a telephone call.
+
+### 3. Risk & Threat Level
+High Risk of financial fraud or credential extraction if personal identifiers or OTPs are shared.
+
+### 4. Recommended Defensive Actions
+1. **Never Share OTPs**: Banks, utility companies, and police will never demand OTP codes or remote-screen-sharing apps (AnyDesk, TeamViewer).
+2. **Use KAVACH Number Scanner**: Verify the full international number in the Caller ID tab to check our national fraud syndicate registry.
+3. **Block & Report**: Tap 'Block & Report' to feed this number into KAVACH's crowd-sourced threat intelligence matrix."""
+
+        if any(w in lower_prompt for w in ("digital arrest", "police", "customs", "cbi", "fedex", "parcel")):
+            return """### 1. Critical Scam Alert: 'Digital Arrest' & Law Enforcement Impersonation
+⚠️ **URGENT WARNING:** 'Digital Arrest' is a fraudulent extortion tactic manufactured by transnational cybercrime syndicates.
+
+### 2. Legal Reality & Evidence
+- **No Lawful Authority:** Under Indian law (CrPC / Bharatiya Nagarik Suraksha Sanhita), neither State Police, CBI, ED, nor Customs conducts arrests via Skype, WhatsApp, or video calls.
+- **Fake Badges & Uniforms:** Attackers use counterfeit police station backdrops, forged Supreme Court letters, and artificial warrant documents to induce panic.
+- **Financial Trap:** Victims are coerced into transferring money to 'RBI Verification Accounts' or 'Clearance Escrows'—these are mule accounts that siphon funds immediately.
+
+### 3. Concrete Action Protocol
+1. **Disconnect the Call Immediately**: You are in zero legal danger. The caller is an extortionist.
+2. **Do Not Send Any Money**: Any request to transfer funds for 'verification' or 'bond' is 100% fraudulent.
+3. **Dial National Cyber Helpline 1930**: Report the incident immediately at [cybercrime.gov.in](https://cybercrime.gov.in) or call 1930."""
+
+        if any(w in lower_prompt for w in ("sms", "smishing", "telegram", "whatsapp", "otp", "task")):
+            return """### 1. SMS & Instant Messaging Threat Assessment
+Evaluation of messaging payload against phishing (smishing) and Part-Time Task scam heuristics.
+
+### 2. Common Attack Vectors
+- **Telegram / WhatsApp Task Scams:** "Earn ₹3,000/day by liking YouTube videos or reviewing Google maps". Initial small payouts are bait to steal larger deposits.
+- **Bank / PAN / KYC Smishing:** Urgent SMS claiming "Your SBI/HDFC account will be blocked today. Update PAN at [short-link]".
+- **APK Droppers:** Messages containing `.apk` attachments disguised as wedding cards, e-challans, or courier tracking updates.
+
+### 3. Impact & Risk
+Installing malicious APKs grants SMS-forwarding and Accessibility permissions, enabling background bank account drainage.
+
+### 4. Recommended Defensive Protocol
+1. Never click shortened URLs (`bit.ly`, `tinyurl`, `.top`, `.xyz`) in unsolicited SMS.
+2. Never install `.apk` files received over WhatsApp or Telegram.
+3. Paste any suspicious link into the KAVACH Web Scanner to verify safety."""
 
         if "wifi" in lower_prompt or "wi-fi" in lower_prompt or "network" in lower_prompt:
             return """### 1. Wi-Fi & Network Security Assessment
@@ -229,7 +288,7 @@ Statistical deviations often indicate zero-day reconnaissance, unauthorized scri
 
         # General inquiry fallback
         return f"""### 1. Cybersecurity Assessment
-Raksha AI analyzed your security inquiry regarding: **{prompt[:80]}**
+Raksha AI analyzed your security inquiry regarding: **{user_q[:80]}**
 
 ### 2. Technical Evaluation & Context
 - Verified against active KAVACH endpoint telemetry, MITRE ATT&CK enterprise techniques, and sovereign defense policies.
@@ -276,8 +335,9 @@ class GoogleGeminiProvider(BaseLLMProvider):
                 data = response.json()
                 return data["candidates"][0]["content"]["parts"][0]["text"].strip()
         except Exception as exc:
-            logger.error("gemini_call_failed", error=str(exc))
-            raise RuntimeError(f"Google Gemini API request failed: {exc}")
+            logger.warning("gemini_call_failed_falling_back", error=str(exc))
+            local_engine = LocalFallbackProvider()
+            return await local_engine.generate_response(prompt, system_prompt)
 
 
 def get_llm_provider() -> BaseLLMProvider:
@@ -291,9 +351,9 @@ def get_llm_provider() -> BaseLLMProvider:
 
     if api_key and not api_key.startswith("your_"):
         base_url = settings.nim.base_url or os.getenv("NVIDIA_NIM_BASE_URL", "https://integrate.api.nvidia.com/v1")
-        model = settings.nim.model or os.getenv("NVIDIA_NIM_MODEL", "google/diffusiongemma-26b-a4b-it")
-        if not model or "llama-3.2-11b-vision" in model:
-            model = "google/diffusiongemma-26b-a4b-it"
+        model = settings.nim.model or os.getenv("NVIDIA_NIM_MODEL", "meta/llama-3.1-8b-instruct")
+        if not model or "llama-3.2-11b-vision" in model or "diffusion" in model:
+            model = "meta/llama-3.1-8b-instruct"
         return NvidiaNimProvider(
             api_key=api_key,
             base_url=base_url,

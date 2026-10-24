@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'app_routes.dart';
-import '../services/api_service.dart';
 import '../../screens/authentication/splash/splash_screen.dart';
 import '../../screens/authentication/login/login_screen.dart';
 import '../../screens/authentication/signup/signup_screen.dart';
 import '../../screens/authentication/forgot_password/forgot_password_screen.dart';
 import '../../screens/authentication/verify_email/verify_email_screen.dart';
 import '../../screens/user_mode/user_dashboard_screen.dart';
-import '../../screens/soc_mode/soc_dashboard_screen.dart';
-import '../../screens/admin_mode/admin_dashboard_screen.dart';
 
 /// Centralized route generation with role-based dashboard resolution.
 class AppRouter {
@@ -28,19 +25,11 @@ class AppRouter {
       case AppRoutes.verifyEmail:
         return _buildFadeRoute(const VerifyEmailScreen(), settings);
       case AppRoutes.userDashboard:
-        return _buildFadeRoute(const UserDashboardScreen(), settings);
-      case AppRoutes.socDashboard:
-        return _buildFadeRoute(const SocDashboardScreen(), settings);
-      case AppRoutes.adminDashboard:
-        return _buildFadeRoute(const AdminDashboardScreen(), settings);
       case AppRoutes.protectionDashboard:
       case AppRoutes.home:
-        final role = ApiService.instance.currentUserRole;
-        if (role.isAdmin) {
-          return _buildFadeRoute(const AdminDashboardScreen(), settings);
-        } else if (role.isSocAnalyst) {
-          return _buildFadeRoute(const SocDashboardScreen(), settings);
-        }
+      case AppRoutes.socDashboard:
+      case AppRoutes.adminDashboard:
+        // On mobile devices, always deliver the dedicated, responsive mobile user dashboard
         return _buildFadeRoute(const UserDashboardScreen(), settings);
       default:
         return _buildRoute(const LoginScreen(), settings);

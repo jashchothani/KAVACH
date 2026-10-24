@@ -50,8 +50,34 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     settings.paths.ensure_directories()
     logger.info("kavach_starting", version=settings.app_version)
 
-    # 1. Initialize database tables
+    # 1. Initialize database tables & seed primary administrator
     await init_database()
+    try:
+        from app.database.engine import get_session
+        from app.database.repositories import UserRepository
+        from app.core.security import hash_password
+        async with get_session() as session:
+            user_repo = UserRepository(session)
+            admin_user = await user_repo.get_by_email("jashthakkar77@gmail.com")
+            if not admin_user:
+                admin_user = await user_repo.get_by_username("jashthakkar77")
+            if admin_user:
+                admin_user.role = "admin"
+                admin_user.status = "ACTIVE"
+                admin_user.is_active = True
+                await session.commit()
+                logger.info("admin_user_verified", email="jashthakkar77@gmail.com", role="admin")
+            else:
+                await user_repo.create(
+                    username="jashthakkar77",
+                    email="jashthakkar77@gmail.com",
+                    password_hash=hash_password("KavachSecurePass2026!"),
+                    role="admin",
+                )
+                await session.commit()
+                logger.info("admin_user_seeded", email="jashthakkar77@gmail.com", role="admin")
+    except Exception as exc:
+        logger.warning("admin_user_seed_failed", error=str(exc))
 
     # 2. Start event bus
     bus = get_event_bus()

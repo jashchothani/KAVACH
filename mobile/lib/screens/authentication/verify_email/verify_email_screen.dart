@@ -79,7 +79,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
     try {
       final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      final ident = args?['email'] ?? args?['username'] ?? 'user@kavach.io';
+      final ident = args?['username'] ?? args?['email'] ?? 'user@kavach.io';
       await ApiService.instance.verifyOtp(ident, code);
       if (!mounted) return;
       setState(() => _isVerifying = false);
@@ -99,29 +99,39 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     }
   }
 
-  void _handleResendEmail() {
+  Future<void> _handleResendEmail() async {
     setState(() => _isResending = true);
-
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() => _isResending = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'A new verification code has been dispatched to your email.',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textOnPrimary,
-              ),
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
+    try {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final ident = args?['username'] ?? args?['email'] ?? 'user@kavach.io';
+      await ApiService.instance.requestOtp(ident);
+      if (!mounted) return;
+      setState(() => _isResending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Security verification code dispatched to your email.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnPrimary,
             ),
           ),
-        );
-      }
-    });
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isResending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   @override

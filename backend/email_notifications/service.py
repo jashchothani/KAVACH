@@ -97,7 +97,9 @@ class EmailService:
         if resend_api_key:
             try:
                 import httpx
-                from_email = os.environ.get("RESEND_FROM_EMAIL", "KAVACH Security <kavachcybertech@gmail.com>")
+                from_email = os.environ.get("RESEND_FROM_EMAIL", "KAVACH Security <onboarding@resend.dev>")
+                if "@gmail.com" in from_email.lower():
+                    from_email = "KAVACH Security <onboarding@resend.dev>"
                 resend_payload: dict[str, Any] = {
                     "from": from_email,
                     "to": [to],
@@ -110,7 +112,6 @@ class EmailService:
                             "filename": "kavach_logo.png",
                             "content": logo_b64,
                             "content_type": "image/png",
-                            "id": "kavach_logo",
                         }
                     ]
                 async with httpx.AsyncClient(timeout=10.0) as client:
