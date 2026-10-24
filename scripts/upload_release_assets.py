@@ -1,23 +1,21 @@
 """
 KAVACH Enterprise Release Asset Management Script
 Upload, replace, and synchronize release binaries to GitHub Releases automatically.
-Supports automatic token detection from Git Credential Manager or GITHUB_TOKEN environment variable.
+Supports chunked streaming uploads with live progress bar and auto-detected Git credentials.
 
 Usage examples:
   python scripts/upload_release_assets.py --list
   python scripts/upload_release_assets.py --upload-all
-  python scripts/upload_release_assets.py --file release/kavach-extension.zip
+  python scripts/upload_release_assets.py --file release/kavach-mobile-release.apk
   python scripts/upload_release_assets.py --tag v2.2.0 --create --upload-all
 """
 
 import os
 import sys
-import json
 import time
 import argparse
 import subprocess
-import urllib.request
-import urllib.error
+import requests
 
 REPO = "jashchothani/KAVACH"
 API_BASE = f"https://api.github.com/repos/{REPO}"
@@ -50,60 +48,100 @@ def get_github_token():
     return ""
 
 
-def api_request(url, method="GET", data=None, token="", content_type="application/json"):
+def get_headers(token=""):
     headers = {
         "User-Agent": "KavachReleaseManager/2.1",
         "Accept": "application/vnd.github.v3+json",
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    if content_type:
-        headers["Content-Type"] = content_type
-
-    req = urllib.request.Request(url, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        body = resp.read()
-        return resp.status, body
+    return headers
 
 
 def get_releases(token=""):
     url = f"{API_BASE}/releases"
-    status, body = api_request(url, token=token)
-    return json.loads(body.decode("utf-8"))
+    resp = requests.get(url, headers=get_headers(token), timeout=30)
+    resp.raise_for_status()
+    return resp.json()
 
 
 def get_release_by_tag(tag, token=""):
     url = f"{API_BASE}/releases/tags/{tag}"
-    try:
-        status, body = api_request(url, token=token)
-        return json.loads(body.decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return None
-        raise
+    resp = requests.get(url, headers=get_headers(token), timeout=30)
+    if resp.status_code == 404:
+        return None
+    resp.raise_for_status()
+    return resp.json()
 
 
 def create_release(tag, name, body_text="", token=""):
     url = f"{API_BASE}/releases"
-    payload = json.dumps({
+    payload = {
         "tag_name": tag,
         "name": name,
         "body": body_text or f"KAVACH Enterprise Release {tag}",
         "draft": False,
         "prerelease": False
-    }).encode("utf-8")
-    status, body = api_request(url, method="POST", data=payload, token=token)
-    return json.loads(body.decode("utf-8"))
+    }
+    resp = requests.post(url, json=payload, headers=get_headers(token), timeout=30)
+    resp.raise_for_status()
+    return resp.json()
 
 
 def delete_asset(asset_id, token=""):
     url = f"{API_BASE}/releases/assets/{asset_id}"
     try:
-        status, _ = api_request(url, method="DELETE", token=token)
-        return status in (204, 200)
+        resp = requests.delete(url, headers=get_headers(token), timeout=30)
+        return resp.status_code in (204, 200)
     except Exception as e:
         print(f"  [!] Failed to delete asset {asset_id}: {e}")
         return False
+
+
+class ProgressFileReader:
+    """Streams file from disk with a real-time terminal progress bar."""
+    def __init__(self, file_path, filename):
+        self.file = open(file_path, "rb")
+        self.filename = filename
+        self.total_size = os.path.getsize(file_path)
+        self.uploaded = 0
+        self.start_time = time.time()
+        self.last_update = 0
+
+    def read(self, size=-1):
+        chunk = self.file.read(size)
+        if chunk:
+            self.uploaded += len(chunk)
+            now = time.time()
+            if now - self.last_update > 0.25 or self.uploaded >= self.total_size:
+                self.last_update = now
+                self.print_progress()
+        return chunk
+
+    def print_progress(self):
+        pct = (self.uploaded / self.total_size) * 100 if self.total_size > 0 else 0
+        elapsed = max(0.001, time.time() - self.start_time)
+        speed_mb = (self.uploaded / (1024 * 1024)) / elapsed
+        remaining_sec = ((self.total_size - self.uploaded) / (1024 * 1024)) / speed_mb if speed_mb > 0 else 0
+
+        bar_len = 24
+        filled = int(bar_len * (self.uploaded / self.total_size)) if self.total_size > 0 else 0
+        bar = "=" * filled + (">" if filled < bar_len else "")
+        bar = bar.ljust(bar_len, " ")
+
+        up_mb = self.uploaded / (1024 * 1024)
+        tot_mb = self.total_size / (1024 * 1024)
+
+        sys.stdout.write(
+            f"\r  [{bar}] {pct:5.1f}% ({up_mb:5.1f}/{tot_mb:5.1f} MB) · {speed_mb:4.2f} MB/s · ETA: {int(remaining_sec)}s  "
+        )
+        sys.stdout.flush()
+
+    def __len__(self):
+        return self.total_size
+
+    def close(self):
+        self.file.close()
 
 
 def upload_asset(release_id, file_path, token=""):
@@ -123,8 +161,8 @@ def upload_asset(release_id, file_path, token=""):
 
     # 1. Check if asset already exists on this release
     rel_url = f"{API_BASE}/releases/{release_id}"
-    _, rel_body = api_request(rel_url, token=token)
-    rel_info = json.loads(rel_body.decode("utf-8"))
+    rel_resp = requests.get(rel_url, headers=get_headers(token), timeout=30)
+    rel_info = rel_resp.json()
 
     for a in rel_info.get("assets", []):
         if a.get("name") == filename:
@@ -133,28 +171,41 @@ def upload_asset(release_id, file_path, token=""):
             time.sleep(1)
             break
 
-    # 2. Upload file bytes
+    # 2. Upload with streaming file reader and generous 1800s timeout
     upload_url = f"{UPLOADS_BASE}/releases/{release_id}/assets?name={filename}"
+    upload_headers = get_headers(token)
+    upload_headers.update({
+        "Content-Type": content_type,
+        "Content-Length": str(file_size)
+    })
+
+    reader = ProgressFileReader(file_path, filename)
     start_time = time.time()
 
-    with open(file_path, "rb") as fp:
-        file_bytes = fp.read()
+    try:
+        resp = requests.post(
+            upload_url,
+            data=reader,
+            headers=upload_headers,
+            timeout=(30, 1800)  # 30s connect, 1800s (30m) transfer
+        )
+        reader.close()
+        print()  # newline after progress bar
 
-    status, resp_body = api_request(
-        upload_url,
-        method="POST",
-        data=file_bytes,
-        token=token,
-        content_type=content_type
-    )
-
-    elapsed = time.time() - start_time
-    speed = size_mb / elapsed if elapsed > 0 else 0
-    resp_json = json.loads(resp_body.decode("utf-8"))
-
-    print(f"  [SUCCESS] {filename} uploaded in {elapsed:.1f}s ({speed:.2f} MB/s)!")
-    print(f"  [Direct URL] {resp_json.get('browser_download_url')}")
-    return resp_json
+        if resp.status_code == 201:
+            elapsed = time.time() - start_time
+            speed = size_mb / elapsed if elapsed > 0 else 0
+            resp_json = resp.json()
+            print(f"  [SUCCESS] {filename} uploaded in {elapsed:.1f}s ({speed:.2f} MB/s)!")
+            print(f"  [Direct URL] {resp_json.get('browser_download_url')}")
+            return resp_json
+        else:
+            print(f"  [!] Upload failed with HTTP {resp.status_code}: {resp.text[:300]}")
+            return None
+    except Exception as e:
+        reader.close()
+        print(f"\n  [!] Error uploading {filename}: {e}")
+        return None
 
 
 def main():
@@ -174,7 +225,12 @@ def main():
 
     if args.list:
         print(f"\n[*] Fetching releases for {REPO}...")
-        releases = get_releases(token=token)
+        try:
+            releases = get_releases(token=token)
+        except Exception as e:
+            print(f"Error fetching releases: {e}")
+            return
+
         if not releases:
             print("  No releases found.")
             return
@@ -222,7 +278,6 @@ def main():
             os.path.join("release", "kavach-mobile-release.apk"),
             os.path.join("release", "KAVACH-Setup-2.1.0.exe"),
         ]
-        # Also check for alternate versioned exe
         if os.path.exists("release"):
             for f in os.listdir("release"):
                 if f.startswith("KAVACH-Setup") and f.endswith(".exe"):
@@ -243,7 +298,7 @@ def main():
     for f in files_to_upload:
         upload_asset(release_id, f, token=token)
 
-    print("\n[✔] All requested assets have been synchronized to GitHub Releases successfully!")
+    print("\n[OK] All requested assets have been synchronized to GitHub Releases successfully!")
 
 
 if __name__ == "__main__":
