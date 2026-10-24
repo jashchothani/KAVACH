@@ -60,6 +60,9 @@ Source: "..\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubd
 Source: "..\data\database\kavach.db"; DestDir: "{app}\data\database"; Flags: ignoreversion onlyifdoesntexist
 ; Compiled Flutter Windows Desktop release binary & runtime data
 Source: "..\mobile\build\windows\x64\runner\Release\*"; DestDir: "{app}\desktop"; Flags: ignoreversion recursesubdirs createallsubdirs
+; KAVACH Browser Threat Sentinel Extension (Unpacked for Chrome/Edge and ZIP package)
+Source: "..\extension\*"; DestDir: "{app}\extension"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\release\kavach-extension.zip"; DestDir: "{app}\extension"; Flags: ignoreversion
 ; Compiled Standalone 16-Collector Agent Executable
 Source: "..\KavachCollectorAgent.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; Command Line Terminal Interface (TUI)
@@ -67,6 +70,8 @@ Source: "..\kavach.cmd"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName} Desktop App"; Filename: "{app}\desktop\kavach.exe"; IconFilename: "{app}\assets\kavach.ico"
+Name: "{group}\{#MyAppName} Browser Extension Setup"; Filename: "{app}\extension\load_extension.bat"; IconFilename: "{app}\assets\kavach.ico"
+Name: "{group}\{#MyAppName} Browser Extension Folder"; Filename: "{app}\extension"; IconFilename: "{app}\assets\kavach.ico"
 Name: "{group}\{#MyAppName} 16-Collector Agent"; Filename: "{app}\KavachCollectorAgent.exe"; IconFilename: "{app}\assets\kavach.ico"
 Name: "{group}\{#MyAppName} Companion"; Filename: "{app}\runtime\pythonw.exe"; Parameters: """{app}\backend\app\agent\companion.py"""; IconFilename: "{app}\assets\kavach.ico"
 Name: "{group}\{#MyAppName} System Tray"; Filename: "{app}\runtime\pythonw.exe"; Parameters: """{app}\backend\app\agent\tray_companion.py"""; IconFilename: "{app}\assets\kavach.ico"
@@ -93,6 +98,7 @@ Filename: "{app}\KavachCollectorAgent.exe"; Parameters: "--startup --silent"; Fl
 ; Step 2: Launch KAVACH Desktop App, System Tray, and Companion
 Filename: "{app}\desktop\kavach.exe"; Flags: nowait postinstall; Description: "Open KAVACH Unified Defense Application"
 Filename: "{app}\runtime\pythonw.exe"; Parameters: """{app}\backend\app\agent\tray_companion.py"""; Flags: nowait postinstall skipifsilent; Description: "Launch KAVACH System Tray Guardian"
+Filename: "{app}\extension\load_extension.bat"; Flags: nowait postinstall skipifsilent unchecked; Description: "Setup Browser Threat Sentinel Chrome/Edge Extension"
 
 [UninstallRun]
 ; Clean uninstaller: Stop and remove Windows service gracefully

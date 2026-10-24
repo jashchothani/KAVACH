@@ -3,7 +3,7 @@
 
 param(
     [switch]$SkipTests = $false,
-    [string]$Version = "2.1.0"
+    [string]$Version = "2.2.1"
 )
 
 $ErrorActionPreference = "Stop"
