@@ -1,11 +1,11 @@
 {
   "product": "KAVACH Enterprise SOAR-XDR Cyber Defense Platform",
-  "version": "2.1.0",
-  "build_timestamp_utc": "2026-10-18T07:33:52.533452+00:00",
-  "installer_file": "KAVACH-Setup-2.1.0.exe",
-  "file_size_bytes": 78187524,
-  "file_size_mb": "74.57 MB",
-  "sha256": "48AF794A159624F7440A8F50D5AFB52B429D5AAD0BB1C9FE3ADA4E88C898F0B5",
+  "version": "2.2.1",
+  "build_timestamp_utc": "2026-10-24T15:34:49Z",
+  "installer_file": "KAVACH-Setup-2.2.1.exe",
+  "file_size_bytes": 193395790,
+  "file_size_mb": "184.44 MB",
+  "sha256": "7449F407D86D92DF61F4515BFCDB6B0CB80848ABB69975B7594E1368ACDD2397",
   "target_os": "Windows 10 / Windows 11 (64-bit)",
   "components_included": [
     "KAVACH Flutter Desktop Enterprise App (User, SOC Analyst, Admin modes)",
