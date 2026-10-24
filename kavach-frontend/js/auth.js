@@ -81,21 +81,79 @@
       $('#mail').textContent = emailDisplay;
 
       if (r.match_number && r.challenge_id) {
-        let mb = $('#mobile-prompt-box');
-        if (!mb) {
-          const sec = document.querySelectorAll('.pane')[1];
-          sec.insertAdjacentHTML('afterbegin', `
-            <div id="mobile-prompt-box" style="margin-bottom:16px;padding:14px;background:rgba(56,189,248,0.08);border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;text-align:center">
-              <div style="font-size:0.75rem;color:#38bdf8;font-weight:700;letter-spacing:0.5px">📲 GOOGLE-STYLE MOBILE APPROVAL</div>
-              <div style="font-size:0.85rem;color:#f8fafc;margin:4px 0 2px">Confirm on your <b>KAVACH Mobile App</b></div>
-              <div style="font-size:0.75rem;color:#94a3b8">Tap the matching number on your phone:</div>
-              <div id="mobile-match-num" style="font-size:2.8rem;font-weight:900;color:#38bdf8;letter-spacing:4px;margin:6px 0;line-height:1;text-shadow:0 0 16px rgba(56,189,248,0.5)">--</div>
-              <div style="font-size:0.75rem;color:#94a3b8">Or enter the 6-digit OTP code below:</div>
+        let twoFaWrap = $('#twofa-dual-wrap');
+        const pane2 = document.querySelectorAll('.pane')[1];
+        if (!twoFaWrap) {
+          const origSub = pane2.querySelector('p.sub');
+          if (origSub) origSub.style.display = 'none';
+
+          pane2.insertAdjacentHTML('afterbegin', `
+            <div id="twofa-dual-wrap" style="margin-bottom:14px">
+              <div class="twofa-nav" style="display:flex;background:rgba(255,255,255,0.06);border-radius:12px;padding:3px;margin:8px 0 16px;border:1px solid rgba(255,255,255,0.1)">
+                <button type="button" id="tab-mobile" style="flex:1;padding:8px 10px;border:none;background:rgba(56,189,248,0.22);color:#38bdf8;border-radius:9px;font-size:0.8rem;font-weight:700;cursor:pointer;transition:0.2s;display:flex;align-items:center;justify-content:center;gap:6px">
+                  <span>📲 Mobile Prompt</span>
+                </button>
+                <button type="button" id="tab-email" style="flex:1;padding:8px 10px;border:none;background:transparent;color:#94a3b8;border-radius:9px;font-size:0.8rem;font-weight:700;cursor:pointer;transition:0.2s;display:flex;align-items:center;justify-content:center;gap:6px">
+                  <span>📧 Email OTP</span>
+                </button>
+              </div>
+
+              <div id="view-mobile" style="padding:16px 12px;background:rgba(56,189,248,0.06);border:1.5px solid rgba(56,189,248,0.3);border-radius:16px;text-align:center;box-shadow:0 0 24px rgba(56,189,248,0.12)">
+                <div style="font-size:0.75rem;color:#38bdf8;font-weight:800;letter-spacing:0.8px">GOOGLE-STYLE 2-DIGIT CHALLENGE</div>
+                <div style="font-size:0.9rem;color:#f8fafc;margin:6px 0 2px;font-weight:600">Open your <b>KAVACH Mobile App</b></div>
+                <div style="font-size:0.8rem;color:#94a3b8">Tap the matching number on your phone:</div>
+                <div id="mobile-match-num" style="font-size:3.4rem;font-weight:900;color:#38bdf8;letter-spacing:6px;margin:8px 0;line-height:1;text-shadow:0 0 20px rgba(56,189,248,0.6)">--</div>
+                <div style="display:inline-flex;align-items:center;gap:6px;font-size:0.78rem;color:#34d399;background:rgba(16,185,129,0.12);padding:4px 10px;border-radius:999px;margin-bottom:10px">
+                  <span style="width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981;display:inline-block"></span>
+                  Waiting for phone tap…
+                </div>
+                <div>
+                  <button type="button" id="btn-switch-to-email" class="lnk" style="font-size:0.8rem;color:#94a3b8;text-decoration:underline;cursor:pointer;background:none;border:none">Prefer entering code? Switch to Email OTP →</button>
+                </div>
+              </div>
             </div>
           `);
+
+          const tabMob = $('#tab-mobile');
+          const tabEm = $('#tab-email');
+          const viewMob = $('#view-mobile');
+          const f2 = $('#f2');
+          const metaP = pane2.querySelector('p.meta');
+          const switchToEm = $('#btn-switch-to-email');
+
+          const showMob = () => {
+            tabMob.style.background = 'rgba(56,189,248,0.22)';
+            tabMob.style.color = '#38bdf8';
+            tabEm.style.background = 'transparent';
+            tabEm.style.color = '#94a3b8';
+            viewMob.style.display = 'block';
+            f2.style.display = 'none';
+            if (metaP) metaP.style.display = 'none';
+          };
+
+          const showEm = () => {
+            tabEm.style.background = 'rgba(56,189,248,0.22)';
+            tabEm.style.color = '#38bdf8';
+            tabMob.style.background = 'transparent';
+            tabMob.style.color = '#94a3b8';
+            viewMob.style.display = 'none';
+            f2.style.display = 'block';
+            if (metaP) metaP.style.display = 'block';
+            ins[0].focus();
+          };
+
+          tabMob.onclick = showMob;
+          tabEm.onclick = showEm;
+          if (switchToEm) switchToEm.onclick = showEm;
+
+          // Default to mobile prompt tab
+          showMob();
         } else {
-          mb.style.display = 'block';
+          twoFaWrap.style.display = 'block';
+          const tabMob = $('#tab-mobile');
+          if (tabMob) tabMob.click();
         }
+
         const mn = $('#mobile-match-num');
         if (mn) mn.textContent = r.match_number;
         pollMobileApproval(r.challenge_id);
@@ -112,6 +170,7 @@
       busy(b, false);
     }
   };
+
 
   $('#f2').onsubmit = async e => {
     e.preventDefault();

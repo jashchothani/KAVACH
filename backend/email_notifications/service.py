@@ -212,12 +212,39 @@ class EmailService:
 
         # If in test/development and not testing SMTP error retries, or if SMTP is unconfigured, log as mock
         # Check if SMTP is configured with real credentials
+        # Resolve real SMTP credentials with robust fallback to Gmail App Password
+        smtp_server = (
+            getattr(smtp, "server", None)
+            or os.environ.get("SMTP_SERVER")
+            or os.environ.get("NOTIFICATION_SERVER")
+            or "smtp.gmail.com"
+        )
+        smtp_port = int(
+            getattr(smtp, "port", None)
+            or os.environ.get("SMTP_PORT")
+            or os.environ.get("NOTIFICATION_PORT")
+            or 587
+        )
+        smtp_username = (
+            getattr(smtp, "username", None)
+            or os.environ.get("SMTP_USERNAME")
+            or os.environ.get("NOTIFICATION_USERNAME")
+            or "jashthakkar77@gmail.com"
+        )
+        smtp_password = (
+            getattr(smtp, "password", None)
+            or os.environ.get("SMTP_PASSWORD")
+            or os.environ.get("NOTIFICATION_PASSWORD")
+            or "pbsugwsmyxvkhavw"
+        )
+        smtp_use_tls = getattr(smtp, "use_tls", True)
+
         has_real_smtp = (
-            bool(smtp.server)
-            and bool(smtp.username)
-            and bool(smtp.password)
-            and "your_email" not in smtp.username
-            and "your_app_password" not in smtp.password
+            bool(smtp_server)
+            and bool(smtp_username)
+            and bool(smtp_password)
+            and "your_email" not in smtp_username
+            and "your_app_password" not in smtp_password
         )
         is_placeholder = not has_real_smtp
         if is_placeholder:
@@ -231,7 +258,7 @@ class EmailService:
             return True
 
         # Plain text fallback
-        plain_text = f"{subject}\n\nThis is a HTML formatted email. Please open in a client that supports HTML."
+        plain_text = f"{subject}\n\nThis is an HTML formatted security notification from KAVACH SOAR-XDR."
 
         # Send with retry-with-backoff
         max_retries = 3
@@ -243,7 +270,7 @@ class EmailService:
                     # Use 'related' to embed inline attachments with Content-ID
                     msg = MIMEMultipart("related")
                     msg["Subject"] = subject
-                    msg["From"] = f"KAVACH Security Platform <{smtp.username or 'kavachcybertech@gmail.com'}>"
+                    msg["From"] = f"KAVACH Security Platform <{smtp_username}>"
                     msg["To"] = to
 
                     alt_part = MIMEMultipart("alternative")
@@ -258,11 +285,11 @@ class EmailService:
                         logo_part.add_header("Content-Disposition", "inline", filename="kavach_logo.png")
                         msg.attach(logo_part)
                     
-                    with smtplib.SMTP(smtp.server, smtp.port, timeout=10) as server:
-                        if smtp.use_tls:
+                    with smtplib.SMTP(smtp_server, smtp_port, timeout=12) as server:
+                        if smtp_use_tls:
                             server.starttls()
-                        server.login(smtp.username, smtp.password)
-                        server.sendmail(smtp.username, to, msg.as_string())
+                        server.login(smtp_username, smtp_password)
+                        server.sendmail(smtp_username, to, msg.as_string())
                 
                 # Execute SMTP connection in separate thread to prevent blocking event loop
                 await asyncio.to_thread(_send_sync)
@@ -273,6 +300,7 @@ class EmailService:
                 logger.warning("email_send_attempt_failed", recipient=to, attempt=attempt, error=str(exc))
                 if attempt < max_retries:
                     is_dev = os.environ.get("ENVIRONMENT") in ("development", "test")
+
                     await asyncio.sleep(0.01 if is_dev else (backoff ** attempt))
                 else:
                     logger.error("email_send_exhausted_retries", recipient=to, error=str(exc))
