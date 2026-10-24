@@ -1,11 +1,17 @@
+// ==========================================================================
 // KAVACH Web, Gmail & WhatsApp Threat Sentinel — Unified Popup Controller
+// Sovereign Threat Detection, Raksha AI Intelligence & Live API Integration
+// ==========================================================================
 
-const BACKEND_API = "http://localhost:8000/api/v1";
+const CLOUD_API_URL = "https://api.kavachcybertech.in/api/v1";
+const LOCAL_API_URL = "http://localhost:8000/api/v1";
+let activeApiUrl = CLOUD_API_URL;
 
 document.addEventListener("DOMContentLoaded", async () => {
   // --- Tab 1 Elements (Web Shield) ---
   const targetUrlEl = document.getElementById("targetUrl");
   const schemeIconEl = document.getElementById("schemeIcon");
+  const copyUrlBtn = document.getElementById("copyUrlBtn");
   const verdictCardEl = document.getElementById("verdictCard");
   const gaugeProgressEl = document.getElementById("gaugeProgress");
   const scoreValEl = document.getElementById("scoreVal");
@@ -23,6 +29,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const checkHeuristicsVal = document.getElementById("checkHeuristicsVal");
   const checkAiVal = document.getElementById("checkAiVal");
 
+  // --- Theme Toggle Elements ---
+  const themeToggleBtn = document.getElementById("themeToggleBtn");
+  const themeToggleIcon = document.getElementById("themeToggleIcon");
+
   // --- Tab 2 Elements (Gmail & WhatsApp) ---
   const gmailShieldToggle = document.getElementById("gmailShieldToggle");
   const whatsappShieldToggle = document.getElementById("whatsappShieldToggle");
@@ -39,27 +49,174 @@ document.addEventListener("DOMContentLoaded", async () => {
   const scanResultIndicators = document.getElementById("scanResultIndicators");
   let activeScanType = "url";
 
-  // --- Tab 4 Elements (Settings) ---
+  // --- Tab 4 Elements (Settings & Events) ---
   const linkAnnotatorToggle = document.getElementById("linkAnnotatorToggle");
   const strictShieldToggle = document.getElementById("strictShieldToggle");
   const recentThreatsList = document.getElementById("recentThreatsList");
+  const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+
+  // --- Tab 5 Elements (Diagnostics & API Selector) ---
+  const radioServerCloud = document.getElementById("radioServerCloud");
+  const radioServerLocal = document.getElementById("radioServerLocal");
+  const customApiInput = document.getElementById("customApiInput");
+  const saveCustomApiBtn = document.getElementById("saveCustomApiBtn");
+  const apiLiveBadge = document.getElementById("apiLiveBadge");
+  const runDiagnosticsBtn = document.getElementById("runDiagnosticsBtn");
 
   // --- Footer Elements ---
   const rescanBtn = document.getElementById("rescanBtn");
   const openSocBtn = document.getElementById("openSocBtn");
 
-  // 1. Navigation Tab Switching
+  // ========================================================================
+  // 1. Theme Management (Light Theme Default)
+  // ========================================================================
+  function initTheme() {
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(["kavach_theme"], (res) => {
+        const theme = res.kavach_theme || "light";
+        applyTheme(theme);
+      });
+    } else {
+      applyTheme("light");
+    }
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    if (themeToggleIcon) {
+      themeToggleIcon.textContent = theme === "dark" ? "☀️" : "🌙";
+      themeToggleBtn.title = theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme";
+    }
+  }
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme") || "light";
+      const next = current === "dark" ? "light" : "dark";
+      applyTheme(next);
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ kavach_theme: next });
+      }
+    });
+  }
+
+  // ========================================================================
+  // 2. API Server Configuration & Storage
+  // ========================================================================
+  async function initApiServer() {
+    return new Promise((resolve) => {
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(["kavach_api_url"], (res) => {
+          if (res.kavach_api_url) {
+            activeApiUrl = res.kavach_api_url;
+          } else {
+            activeApiUrl = CLOUD_API_URL;
+            chrome.storage.local.set({ kavach_api_url: CLOUD_API_URL });
+          }
+          syncApiRadioUi();
+          resolve();
+        });
+      } else {
+        activeApiUrl = CLOUD_API_URL;
+        syncApiRadioUi();
+        resolve();
+      }
+    });
+  }
+
+  function syncApiRadioUi() {
+    if (activeApiUrl === CLOUD_API_URL) {
+      if (radioServerCloud) radioServerCloud.checked = true;
+    } else if (activeApiUrl === LOCAL_API_URL) {
+      if (radioServerLocal) radioServerLocal.checked = true;
+    } else {
+      if (radioServerCloud) radioServerCloud.checked = false;
+      if (radioServerLocal) radioServerLocal.checked = false;
+      if (customApiInput) customApiInput.value = activeApiUrl;
+    }
+  }
+
+  function setApiServer(newUrl) {
+    activeApiUrl = newUrl.replace(/\/+$/, "");
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ kavach_api_url: activeApiUrl });
+    }
+    // Notify background worker
+    try {
+      chrome.runtime.sendMessage({ type: "SET_API_URL", apiUrl: activeApiUrl });
+    } catch (e) {}
+
+    syncApiRadioUi();
+    checkServerHealth();
+  }
+
+  if (radioServerCloud) {
+    radioServerCloud.addEventListener("change", () => {
+      if (radioServerCloud.checked) setApiServer(CLOUD_API_URL);
+    });
+  }
+
+  if (radioServerLocal) {
+    radioServerLocal.addEventListener("change", () => {
+      if (radioServerLocal.checked) setApiServer(LOCAL_API_URL);
+    });
+  }
+
+  if (saveCustomApiBtn && customApiInput) {
+    saveCustomApiBtn.addEventListener("click", () => {
+      const val = customApiInput.value.trim();
+      if (!val) return;
+      setApiServer(val);
+      saveCustomApiBtn.textContent = "Saved!";
+      setTimeout(() => {
+        saveCustomApiBtn.textContent = "Connect";
+      }, 1500);
+    });
+  }
+
+  // ========================================================================
+  // 3. Navigation Tabs
+  // ========================================================================
   document.querySelectorAll(".nav-tab").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".nav-tab").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll(".nav-tab").forEach((b) => {
+        b.classList.remove("active");
+        b.setAttribute("aria-selected", "false");
+      });
       document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
       btn.classList.add("active");
+      btn.setAttribute("aria-selected", "true");
       const targetPane = document.getElementById(btn.dataset.tab);
       if (targetPane) targetPane.classList.add("active");
+
+      if (btn.dataset.tab === "diagnosticsSection") {
+        runDiagnostics();
+      }
     });
   });
 
-  // 2. Load & bind settings toggles
+  // ========================================================================
+  // 4. Copy URL Button
+  // ========================================================================
+  if (copyUrlBtn) {
+    copyUrlBtn.addEventListener("click", () => {
+      const text = targetUrlEl ? targetUrlEl.textContent : "";
+      if (text && !text.startsWith("Inspecting") && !text.startsWith("Unable")) {
+        navigator.clipboard.writeText(text).then(() => {
+          copyUrlBtn.innerHTML = "✓";
+          copyUrlBtn.style.color = "var(--accent-safe)";
+          setTimeout(() => {
+            copyUrlBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+            copyUrlBtn.style.color = "";
+          }, 1500);
+        });
+      }
+    });
+  }
+
+  // ========================================================================
+  // 5. Settings Toggles
+  // ========================================================================
   if (chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(
       [
@@ -70,10 +227,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         "recentThreats",
       ],
       (res) => {
-        if (res.linkAnnotatorEnabled !== undefined) {
+        if (res.linkAnnotatorEnabled !== undefined && linkAnnotatorToggle) {
           linkAnnotatorToggle.checked = res.linkAnnotatorEnabled;
         }
-        if (res.strictPhishingShield !== undefined) {
+        if (res.strictPhishingShield !== undefined && strictShieldToggle) {
           strictShieldToggle.checked = res.strictPhishingShield;
         }
         if (res.gmailShieldEnabled !== undefined && gmailShieldToggle) {
@@ -86,13 +243,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     );
 
-    linkAnnotatorToggle.addEventListener("change", (e) => {
-      chrome.storage.local.set({ linkAnnotatorEnabled: e.target.checked });
-    });
+    if (linkAnnotatorToggle) {
+      linkAnnotatorToggle.addEventListener("change", (e) => {
+        chrome.storage.local.set({ linkAnnotatorEnabled: e.target.checked });
+      });
+    }
 
-    strictShieldToggle.addEventListener("change", (e) => {
-      chrome.storage.local.set({ strictPhishingShield: e.target.checked });
-    });
+    if (strictShieldToggle) {
+      strictShieldToggle.addEventListener("change", (e) => {
+        chrome.storage.local.set({ strictPhishingShield: e.target.checked });
+      });
+    }
 
     if (gmailShieldToggle) {
       gmailShieldToggle.addEventListener("change", (e) => {
@@ -108,6 +269,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function renderRecentThreats(threats) {
+    if (!recentThreatsList) return;
     if (!threats || threats.length === 0) {
       recentThreatsList.innerHTML = `<li class="threat-empty">No suspicious domains or scam numbers intercepted recently. System secure!</li>`;
       return;
@@ -117,14 +279,89 @@ document.addEventListener("DOMContentLoaded", async () => {
       const li = document.createElement("li");
       li.className = "threat-item";
       li.innerHTML = `
-        <span style="font-weight: 700; color: #f87171;">${escapeHtml(t.domain || t.target || "Threat")}</span>
-        <span style="color: #94a3b8; font-size: 11px;">Risk: ${Math.round(t.risk_score || 85)}/100 · ${escapeHtml(t.type || "Flagged")}</span>
+        <span style="font-weight: 700; color: var(--accent-red);">${escapeHtml(t.domain || t.target || "Threat")}</span>
+        <span style="color: var(--text-muted); font-size: 10px;">Risk: ${Math.round(t.risk_score || 85)}/100 · ${escapeHtml(t.type || "Flagged")}</span>
       `;
       recentThreatsList.appendChild(li);
     });
   }
 
-  // 3. Current Tab Telemetry & Inspection
+  if (clearHistoryBtn) {
+    clearHistoryBtn.addEventListener("click", () => {
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ recentThreats: [] }, () => {
+          renderRecentThreats([]);
+        });
+      }
+    });
+  }
+
+  // ========================================================================
+  // 6. Real-time Backend Health & Latency Monitor
+  // ========================================================================
+  async function checkServerHealth() {
+    if (backendStatusEl) {
+      backendStatusEl.className = "backend-status";
+      statusTextEl.textContent = "Connecting...";
+    }
+    if (apiLiveBadge) {
+      apiLiveBadge.textContent = "PINGING...";
+      apiLiveBadge.style.color = "var(--text-muted)";
+    }
+
+    const t0 = performance.now();
+    try {
+      const ctrl = new AbortController();
+      const timeoutId = setTimeout(() => ctrl.abort(), 4500);
+
+      const resp = await fetch(`${activeApiUrl}/health`, {
+        signal: ctrl.signal,
+        headers: { "Accept": "application/json" },
+      });
+      clearTimeout(timeoutId);
+
+      const latency = Math.round(performance.now() - t0);
+
+      if (resp.ok) {
+        const isCloud = activeApiUrl.includes("kavachcybertech.in");
+        const serverLabel = isCloud ? "Cloud" : "Local";
+
+        if (backendStatusEl) {
+          backendStatusEl.className = "backend-status";
+          statusTextEl.textContent = `${serverLabel} · ${latency}ms`;
+          backendStatusEl.title = `Connected to ${activeApiUrl} (${latency}ms roundtrip)`;
+        }
+        if (apiLiveBadge) {
+          apiLiveBadge.textContent = `LIVE · ${latency}ms`;
+          apiLiveBadge.style.color = "var(--accent-safe)";
+        }
+        return { ok: true, latency };
+      } else {
+        throw new Error(`HTTP ${resp.status}`);
+      }
+    } catch (err) {
+      if (backendStatusEl) {
+        backendStatusEl.className = "backend-status warn";
+        statusTextEl.textContent = "Local Heuristics";
+        backendStatusEl.title = `Cannot reach ${activeApiUrl} — using client-side heuristic engine`;
+      }
+      if (apiLiveBadge) {
+        apiLiveBadge.textContent = "OFFLINE";
+        apiLiveBadge.style.color = "var(--accent-warn)";
+      }
+      return { ok: false, error: err.message };
+    }
+  }
+
+  if (backendStatusEl) {
+    backendStatusEl.addEventListener("click", () => {
+      checkServerHealth();
+    });
+  }
+
+  // ========================================================================
+  // 7. Active Tab Telemetry & Inspection
+  // ========================================================================
   async function inspectCurrentTab() {
     statusBadgeEl.textContent = "SCANNING...";
     verdictTitleEl.textContent = "Analyzing destination telemetry...";
@@ -141,137 +378,94 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (!tabs || !tabs[0] || !tabs[0].url) {
-      targetUrlEl.textContent = "No active URL";
+    if (!tabs || tabs.length === 0 || !tabs[0].url) {
+      targetUrlEl.textContent = "Chrome Internal / New Tab";
+      schemeIconEl.textContent = "⚪";
+      verdictCardEl.className = "verdict-banner safe";
+      statusBadgeEl.textContent = "SYSTEM";
+      verdictTitleEl.textContent = "Internal Browser Space";
+      verdictSubtitleEl.textContent = "Browser system page";
+      scoreValEl.textContent = "0";
+      gaugeProgressEl.setAttribute("stroke-dasharray", "0, 100");
+      aiSummaryEl.textContent = "System tab is inherently secure.";
+      indicatorListEl.innerHTML = "<li class='indicator-item'>Internal browser component. No external network traffic.</li>";
+      checkSslVal.textContent = "N/A";
+      checkDomainVal.textContent = "System";
+      checkHeuristicsVal.textContent = "Clean";
+      checkAiVal.textContent = "Idle";
       return;
     }
 
     const currentUrl = tabs[0].url;
     targetUrlEl.textContent = currentUrl;
 
-    // TLS verification
     if (currentUrl.startsWith("https://")) {
       schemeIconEl.textContent = "🔒";
       checkSslVal.textContent = "TLS Valid";
-      checkSslVal.style.color = "#10b981";
-    } else {
+      checkSslVal.style.color = "var(--accent-safe)";
+    } else if (currentUrl.startsWith("http://")) {
       schemeIconEl.textContent = "⚠️";
-      checkSslVal.textContent = "Unencrypted";
-      checkSslVal.style.color = "#f59e0b";
+      checkSslVal.textContent = "Insecure HTTP";
+      checkSslVal.style.color = "var(--accent-warn)";
+    } else {
+      schemeIconEl.textContent = "🌐";
+      checkSslVal.textContent = "Local / Scheme";
+      checkSslVal.style.color = "var(--text-muted)";
     }
 
-    // Special Browser Pages
-    if (currentUrl.startsWith("chrome://") || currentUrl.startsWith("edge://") || currentUrl.startsWith("about:")) {
-      statusBadgeEl.textContent = "SYSTEM";
-      scoreValEl.textContent = "0";
-      verdictTitleEl.textContent = "Browser System Environment";
-      verdictSubtitleEl.textContent = "Sandboxed local client process";
-      verdictCardEl.className = "verdict-banner safe";
-      gaugeProgressEl.setAttribute("stroke-dasharray", "0, 100");
-      indicatorListEl.innerHTML = "<li class='indicator-item'>Internal browser sandboxed page.</li>";
-      aiSummaryEl.textContent = "Internal browser page is isolated and verified safe from network threats.";
-      backendStatusEl.className = "backend-status";
-      statusTextEl.textContent = "Active Defense";
-      checkDomainVal.textContent = "Internal";
-      checkHeuristicsVal.textContent = "Clean";
-      checkAiVal.textContent = "Protected";
-      return;
-    }
-
-    // Gmail Detection
-    if (currentUrl.includes("mail.google.com")) {
-      statusBadgeEl.textContent = "GMAIL SHIELD";
-      scoreValEl.textContent = "0";
-      verdictTitleEl.textContent = "Gmail Inbox Protected";
-      verdictSubtitleEl.textContent = "KAVACH Phishing & Brand Spoof Sentinel Active";
-      verdictCardEl.className = "verdict-banner safe";
-      gaugeProgressEl.setAttribute("stroke-dasharray", "0, 100");
-      indicatorListEl.innerHTML =
-        "<li class='indicator-item'>Monitoring incoming messages for brand spoofing &amp; dangerous links.</li><li class='indicator-item'>Red alert banner ready to disarm phishing attachments.</li>";
-      aiSummaryEl.textContent =
-        "KAVACH Gmail Sentinel is actively scanning open emails and inbox entries for spoofed senders, urgent financial lures, and credential harvester links.";
-      checkDomainVal.textContent = "google.com";
-      checkDomainVal.style.color = "#10b981";
-      checkHeuristicsVal.textContent = "Sentinel Active";
-      checkHeuristicsVal.style.color = "#10b981";
-      checkAiVal.textContent = "Armed";
-      checkAiVal.style.color = "#10b981";
-      return;
-    }
-
-    // WhatsApp Web Detection
-    if (currentUrl.includes("web.whatsapp.com")) {
-      statusBadgeEl.textContent = "WHATSAPP SHIELD";
-      scoreValEl.textContent = "0";
-      verdictTitleEl.textContent = "WhatsApp Web Protected";
-      verdictSubtitleEl.textContent = "KAVACH Scam Number & Task Fraud Blocker Active";
-      verdictCardEl.className = "verdict-banner safe";
-      gaugeProgressEl.setAttribute("stroke-dasharray", "0, 100");
-      indicatorListEl.innerHTML =
-        "<li class='indicator-item'>Monitoring active chats for high-risk international numbers (+92, +234, +880).</li><li class='indicator-item'>Scanning message text for part-time task scams &amp; malicious APK downloads.</li>";
-      aiSummaryEl.textContent =
-        "KAVACH WhatsApp Sentinel is actively defending this session against impersonators, task-offer lures, and foreign spam phone networks.";
-      checkDomainVal.textContent = "whatsapp.com";
-      checkDomainVal.style.color = "#10b981";
-      checkHeuristicsVal.textContent = "Sentinel Active";
-      checkHeuristicsVal.style.color = "#10b981";
-      checkAiVal.textContent = "Armed";
-      checkAiVal.style.color = "#10b981";
-      return;
-    }
-
+    // Call API Server for Real Threat Scan
     try {
-      const resp = await fetch(`${BACKEND_API}/url/scan`, {
+      const ctrl = new AbortController();
+      const timeoutId = setTimeout(() => ctrl.abort(), 4000);
+
+      const resp = await fetch(`${activeApiUrl}/url/scan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: currentUrl }),
+        signal: ctrl.signal,
       });
+      clearTimeout(timeoutId);
 
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}`);
-      }
-
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      backendStatusEl.className = "backend-status";
-      statusTextEl.textContent = "Active Defense";
 
       const score = Math.round(data.risk_score || 0);
+      const level = data.risk_level || "SAFE";
+
       scoreValEl.textContent = score;
       gaugeProgressEl.setAttribute("stroke-dasharray", `${score}, 100`);
-
-      const level = data.risk_level || "SAFE";
       statusBadgeEl.textContent = level;
 
-      if (score >= 65 || level === "CRITICAL" || level === "HIGH RISK") {
+      if (score >= 60 || level === "CRITICAL" || level === "HIGH RISK") {
         verdictCardEl.className = "verdict-banner danger";
-        verdictTitleEl.textContent = "Malicious or Phishing Threat";
-        verdictSubtitleEl.textContent = "Dangerous signals detected on this destination";
-        checkDomainVal.textContent = "High Risk";
-        checkDomainVal.style.color = "#ef4444";
+        verdictTitleEl.textContent = "High-Risk Threat / Phishing";
+        verdictSubtitleEl.textContent = "Severe security indicators or malicious patterns found";
+        checkDomainVal.textContent = "Flagged";
+        checkDomainVal.style.color = "var(--accent-danger)";
         checkHeuristicsVal.textContent = "Flagged";
-        checkHeuristicsVal.style.color = "#ef4444";
-        checkAiVal.textContent = "Danger";
-        checkAiVal.style.color = "#ef4444";
+        checkHeuristicsVal.style.color = "var(--accent-danger)";
+        checkAiVal.textContent = "Threat";
+        checkAiVal.style.color = "var(--accent-danger)";
       } else if (score >= 30 || level === "SUSPICIOUS") {
-        verdictCardEl.className = "verdict-banner suspicious";
+        verdictCardEl.className = "verdict-banner warn";
         verdictTitleEl.textContent = "Suspicious Domain / Caution";
         verdictSubtitleEl.textContent = "Unusual patterns or new registration detected";
         checkDomainVal.textContent = "Caution";
-        checkDomainVal.style.color = "#f59e0b";
+        checkDomainVal.style.color = "var(--accent-warn)";
         checkHeuristicsVal.textContent = "Unusual";
-        checkHeuristicsVal.style.color = "#f59e0b";
+        checkHeuristicsVal.style.color = "var(--accent-warn)";
         checkAiVal.textContent = "Monitored";
-        checkAiVal.style.color = "#f59e0b";
+        checkAiVal.style.color = "var(--accent-warn)";
       } else {
         verdictCardEl.className = "verdict-banner safe";
         verdictTitleEl.textContent = "Verified Safe Destination";
         verdictSubtitleEl.textContent = "Protected by KAVACH Neural Shield";
         checkDomainVal.textContent = "Reputable";
-        checkDomainVal.style.color = "#10b981";
+        checkDomainVal.style.color = "var(--accent-safe)";
         checkHeuristicsVal.textContent = "Clean";
-        checkHeuristicsVal.style.color = "#10b981";
+        checkHeuristicsVal.style.color = "var(--accent-safe)";
         checkAiVal.textContent = "Safe";
-        checkAiVal.style.color = "#10b981";
+        checkAiVal.style.color = "var(--accent-safe)";
       }
 
       // Render indicators
@@ -293,8 +487,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       // Offline fallback: perform local client-side heuristics
       const localResult = evaluateLocalUrl(currentUrl);
-      backendStatusEl.className = "backend-status";
-      statusTextEl.textContent = "Local Heuristics";
 
       scoreValEl.textContent = localResult.score;
       gaugeProgressEl.setAttribute("stroke-dasharray", `${localResult.score}, 100`);
@@ -305,13 +497,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         verdictTitleEl.textContent = "Potential Phishing Destination";
         verdictSubtitleEl.textContent = localResult.subtitle;
         checkDomainVal.textContent = "Suspicious";
-        checkDomainVal.style.color = "#ef4444";
+        checkDomainVal.style.color = "var(--accent-danger)";
       } else {
         verdictCardEl.className = "verdict-banner safe";
         verdictTitleEl.textContent = "Website Monitored Locally";
         verdictSubtitleEl.textContent = "Local heuristic checks clean (Backend offline)";
         checkDomainVal.textContent = "Verified";
-        checkDomainVal.style.color = "#10b981";
+        checkDomainVal.style.color = "var(--accent-safe)";
       }
 
       indicatorListEl.innerHTML = "";
@@ -326,7 +518,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // 4. Scanner Type Selector
+  // ========================================================================
+  // 8. Scanner Type Selector & Engine
+  // ========================================================================
   scannerTypeBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       scannerTypeBtns.forEach((b) => b.classList.remove("active"));
@@ -343,13 +537,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // 5. Threat Scanner Engine
   manualScanBtn.addEventListener("click", async () => {
     const query = manualInput.value.trim();
     if (!query) return;
 
     manualScanBtn.disabled = true;
-    manualScanBtn.textContent = "Analyzing...";
+    manualScanBtn.textContent = "Scanning...";
 
     try {
       let resultData;
@@ -372,7 +565,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function scanUrlQuery(url) {
     try {
-      const resp = await fetch(`${BACKEND_API}/url/scan`, {
+      const resp = await fetch(`${activeApiUrl}/url/scan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
@@ -380,15 +573,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (resp.ok) {
         return await resp.json();
       }
-    } catch (e) {
-      // Fallback to local heuristic
-    }
+    } catch (e) {}
     return evaluateLocalUrl(url);
   }
 
   async function scanEmailQuery(email) {
     try {
-      const resp = await fetch(`${BACKEND_API}/ml/scan-email`, {
+      const resp = await fetch(`${activeApiUrl}/ml/scan-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sender_email: email, body: email }),
@@ -408,6 +599,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     return localScanEmail(email);
   }
 
+  async function scanPhoneQuery(phone) {
+    return localScanPhone(phone);
+  }
+
   function localScanEmail(email) {
     const emailNorm = email.toLowerCase().trim();
     const domainMatch = emailNorm.match(/@([a-z0-9.-]+\.[a-z]{2,})/);
@@ -416,7 +611,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const indicators = [];
     let score = 5;
 
-    // Brand imitation in domain
     const brands = ["google", "microsoft", "paypal", "apple", "amazon", "netflix", "sbi", "hdfc", "incometax"];
     for (const b of brands) {
       if (domain.includes(b) && !domain.endsWith(`.${b}.com`) && domain !== `${b}.com` && !domain.endsWith(`.${b}.in`)) {
@@ -425,13 +619,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
-    // Suspicious email words
     if (/(security|verify|support|account|update|alert|billing|auth)/.test(emailNorm)) {
       score += 20;
       indicators.push("Uses high-urgency security or verification keywords.");
     }
 
-    // High risk TLDs
     if (/\.(xyz|top|ru|tk|ml|ga|cf|gq|work|click|country|buzz)$/.test(domain)) {
       score += 30;
       indicators.push(`Unusual or high-risk domain extension (.${domain.split(".").pop()}).`);
@@ -446,57 +638,29 @@ document.addEventListener("DOMContentLoaded", async () => {
       risk_level: level,
       raksha_summary:
         score >= 65
-          ? `High-risk sender pattern detected. Do not click links or respond with OTPs/passwords.`
-          : `Sender address does not show obvious known spoofing signatures. Exercise normal caution.`,
-      indicators: indicators.length > 0 ? indicators : ["Sender domain syntax verified without brand spoofing."],
+          ? "High-risk sender pattern detected. Do not click links or respond with OTPs/passwords."
+          : "Sender address does not show obvious known spoofing signatures. Exercise normal caution.",
+      indicators: indicators.length > 0 ? indicators : ["Standard sender address syntax. No obvious spoofing signatures."],
     };
   }
 
-  async function scanPhoneQuery(phone) {
-    try {
-      const resp = await fetch(`${BACKEND_API}/ml/scan-comms`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone_number: phone, message_text: phone }),
-      });
-      if (resp.ok) {
-        const ml = await resp.json();
-        return {
-          target: phone,
-          risk_score: ml.risk_score,
-          risk_level: ml.risk_level,
-          raksha_summary: ml.raksha_summary,
-          indicators: ml.indicators,
-        };
-      }
-    } catch (e) {}
-
-    return localScanPhone(phone);
-  }
-
   function localScanPhone(phone) {
-    const raw = phone.replace(/[\s\-\(\)]/g, "");
-    const indicators = [];
+    const cleaned = phone.replace(/[\s\-\(\)]/g, "");
     let score = 5;
+    const indicators = [];
 
-    // High risk country codes often associated with cybercrime/WhatsApp scams
-    const flaggedPrefixes = [
-      { code: "+92", country: "Pakistan (High volume task scam network)" },
-      { code: "+234", country: "Nigeria (Advance-fee & lottery fraud)" },
-      { code: "+880", country: "Bangladesh (Job lure networks)" },
-      { code: "+855", country: "Cambodia (Cyber scam compounds / OTP fraud)" },
-      { code: "+62", country: "Indonesia (Unsolicited bulk job offers)" },
-      { code: "+4470", country: "UK Personal Number (Commonly abused redirect prefix)" },
+    const highRiskPrefixes = [
+      { prefix: "+92", country: "Pakistan (+92)" },
+      { prefix: "+234", country: "Nigeria (+234)" },
+      { prefix: "+880", country: "Bangladesh (+880)" },
+      { prefix: "+855", country: "Cambodia (+855)" },
+      { prefix: "+62", country: "Indonesia (+62)" },
+      { prefix: "+94", country: "Sri Lanka (+94)" },
+      { prefix: "+4470", country: "UK Premium Rate Number (+4470)" },
+      { prefix: "+254", country: "Kenya (+254)" },
     ];
 
-    let foundPrefix = null;
-    for (const p of flaggedPrefixes) {
-      if (raw.startsWith(p.code) || raw.startsWith(p.code.replace("+", ""))) {
-        foundPrefix = p;
-        break;
-      }
-    }
-
+    const foundPrefix = highRiskPrefixes.find((p) => cleaned.startsWith(p.prefix));
     if (foundPrefix) {
       score += 75;
       indicators.push(`High-Risk Origin: Prefix matches ${foundPrefix.country}.`);
@@ -514,8 +678,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       risk_level: level,
       raksha_summary:
         score >= 65
-          ? `Scam alert! This number matches origin networks associated with mass WhatsApp tasks, lottery scams, and APK dropper campaigns.`
-          : `No immediate threat signature found on this telephone prefix. Never share OTPs or install APKs sent via chat.`,
+          ? "Scam alert! This number matches origin networks associated with mass WhatsApp tasks, lottery scams, and APK dropper campaigns."
+          : "No immediate threat signature found on this telephone prefix. Never share OTPs or install APKs sent via chat.",
       indicators,
     };
   }
@@ -586,17 +750,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     scanResultBadge.textContent = data.risk_level || "SAFE";
 
     if (score >= 65 || (data.risk_level && data.risk_level.includes("HIGH")) || (data.risk_level && data.risk_level.includes("CRITICAL"))) {
-      scanResultBadge.style.background = "rgba(239, 68, 68, 0.2)";
-      scanResultBadge.style.color = "#f87171";
-      scanResultCard.style.borderColor = "rgba(239, 68, 68, 0.4)";
+      scanResultBadge.style.background = "var(--accent-danger-bg)";
+      scanResultBadge.style.color = "var(--accent-danger)";
+      scanResultCard.style.borderColor = "var(--border-crimson)";
     } else if (score >= 30) {
-      scanResultBadge.style.background = "rgba(245, 158, 11, 0.2)";
-      scanResultBadge.style.color = "#fbbf24";
-      scanResultCard.style.borderColor = "rgba(245, 158, 11, 0.4)";
+      scanResultBadge.style.background = "var(--accent-warn-bg)";
+      scanResultBadge.style.color = "var(--accent-warn)";
+      scanResultCard.style.borderColor = "var(--accent-warn-border)";
     } else {
-      scanResultBadge.style.background = "rgba(16, 185, 129, 0.2)";
-      scanResultBadge.style.color = "#34d399";
-      scanResultCard.style.borderColor = "rgba(16, 185, 129, 0.4)";
+      scanResultBadge.style.background = "var(--accent-safe-bg)";
+      scanResultBadge.style.color = "var(--accent-safe)";
+      scanResultCard.style.borderColor = "var(--accent-safe-border)";
     }
 
     scanResultSummary.textContent = data.raksha_summary || "Scan completed.";
@@ -624,30 +788,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // 6. Action Handlers
-  rescanBtn.addEventListener("click", inspectCurrentTab);
-
-  openSocBtn.addEventListener("click", () => {
-    chrome.tabs.create({ url: "http://localhost:5173/dashboard" });
-  });
-
-  // Clear Event Log Handler
-  const clearHistoryBtn = document.getElementById("clearHistoryBtn");
-  if (clearHistoryBtn) {
-    clearHistoryBtn.addEventListener("click", () => {
-      if (chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ recentThreats: [] }, () => {
-          renderRecentThreats([]);
-        });
-      }
-    });
-  }
-
-  // Diagnostics Engine Mode
+  // ========================================================================
+  // 9. Diagnostics Engine & Telemetry Health
+  // ========================================================================
   async function runDiagnostics() {
-    const manifest = chrome.runtime?.getManifest ? chrome.runtime.getManifest() : { version: "1.0.0" };
+    const manifest = chrome.runtime?.getManifest ? chrome.runtime.getManifest() : { version: "2.1.0" };
     const diagManifestVer = document.getElementById("diagManifestVer");
-    if (diagManifestVer) diagManifestVer.textContent = `MV3 · v${manifest.version || "1.0.0"}`;
+    if (diagManifestVer) diagManifestVer.textContent = `MV3 · v${manifest.version || "2.1.0"}`;
 
     const diagWorkerStatus = document.getElementById("diagWorkerStatus");
     if (diagWorkerStatus) diagWorkerStatus.textContent = "ACTIVE";
@@ -660,12 +807,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (diagApiStatus) {
       diagApiStatus.textContent = "Pinging...";
-      diagApiStatus.style.color = "#38bdf8";
+      diagApiStatus.style.color = "var(--accent-cyan)";
     }
 
     const startTime = performance.now();
     try {
-      const resp = await fetch(`${BACKEND_API}/health`);
+      const resp = await fetch(`${activeApiUrl}/health`);
       const latency = Math.round(performance.now() - startTime);
       if (diagApiLatency) diagApiLatency.textContent = `${latency} ms`;
 
@@ -673,19 +820,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         const data = await resp.json();
         if (diagApiStatus) {
           diagApiStatus.textContent = "ONLINE";
-          diagApiStatus.style.color = "#10b981";
+          diagApiStatus.style.color = "var(--accent-safe)";
         }
         if (diagDbStatus) {
           diagDbStatus.textContent = data.database === "healthy" ? "HEALTHY (SQLite)" : (data.database || "Degraded");
-          diagDbStatus.style.color = data.database === "healthy" ? "#10b981" : "#f59e0b";
+          diagDbStatus.style.color = data.database === "healthy" ? "var(--accent-safe)" : "var(--accent-warn)";
         }
         if (diagMlStatus) {
           diagMlStatus.textContent = data.ml ? data.ml.toUpperCase() : "OPERATIONAL";
-          diagMlStatus.style.color = "#10b981";
+          diagMlStatus.style.color = "var(--accent-safe)";
         }
         if (diagAiProvider) {
           diagAiProvider.textContent = data.raksha_ai || "Raksha Neural v2.1";
-          diagAiProvider.style.color = "#10b981";
+          diagAiProvider.style.color = "var(--accent-safe)";
         }
       } else {
         throw new Error(`HTTP ${resp.status}`);
@@ -694,35 +841,50 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (diagApiLatency) diagApiLatency.textContent = "Timeout";
       if (diagApiStatus) {
         diagApiStatus.textContent = "OFFLINE (Local Mode)";
-        diagApiStatus.style.color = "#f59e0b";
+        diagApiStatus.style.color = "var(--accent-warn)";
       }
       if (diagDbStatus) {
         diagDbStatus.textContent = "Local Client Cache";
-        diagDbStatus.style.color = "#94a3b8";
+        diagDbStatus.style.color = "var(--text-muted)";
       }
       if (diagMlStatus) {
         diagMlStatus.textContent = "Local Heuristics Active";
-        diagMlStatus.style.color = "#fbbf24";
+        diagMlStatus.style.color = "var(--accent-warn)";
       }
       if (diagAiProvider) {
         diagAiProvider.textContent = "Local Heuristic Parser";
-        diagAiProvider.style.color = "#94a3b8";
+        diagAiProvider.style.color = "var(--text-muted)";
       }
     }
   }
 
-  const runDiagnosticsBtn = document.getElementById("runDiagnosticsBtn");
   if (runDiagnosticsBtn) {
     runDiagnosticsBtn.addEventListener("click", runDiagnostics);
   }
 
-  // Trigger diagnostics on tab switch
-  document.querySelector("[data-tab='diagnosticsSection']")?.addEventListener("click", runDiagnostics);
+  // ========================================================================
+  // 10. Action Handlers & Boot
+  // ========================================================================
+  if (rescanBtn) {
+    rescanBtn.addEventListener("click", inspectCurrentTab);
+  }
+
+  if (openSocBtn) {
+    openSocBtn.addEventListener("click", () => {
+      const socUrl = activeApiUrl.includes("kavachcybertech.in")
+        ? "https://kavachcybertech.in/soc.html"
+        : "http://localhost:5173/dashboard";
+      chrome.tabs.create({ url: socUrl });
+    });
+  }
 
   function escapeHtml(str) {
     return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  // Initial tab inspection
+  // Initialize theme, API server, server health, and inspect current tab
+  initTheme();
+  await initApiServer();
+  checkServerHealth();
   await inspectCurrentTab();
 });

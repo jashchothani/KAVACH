@@ -2,7 +2,12 @@
 // McAfee SiteAdvisor-style Link Annotations, Hover Cards, & Cyber Defense Shield
 
 (function () {
-  const BACKEND_API = "http://localhost:8000/api/v1";
+  let backendApi = "https://api.kavachcybertech.in/api/v1";
+  if (chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(["kavach_api_url"], (res) => {
+      if (res.kavach_api_url) backendApi = res.kavach_api_url;
+    });
+  }
   const linkSafetyCache = new Map();
   let linkAnnotatorEnabled = true;
   let activeCard = null;
@@ -371,7 +376,10 @@
     });
 
     document.getElementById("kavachCardSocBtn")?.addEventListener("click", () => {
-      window.open("http://localhost:8000/soc", "_blank");
+      const targetSoc = backendApi.includes("kavachcybertech.in")
+        ? "https://kavachcybertech.in/soc.html"
+        : "http://localhost:5173/dashboard";
+      window.open(targetSoc, "_blank");
     });
   }
 

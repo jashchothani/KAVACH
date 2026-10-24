@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KAVACH — Web, Gmail &amp; WhatsApp Threat Sentinel</title>
+  <title>KAVACH — Sovereign Web, Gmail &amp; WhatsApp Threat Sentinel</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -11,32 +11,56 @@
     <!-- Header -->
     <header class="header">
       <div class="brand">
-        <img src="../assets/icon48.png" class="shield-logo-img" alt="KAVACH Shield" width="28" height="28">
+        <div class="shield-logo-wrap">
+          <img src="../assets/icon48.png" class="shield-logo-img" alt="KAVACH Shield" width="28" height="28">
+        </div>
         <div>
-          <h1 class="logo">KAVACH</h1>
+          <div class="logo-row">
+            <h1 class="logo">KAVACH</h1>
+            <span class="version-tag">v2.1</span>
+          </div>
           <p class="tagline">SOAR-XDR Threat &amp; Phishing Sentinel</p>
         </div>
       </div>
-      <div class="backend-status" id="backendStatus">
-        <span class="dot"></span> <span id="statusText">Active Defense</span>
+      <div class="header-actions">
+        <button class="theme-toggle-btn" id="themeToggleBtn" title="Switch Theme (Light / Dark)" aria-label="Toggle Theme">
+          <span id="themeToggleIcon">🌙</span>
+        </button>
+        <div class="backend-status" id="backendStatus" title="Click to test connection">
+          <span class="dot"></span>
+          <span id="statusText">Connecting...</span>
+        </div>
       </div>
     </header>
 
     <!-- Navigation Tabs (5 Tabs) -->
-    <nav class="nav-tabs">
-      <button class="nav-tab active" data-tab="activeTabSection">Web</button>
-      <button class="nav-tab" data-tab="commsSection">Comms</button>
-      <button class="nav-tab" data-tab="scannerSection">Scanner</button>
-      <button class="nav-tab" data-tab="eventsSection">Events</button>
-      <button class="nav-tab" data-tab="diagnosticsSection">Diagnostics</button>
+    <nav class="nav-tabs" role="tablist">
+      <button class="nav-tab active" data-tab="activeTabSection" role="tab" aria-selected="true">
+        <span class="tab-icon">🌐</span> Web
+      </button>
+      <button class="nav-tab" data-tab="commsSection" role="tab" aria-selected="false">
+        <span class="tab-icon">🛡️</span> Comms
+      </button>
+      <button class="nav-tab" data-tab="scannerSection" role="tab" aria-selected="false">
+        <span class="tab-icon">🔍</span> Scanner
+      </button>
+      <button class="nav-tab" data-tab="eventsSection" role="tab" aria-selected="false">
+        <span class="tab-icon">⚡</span> Events
+      </button>
+      <button class="nav-tab" data-tab="diagnosticsSection" role="tab" aria-selected="false">
+        <span class="tab-icon">⚙️</span> Engine
+      </button>
     </nav>
 
     <!-- TAB 1: Current Active Tab -->
-    <section class="tab-pane active" id="activeTabSection">
+    <section class="tab-pane active" id="activeTabSection" role="tabpanel">
       <!-- Active URL Pill -->
       <div class="url-card">
-        <span class="lock-icon" id="schemeIcon">🔒</span>
+        <span class="lock-icon" id="schemeIcon" title="Encrypted Connection">🔒</span>
         <span class="url-display" id="targetUrl">Inspecting active tab...</span>
+        <button class="copy-url-btn" id="copyUrlBtn" title="Copy Current URL">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
       </div>
 
       <!-- Main Verdict & Radial Gauge -->
@@ -61,28 +85,28 @@
       <!-- Security Checklist Grid -->
       <div class="checklist-grid">
         <div class="check-item" id="checkSsl">
-          <span class="icon">🔒</span>
+          <div class="check-icon-wrap"><span class="icon">🔒</span></div>
           <div class="check-text">
             <strong>SSL / TLS</strong>
             <span id="checkSslVal">Checking</span>
           </div>
         </div>
         <div class="check-item" id="checkDomain">
-          <span class="icon">🌐</span>
+          <div class="check-icon-wrap"><span class="icon">🌐</span></div>
           <div class="check-text">
             <strong>Reputation</strong>
             <span id="checkDomainVal">Evaluating</span>
           </div>
         </div>
         <div class="check-item" id="checkHeuristics">
-          <span class="icon">🧬</span>
+          <div class="check-icon-wrap"><span class="icon">🧬</span></div>
           <div class="check-text">
             <strong>Heuristics</strong>
             <span id="checkHeuristicsVal">Scanning</span>
           </div>
         </div>
         <div class="check-item" id="checkAi">
-          <span class="icon">✨</span>
+          <div class="check-icon-wrap"><span class="icon">✨</span></div>
           <div class="check-text">
             <strong>Raksha AI</strong>
             <span id="checkAiVal">Active</span>
@@ -92,7 +116,7 @@
 
       <!-- Indicators List -->
       <div class="section-box">
-        <div class="section-heading">Threat Signals &amp; Indicators</div>
+        <div class="section-heading">Threat Signals &amp; Heuristic Indicators</div>
         <ul class="indicator-list" id="indicatorList">
           <li class="indicator-item">Connecting to KAVACH Engine...</li>
         </ul>
@@ -111,14 +135,14 @@
     </section>
 
     <!-- TAB 2: Gmail & WhatsApp Guard -->
-    <section class="tab-pane" id="commsSection">
+    <section class="tab-pane" id="commsSection" role="tabpanel">
       <!-- Live Overview Card -->
       <div class="comms-hero-card">
         <div class="comms-hero-header">
           <div class="comms-badge"><i></i> REAL-TIME INBOX &amp; CHAT SHIELD</div>
-          <span class="comms-status-tag">ACTIVE</span>
+          <span class="comms-status-tag">ACTIVE DEFENSE</span>
         </div>
-        <h3 class="comms-hero-title">Continuous Communications Defense</h3>
+        <h3 class="comms-hero-title">Continuous Communications Guard</h3>
         <p class="comms-hero-sub">Intercepts spoofed sender addresses, phishing attachments, unknown foreign WhatsApp numbers, and part-time task scams.</p>
       </div>
 
@@ -139,7 +163,7 @@
           <p class="service-desc">Scans inbox rows &amp; message bodies for brand impersonation, deceptive URLs, and dangerous file attachments.</p>
           <div class="service-stat-row">
             <span>Red Flag Warning Banners:</span>
-            <strong style="color: #10b981;">AUTO-INJECT</strong>
+            <strong style="color: var(--accent-safe);">AUTO-INJECT</strong>
           </div>
         </div>
 
@@ -158,7 +182,7 @@
           <p class="service-desc">Flags high-risk international numbers (+92, +234, +880) and detects task scams, lottery fraud, and malicious APK files.</p>
           <div class="service-stat-row">
             <span>Deceptive Link Neutralizer:</span>
-            <strong style="color: #10b981;">ENABLED</strong>
+            <strong style="color: var(--accent-safe);">ENABLED</strong>
           </div>
         </div>
       </div>
@@ -190,20 +214,20 @@
     </section>
 
     <!-- TAB 3: Universal Threat Scanner -->
-    <section class="tab-pane" id="scannerSection">
+    <section class="tab-pane" id="scannerSection" role="tabpanel">
       <div class="scanner-card">
-        <label class="scanner-label" for="manualInput">Unified Security Intelligence Scanner</label>
+        <label class="scanner-label" for="manualInput">Unified Threat Intelligence Scanner</label>
         <p class="scanner-subtext">Inspect any URL, Sender Email, or WhatsApp Phone Number without opening it.</p>
         
         <!-- Input Selector -->
         <div class="scanner-type-row">
-          <button class="scanner-type-btn active" data-type="url">URL Link</button>
-          <button class="scanner-type-btn" data-type="email">Sender Email</button>
-          <button class="scanner-type-btn" data-type="phone">Phone Number</button>
+          <button class="scanner-type-btn active" data-type="url">🔗 URL Link</button>
+          <button class="scanner-type-btn" data-type="email">✉️ Sender Email</button>
+          <button class="scanner-type-btn" data-type="phone">📱 Phone Number</button>
         </div>
 
         <div class="scanner-input-group">
-          <input type="text" id="manualInput" placeholder="https://example.com/login" autocomplete="off">
+          <input type="text" id="manualInput" placeholder="https://example.com/login" autocomplete="off" spellcheck="false">
           <button id="manualScanBtn">Analyze</button>
         </div>
       </div>
@@ -223,7 +247,7 @@
     </section>
 
     <!-- TAB 4: Security Events & Threat History -->
-    <section class="tab-pane" id="eventsSection">
+    <section class="tab-pane" id="eventsSection" role="tabpanel">
       <div class="settings-group">
         <div class="toggle-row">
           <div class="toggle-info">
@@ -239,7 +263,7 @@
         <div class="toggle-row">
           <div class="toggle-info">
             <strong>Strict Interstitial Phishing Shield</strong>
-            <span>Blocks high-risk phishing pages with red sovereign barrier</span>
+            <span>Blocks high-risk phishing pages with sovereign barrier</span>
           </div>
           <label class="switch">
             <input type="checkbox" id="strictShieldToggle">
@@ -259,9 +283,49 @@
       </div>
     </section>
 
-    <!-- TAB 5: Diagnostic Engine Mode -->
-    <section class="tab-pane" id="diagnosticsSection">
+    <!-- TAB 5: Diagnostic Engine Mode & API Server Selector -->
+    <section class="tab-pane" id="diagnosticsSection" role="tabpanel">
       <div class="diag-container">
+        
+        <!-- Live API Server Switcher Card -->
+        <div class="api-env-card">
+          <div class="api-env-top">
+            <span class="api-env-title">🌐 API BACKEND SERVER</span>
+            <span class="api-live-tag" id="apiLiveBadge">CONNECTING</span>
+          </div>
+          <p class="api-env-desc">Switch between the cloud production threat API and local development instance.</p>
+          
+          <div class="server-choice-list">
+            <label class="server-choice-item" id="labelCloudChoice">
+              <input type="radio" name="apiServerRadio" value="https://api.kavachcybertech.in/api/v1" id="radioServerCloud" checked>
+              <div class="server-choice-text">
+                <div class="server-choice-head">
+                  <strong>☁️ Production Cloud API</strong>
+                  <span class="server-pill prod">Live Cloud</span>
+                </div>
+                <span class="server-endpoint">https://api.kavachcybertech.in/api/v1</span>
+              </div>
+            </label>
+
+            <label class="server-choice-item" id="labelLocalChoice">
+              <input type="radio" name="apiServerRadio" value="http://localhost:8000/api/v1" id="radioServerLocal">
+              <div class="server-choice-text">
+                <div class="server-choice-head">
+                  <strong>💻 Localhost Dev Server</strong>
+                  <span class="server-pill dev">Local Port 8000</span>
+                </div>
+                <span class="server-endpoint">http://localhost:8000/api/v1</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="custom-api-box">
+            <input type="text" id="customApiInput" placeholder="Custom URL: e.g. http://192.168.1.100:8000/api/v1" spellcheck="false">
+            <button class="custom-api-btn" id="saveCustomApiBtn">Connect</button>
+          </div>
+        </div>
+
+        <!-- Telemetry Health Metrics -->
         <div class="diag-header-card">
           <div class="diag-badge">SYSTEM DIAGNOSTICS</div>
           <h3 class="diag-title">Extension &amp; Telemetry Health</h3>
@@ -271,11 +335,11 @@
         <div class="diag-metrics-grid">
           <div class="diag-card">
             <span class="diag-card-label">EXTENSION MANIFEST</span>
-            <strong class="diag-card-val" id="diagManifestVer">MV3 · v1.0.0</strong>
+            <strong class="diag-card-val" id="diagManifestVer">MV3 · v2.1.0</strong>
           </div>
           <div class="diag-card">
             <span class="diag-card-label">SERVICE WORKER</span>
-            <strong class="diag-card-val" style="color: #10b981;" id="diagWorkerStatus">ACTIVE</strong>
+            <strong class="diag-card-val" style="color: var(--accent-safe);" id="diagWorkerStatus">ACTIVE</strong>
           </div>
           <div class="diag-card">
             <span class="diag-card-label">BACKEND API</span>
@@ -291,28 +355,28 @@
           <div class="section-heading">Component Telemetry</div>
           <div class="diag-item-row">
             <span>Database (SQLite)</span>
-            <strong id="diagDbStatus" style="color: #94a3b8;">Checking...</strong>
+            <strong id="diagDbStatus" style="color: var(--text-muted);">Checking...</strong>
           </div>
           <div class="diag-item-row">
             <span>Anomaly ML Engine</span>
-            <strong id="diagMlStatus" style="color: #94a3b8;">Checking...</strong>
+            <strong id="diagMlStatus" style="color: var(--text-muted);">Checking...</strong>
           </div>
           <div class="diag-item-row">
             <span>Raksha AI Provider</span>
-            <strong id="diagAiProvider" style="color: #94a3b8;">Checking...</strong>
+            <strong id="diagAiProvider" style="color: var(--text-muted);">Checking...</strong>
           </div>
           <div class="diag-item-row">
             <span>Gmail Phishing Sentinel</span>
-            <strong style="color: #10b981;">Ready · DOM Idle</strong>
+            <strong style="color: var(--accent-safe);">Ready · DOM Idle</strong>
           </div>
           <div class="diag-item-row">
             <span>WhatsApp Scam Guard</span>
-            <strong style="color: #10b981;">Ready · Number Classifier</strong>
+            <strong style="color: var(--accent-safe);">Ready · Number Classifier</strong>
           </div>
         </div>
 
-        <button class="footer-btn secondary" id="runDiagnosticsBtn" style="margin-top: 10px; width: 100%;">
-          Run Diagnostic Health Check
+        <button class="footer-btn secondary" id="runDiagnosticsBtn" style="margin-top: 6px; width: 100%;">
+          ⚡ Ping &amp; Run Diagnostic Health Check
         </button>
       </div>
     </section>
@@ -321,7 +385,7 @@
     <footer class="footer">
       <button class="footer-btn secondary" id="rescanBtn">🔄 Re-scan</button>
       <button class="footer-btn primary" id="openSocBtn">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="vertical-align: -1px; margin-right: 4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="vertical-align: -1px; margin-right: 5px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         Open SOC Console
       </button>
     </footer>
