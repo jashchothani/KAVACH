@@ -388,6 +388,64 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
             ),
           ),
 
+          const SizedBox(height: 10),
+
+          // ── Workspace Mode Switcher (User / SOC / Admin) ─────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(left: 4, bottom: 6),
+                  child: Text(
+                    'OPERATING MODE',
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF09101F),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF1E293B)),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildModeTab(
+                        label: 'User',
+                        icon: Icons.shield_rounded,
+                        isActive: true,
+                        onTap: () {},
+                      ),
+                      _buildModeTab(
+                        label: 'SOC',
+                        icon: Icons.remove_red_eye_rounded,
+                        isActive: false,
+                        onTap: () {
+                          Navigator.pushReplacementNamed(context, AppRoutes.socDashboard);
+                        },
+                      ),
+                      _buildModeTab(
+                        label: 'Admin',
+                        icon: Icons.admin_panel_settings_rounded,
+                        isActive: false,
+                        onTap: () {
+                          Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 14),
 
           // Navigation Links
@@ -496,6 +554,57 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     );
   }
 
+  Widget _buildModeTab({
+    required String label,
+    required IconData icon,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
+          decoration: BoxDecoration(
+            color: isActive ? const Color(0xFF0F52BA) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF0F52BA).withValues(alpha: 0.4),
+                      blurRadius: 6,
+                    ),
+                  ]
+                : null,
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 12,
+                  color: isActive ? Colors.white : const Color(0xFF94A3B8),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isActive ? Colors.white : const Color(0xFF94A3B8),
+                    fontSize: 11,
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── Desktop Top Header Bar ──────────────────────────────────────────────────
   Widget _buildDesktopHeader() {
     return Container(
@@ -565,6 +674,75 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Operating Mode Quick Selector
+                      PopupMenuButton<String>(
+                        tooltip: 'Switch Operating Mode',
+                        color: const Color(0xFF161B22),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: const BorderSide(color: Color(0xFF30363D)),
+                        ),
+                        onSelected: (mode) {
+                          if (mode == 'user') {
+                            Navigator.pushReplacementNamed(context, AppRoutes.userDashboard);
+                          } else if (mode == 'soc') {
+                            Navigator.pushReplacementNamed(context, AppRoutes.socDashboard);
+                          } else if (mode == 'admin') {
+                            Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+                          }
+                        },
+                        itemBuilder: (ctx) => [
+                          const PopupMenuItem(
+                            value: 'user',
+                            child: Row(
+                              children: [
+                                Icon(Icons.shield_rounded, color: Color(0xFF60A5FA), size: 16),
+                                SizedBox(width: 8),
+                                Text('🛡️ User Endpoint Mode (Active)', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'soc',
+                            child: Row(
+                              children: [
+                                Icon(Icons.remove_red_eye_rounded, color: Color(0xFF34D399), size: 16),
+                                SizedBox(width: 8),
+                                Text('👁️ SOC Operations Center', style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12.5)),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'admin',
+                            child: Row(
+                              children: [
+                                Icon(Icons.admin_panel_settings_rounded, color: Color(0xFFA78BFA), size: 16),
+                                SizedBox(width: 8),
+                                Text('⚡ Enterprise Admin Panel', style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12.5)),
+                              ],
+                            ),
+                          ),
+                        ],
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F52BA).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF0F52BA).withValues(alpha: 0.5)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.shield_rounded, size: 12, color: Color(0xFF60A5FA)),
+                              SizedBox(width: 6),
+                              Text('MODE: USER', style: TextStyle(color: Color(0xFF93C5FD), fontSize: 10.5, fontWeight: FontWeight.bold)),
+                              SizedBox(width: 4),
+                              Icon(Icons.arrow_drop_down, size: 14, color: Color(0xFF93C5FD)),
+                            ],
+                          ),
                         ),
                       ),
                     ],

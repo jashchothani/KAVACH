@@ -235,30 +235,84 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           ),
           if (isWide)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDC2626).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.admin_panel_settings,
-                        color: Color(0xFFDC2626), size: 14),
-                    SizedBox(width: 6),
-                    Text(
-                      'ADMIN PANEL',
-                      style: TextStyle(
-                        color: Color(0xFFDC2626),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.5,
-                      ),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDC2626).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ],
-                ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.admin_panel_settings,
+                            color: Color(0xFFDC2626), size: 14),
+                        SizedBox(width: 6),
+                        Text(
+                          'ADMIN PANEL',
+                          style: TextStyle(
+                            color: Color(0xFFDC2626),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Mode Switcher Pills
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D1117),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(6),
+                            onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.userDashboard),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 4),
+                              child: Center(
+                                child: Text('User', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(6),
+                            onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.socDashboard),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 4),
+                              child: Center(
+                                child: Text('SOC', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDC2626),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Center(
+                              child: Text('Admin', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           const SizedBox(height: 24),
@@ -399,6 +453,75 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             ],
           ),
           const Spacer(),
+          // ── Operating Mode Switcher ──────────────────────────────────────────
+          PopupMenuButton<String>(
+            tooltip: 'Switch Operating Mode',
+            color: const Color(0xFF161B22),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: const BorderSide(color: Color(0xFF30363D)),
+            ),
+            onSelected: (mode) {
+              if (mode == 'user') {
+                Navigator.pushReplacementNamed(context, AppRoutes.userDashboard);
+              } else if (mode == 'soc') {
+                Navigator.pushReplacementNamed(context, AppRoutes.socDashboard);
+              } else if (mode == 'admin') {
+                Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+              }
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'user',
+                child: Row(
+                  children: [
+                    Icon(Icons.shield_rounded, color: Color(0xFF60A5FA), size: 16),
+                    SizedBox(width: 8),
+                    Text('🛡️ User Endpoint Mode', style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12.5)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'soc',
+                child: Row(
+                  children: [
+                    Icon(Icons.remove_red_eye_rounded, color: Color(0xFF34D399), size: 16),
+                    SizedBox(width: 8),
+                    Text('👁️ SOC Operations Center', style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12.5)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'admin',
+                child: Row(
+                  children: [
+                    Icon(Icons.admin_panel_settings_rounded, color: Color(0xFFA78BFA), size: 16),
+                    SizedBox(width: 8),
+                    Text('⚡ Enterprise Admin Panel (Active)', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.5)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.admin_panel_settings_rounded, size: 13, color: Color(0xFFEF4444)),
+                  SizedBox(width: 6),
+                  Text('MODE: ADMIN', style: TextStyle(color: Color(0xFFFCA5A5), fontSize: 10.5, fontWeight: FontWeight.bold)),
+                  SizedBox(width: 4),
+                  Icon(Icons.arrow_drop_down, size: 14, color: Color(0xFFFCA5A5)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
           // Live indicator
           AnimatedBuilder(
             animation: _pulseAnim,

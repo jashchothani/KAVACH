@@ -2,12 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/widgets/primary_button.dart';
 
 /// Next-Generation 6-Digit OTP Email Verification Screen for Mobile.
 /// Features segmented digit boxes, active 60s resend timer, auto-focus,
@@ -137,14 +135,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     }
   }
 
-  void _onKeyDown(int index, KeyEvent event) {
+  KeyEventResult _onKeyDown(int index, KeyEvent event) {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.backspace &&
         _controllers[index].text.isEmpty &&
         index > 0) {
       _controllers[index - 1].clear();
       _focusNodes[index - 1].requestFocus();
+      return KeyEventResult.handled;
     }
+    return KeyEventResult.ignored;
   }
 
 
@@ -241,6 +241,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     final displayEmail = args?['email'] ?? args?['masked_email'] ?? 'your registered email';
 
     return Scaffold(
+      backgroundColor: const Color(0xFF070B14),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -249,51 +250,77 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppColors.gradientStart,
-              AppColors.gradientEnd,
+              Color(0xFF070B14),
+              Color(0xFF0F172A),
+              Color(0xFF090D1A),
             ],
           ),
         ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.screenPaddingH,
-                vertical: 24,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: SlideTransition(
                   position: _slideAnimation,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: AppDimensions.maxContentWidth,
-                    ),
+                    constraints: const BoxConstraints(maxWidth: 440),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // ── Shield Icon Hero ──────────────────────────────
+                        // ── Shield Hero Badge ──────────────────────────────
                         _buildShieldHero(),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 18),
+
+                        // ── Security Tag Pill ──────────────────────────────
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_clock_rounded, color: Color(0xFF38BDF8), size: 12),
+                              SizedBox(width: 6),
+                              Text(
+                                'TWO-FACTOR VERIFICATION',
+                                style: TextStyle(
+                                  color: Color(0xFF38BDF8),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
 
                         // ── Title & Subtitle ──────────────────────────────
                         const Text(
-                          'Two-Factor Authentication',
+                          'Security Verification',
                           style: TextStyle(
                             fontSize: 24,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w900,
                             color: Colors.white,
                             letterSpacing: -0.5,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
-                          'Enter the 6-digit security code dispatched to:',
+                          'A 6-digit authentication code was sent to:',
                           style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 13,
+                            color: Colors.white.withValues(alpha: 0.65),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -301,12 +328,12 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
                         // ── Recipient Email Pill ──────────────────────────
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F52BA).withValues(alpha: 0.15),
+                            color: const Color(0xFF131D33),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: const Color(0xFF0F52BA).withValues(alpha: 0.4),
+                              color: const Color(0xFF1E293B),
                             ),
                           ),
                           child: Row(
@@ -314,98 +341,178 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
                             children: [
                               const Icon(
                                 Icons.mark_email_read_rounded,
-                                color: Color(0xFF60A5FA),
-                                size: 16,
+                                color: Color(0xFF38BDF8),
+                                size: 14,
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 7),
                               Flexible(
                                 child: Text(
                                   displayEmail,
                                   style: const TextStyle(
-                                    color: Color(0xFF93C5FD),
+                                    color: Color(0xFFE2E8F0),
                                     fontWeight: FontWeight.w700,
-                                    fontSize: 13,
+                                    fontSize: 12,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // ── Card with 6-PIN Entry ─────────────────────────
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF161B22),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.4),
-                                blurRadius: 24,
-                                offset: const Offset(0, 8),
+                              const SizedBox(width: 7),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: const Text(
+                                  'VERIFIED',
+                                  style: TextStyle(
+                                    color: Color(0xFF34D399),
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              // ── 6 Digit Input Boxes ──────────────────────
-                              _buildPinBoxes(),
-
-                              const SizedBox(height: 24),
-
-                              // ── Verify & Continue Button ──────────────────
-                              PrimaryButton(
-                                text: 'Verify Code & Enter KAVACH',
-                                isLoading: _isVerifying,
-                                onPressed: _handleVerifyOtp,
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              // ── Resend Code Section ───────────────────────
-                              _buildResendRow(),
                             ],
                           ),
                         ),
 
                         const SizedBox(height: 24),
 
+                        // ── Credential Card ───────────────────────────────
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D1527),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(
+                              color: const Color(0xFF1E293B),
+                              width: 1.2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.6),
+                                blurRadius: 32,
+                                offset: const Offset(0, 14),
+                              ),
+                              BoxShadow(
+                                color: const Color(0xFF0F52BA).withValues(alpha: 0.1),
+                                blurRadius: 36,
+                                spreadRadius: -4,
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              // ── 6 Digit Segmented Input Boxes ───────────
+                              _buildPinBoxes(),
+
+                              const SizedBox(height: 24),
+
+                              // ── Verify & Proceed Button ─────────────────
+                              SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF0F52BA),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(13),
+                                    ),
+                                    shadowColor: const Color(0xFF0F52BA).withValues(alpha: 0.5),
+                                  ),
+                                  onPressed: _isVerifying ? null : _handleVerifyOtp,
+                                  child: _isVerifying
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.shield_rounded, size: 17),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Verify & Access KAVACH',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w800,
+                                                letterSpacing: 0.2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // ── Resend Code Section ───────────────────────
+                              _buildResendRow(),
+
+                              const SizedBox(height: 16),
+
+                              // ── Security Cert Footnote ────────────────────
+                              const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.lock_rounded, size: 11, color: Color(0xFF64748B)),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'AES-256 DPAPI Vault · Sovereign Indian Cyber Architecture',
+                                    style: TextStyle(
+                                      color: Color(0xFF64748B),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 22),
+
                         // ── Back to Login Link ────────────────────────────
-                        GestureDetector(
+                        InkWell(
+                          borderRadius: BorderRadius.circular(8),
                           onTap: () {
                             Navigator.of(context).pushNamedAndRemoveUntil(
                               AppRoutes.login,
                               (route) => false,
                             );
                           },
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.arrow_back_rounded,
-                                color: Color(0xFF60A5FA),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Wrong account? Back to Sign In',
-                                style: AppTextStyles.linkText.copyWith(
-                                  color: const Color(0xFF60A5FA),
-                                  fontSize: 13,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.arrow_back_rounded,
+                                  color: Color(0xFF60A5FA),
+                                  size: 15,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Wrong account? Back to Sign In',
+                                  style: AppTextStyles.linkText.copyWith(
+                                    color: const Color(0xFF60A5FA),
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-
-                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
@@ -418,181 +525,267 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     );
   }
 
-  /// Builds the 6 individual PIN digit boxes.
+  /// Builds the 6 individual PIN digit boxes with segmented center separator.
   Widget _buildPinBoxes() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final boxWidth = ((constraints.maxWidth - (5 * 8)) / 6).clamp(38.0, 52.0);
+        final totalGaps = (4 * 6.0) + 16.0;
+        final boxWidth = ((constraints.maxWidth - totalGaps) / 6).clamp(36.0, 48.0);
 
         return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(_pinLength, (i) {
-            final isFocused = _focusNodes[i].hasFocus;
-            final hasValue = _controllers[i].text.isNotEmpty;
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // First 3 Digits
+            _buildDigitBox(0, boxWidth),
+            const SizedBox(width: 6),
+            _buildDigitBox(1, boxWidth),
+            const SizedBox(width: 6),
+            _buildDigitBox(2, boxWidth),
 
-            return KeyboardListener(
-              focusNode: FocusNode(),
-              onKeyEvent: (event) => _onKeyDown(i, event),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: boxWidth,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: isFocused
-                      ? const Color(0xFF0F52BA).withValues(alpha: 0.12)
-                      : const Color(0xFF0D1117),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isFocused
-                        ? const Color(0xFF38BDF8)
-                        : hasValue
-                            ? const Color(0xFF0F52BA)
-                            : Colors.white.withValues(alpha: 0.12),
-                    width: isFocused ? 2 : 1.2,
-                  ),
-                  boxShadow: isFocused
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFF38BDF8).withValues(alpha: 0.25),
-                            blurRadius: 10,
-                            spreadRadius: 1,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Center(
-                  child: TextField(
-                    controller: _controllers[i],
-                    focusNode: _focusNodes[i],
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: 0,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(6),
-                    ],
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                      counterText: '',
-                    ),
-                    onChanged: (val) => _onDigitChanged(i, val),
-                  ),
-                ),
+            // Center Dash Divider
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 5),
+              width: 8,
+              height: 2.5,
+              decoration: BoxDecoration(
+                color: const Color(0xFF475569),
+                borderRadius: BorderRadius.circular(2),
               ),
-            );
-          }),
+            ),
+
+            // Last 3 Digits
+            _buildDigitBox(3, boxWidth),
+            const SizedBox(width: 6),
+            _buildDigitBox(4, boxWidth),
+            const SizedBox(width: 6),
+            _buildDigitBox(5, boxWidth),
+          ],
         );
       },
+    );
+  }
+
+  Widget _buildDigitBox(int i, double boxWidth) {
+    final isFocused = _focusNodes[i].hasFocus;
+    final hasValue = _controllers[i].text.isNotEmpty;
+
+    return Focus(
+      onKeyEvent: (node, event) => _onKeyDown(i, event),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: boxWidth,
+        height: 56,
+        decoration: BoxDecoration(
+          color: isFocused
+              ? const Color(0xFF0F264E)
+              : hasValue
+                  ? const Color(0xFF0B1B38)
+                  : const Color(0xFF091122),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isFocused
+                ? const Color(0xFF38BDF8)
+                : hasValue
+                    ? const Color(0xFF0284C7)
+                    : const Color(0xFF23314A),
+            width: isFocused ? 2.0 : 1.3,
+          ),
+          boxShadow: isFocused
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : hasValue
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                        blurRadius: 6,
+                      ),
+                    ]
+                  : null,
+        ),
+        child: Center(
+          child: TextField(
+            controller: _controllers[i],
+            focusNode: _focusNodes[i],
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            cursorColor: const Color(0xFF38BDF8),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              fontFamily: 'monospace',
+            ),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+              counterText: '',
+              hintText: !isFocused && !hasValue ? '•' : null,
+              hintStyle: const TextStyle(
+                color: Color(0xFF334155),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onChanged: (val) => _onDigitChanged(i, val),
+          ),
+        ),
+      ),
     );
   }
 
   /// Builds the resend countdown or active button.
   Widget _buildResendRow() {
     if (_isResending) {
-      return const Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 14,
-            height: 14,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Color(0xFF60A5FA),
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: const Color(0xFF131D33),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 13,
+              height: 13,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFF60A5FA),
+              ),
             ),
-          ),
-          SizedBox(width: 8),
-          Text(
-            'Dispatching new code...',
-            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-          ),
-        ],
+            SizedBox(width: 8),
+            Text(
+              'Dispatching fresh 6-digit code...',
+              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+            ),
+          ],
+        ),
       );
     }
 
     if (_canResend) {
       return TextButton.icon(
+        style: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF38BDF8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          backgroundColor: const Color(0xFF0284C7).withValues(alpha: 0.12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: const Color(0xFF0284C7).withValues(alpha: 0.3)),
+          ),
+        ),
         onPressed: _handleResendEmail,
-        icon: const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF38BDF8)),
+        icon: const Icon(Icons.refresh_rounded, size: 15),
         label: const Text(
-          'Resend Verification Code',
+          'Resend Security Code',
           style: TextStyle(
-            color: Color(0xFF38BDF8),
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
           ),
         ),
       );
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.timer_outlined,
-          size: 15,
-          color: Colors.white.withValues(alpha: 0.4),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          'Resend code in ${_resendCountdown}s',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+    final mins = _resendCountdown ~/ 60;
+    final secs = _resendCountdown % 60;
+    final timeStr = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF131D33),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF1E293B)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.timer_outlined,
+            size: 13,
+            color: Color(0xFF94A3B8),
           ),
-        ),
-      ],
+          const SizedBox(width: 7),
+          Text(
+            'Resend code in $timeStr',
+            style: const TextStyle(
+              color: Color(0xFF94A3B8),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   /// Builds the hero shield illustration.
   Widget _buildShieldHero() {
     return SizedBox(
-      height: 100,
-      width: 100,
+      height: 84,
+      width: 84,
       child: Stack(
         alignment: Alignment.center,
         children: [
+          // Outer Glow Pulse
           Container(
-            width: 100,
-            height: 100,
+            width: 84,
+            height: 84,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFF0F52BA).withValues(alpha: 0.25),
-                  const Color(0xFF0F52BA).withValues(alpha: 0.0),
+                  const Color(0xFF0284C7).withValues(alpha: 0.26),
+                  Colors.transparent,
                 ],
               ),
             ),
           ),
+          // Middle Glass Ring
           Container(
-            width: 76,
-            height: 76,
+            width: 70,
+            height: 70,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF161B22),
+              color: const Color(0xFF0D1527),
               border: Border.all(
-                color: const Color(0xFF0F52BA).withValues(alpha: 0.4),
-                width: 2,
+                color: const Color(0xFF38BDF8).withValues(alpha: 0.3),
+                width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0F52BA).withValues(alpha: 0.3),
+                  color: const Color(0xFF0284C7).withValues(alpha: 0.22),
                   blurRadius: 16,
                 ),
               ],
             ),
+          ),
+          // Inner Emblem
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [Color(0xFF0284C7), Color(0xFF0F52BA)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
             child: const Icon(
               Icons.verified_user_rounded,
-              size: 38,
-              color: Color(0xFF60A5FA),
+              size: 26,
+              color: Colors.white,
             ),
           ),
         ],

@@ -356,6 +356,76 @@ class _SocDashboardScreenState extends State<SocDashboardScreen>
           ],
         ),
         actions: [
+          // ── Operating Mode Switcher ──────────────────────────────────────────
+          PopupMenuButton<String>(
+            tooltip: 'Switch Operating Mode',
+            color: const Color(0xFF161B22),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: const BorderSide(color: Color(0xFF30363D)),
+            ),
+            onSelected: (mode) {
+              if (mode == 'user') {
+                Navigator.pushReplacementNamed(context, AppRoutes.userDashboard);
+              } else if (mode == 'soc') {
+                Navigator.pushReplacementNamed(context, AppRoutes.socDashboard);
+              } else if (mode == 'admin') {
+                Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+              }
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'user',
+                child: Row(
+                  children: [
+                    Icon(Icons.shield_rounded, color: Color(0xFF60A5FA), size: 16),
+                    SizedBox(width: 8),
+                    Text('🛡️ User Endpoint Mode', style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12.5)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'soc',
+                child: Row(
+                  children: [
+                    Icon(Icons.remove_red_eye_rounded, color: Color(0xFF34D399), size: 16),
+                    SizedBox(width: 8),
+                    Text('👁️ SOC Operations Center (Active)', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'admin',
+                child: Row(
+                  children: [
+                    Icon(Icons.admin_panel_settings_rounded, color: Color(0xFFA78BFA), size: 16),
+                    SizedBox(width: 8),
+                    Text('⚡ Enterprise Admin Panel', style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12.5)),
+                  ],
+                ),
+              ),
+            ],
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.6)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.remove_red_eye_rounded, size: 12, color: Color(0xFF34D399)),
+                  SizedBox(width: 6),
+                  Text('MODE: SOC', style: TextStyle(color: Color(0xFF34D399), fontSize: 10.5, fontWeight: FontWeight.bold)),
+                  SizedBox(width: 4),
+                  Icon(Icons.arrow_drop_down, size: 14, color: Color(0xFF34D399)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           // Pulsing Live Socket Indicator
           ScaleTransition(
             scale: _pulseAnim,
