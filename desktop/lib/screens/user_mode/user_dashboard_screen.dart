@@ -31,7 +31,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   List<dynamic> _events = [];
   bool _socActivated = true;
   bool _showUpdateBanner = true;
-  final String _latestVersion = '2.4.2';
+  final String _latestVersion = '2.5.2';
 
   // URL Scanner state
   final TextEditingController _urlController = TextEditingController();

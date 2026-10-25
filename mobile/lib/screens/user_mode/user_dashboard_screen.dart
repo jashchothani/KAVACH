@@ -35,7 +35,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   List<dynamic> _enrolledDevices = [];
   bool _socActivated = true;
   bool _showUpdateBanner = true;
-  final String _latestVersion = '2.4.2';
+  final String _latestVersion = '2.5.2';
   List<dynamic> _userWeeklyReports = [];
   bool _isPinActive = ApiService.instance.isPinEnabled();
   Map<String, dynamic>? _pendingMobileChallenge;

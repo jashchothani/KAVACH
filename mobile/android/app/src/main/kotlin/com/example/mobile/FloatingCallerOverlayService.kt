@@ -166,14 +166,14 @@ class FloatingCallerOverlayService : Service() {
             PixelFormat.TRANSLUCENT
         )
 
+        val context = this
+        val density = resources.displayMetrics.density
+        fun dp(value: Number): Int = (value.toFloat() * density).toInt()
+
         params.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         params.x = 0
         params.y = dp(24)
         params.windowAnimations = android.R.style.Animation_InputMethod
-
-        val context = this
-        val density = resources.displayMetrics.density
-        fun dp(value: Int): Int = (value * density).toInt()
 
         // Outer Container
         val rootLayout = LinearLayout(context).apply {

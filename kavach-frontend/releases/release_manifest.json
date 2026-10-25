@@ -1,8 +1,8 @@
-﻿{
+{
     "product":  "KAVACH Enterprise SOAR-XDR Cyber Defense Platform",
-    "version":  "2.2.1",
-    "build_timestamp_utc":  "2026-10-24 16:34:54Z",
-    "installer_file":  "KAVACH-Setup-2.2.1.exe",
+    "version":  "2.5.2",
+    "build_timestamp_utc":  "2026-10-25 06:14:00Z",
+    "installer_file":  "KAVACH-Setup-2.5.2.exe",
     "file_size_bytes":  194408003,
     "file_size_mb":  "185.4 MB",
     "sha256":  "DBA7C660463FE5BE56E192796A8190A4F01B333E51B0AAEF2442A7DFDAB6E52D",

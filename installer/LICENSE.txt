@@ -1,13 +1,13 @@
 ==============================================================================
                       KAVACH END USER LICENSE AGREEMENT
-      KAVACH AI-Driven SOAR-XDR Threat Intelligence & Response Platform
-                                Version 2.1.0 
+      KAVACH AI-Driven SOAR-XDR Threat Intelligence & Telephony Protection
+                                Version 2.5.2
 ==============================================================================
 
 IMPORTANT: READ CAREFULLY BEFORE INSTALLING OR USING THE SOFTWARE. This End
 User License Agreement (the "Agreement") is a legally binding contract between
-you ("Licensee" or "you") and KAVACH Cybersecurity Technologies, [registered
-address] ("KAVACH", "we", "us"). By clicking "I Accept", installing, copying,
+you ("Licensee" or "you") and KAVACH Cyber Technologies, Mumbai, Maharashtra,
+India ("KAVACH", "we", "us"). By clicking "I Accept", installing, copying,
 or otherwise using the Software, you confirm that you have read and understood
 this Agreement and agree to be bound by it. If you do not agree, do not
 install or use the Software. If you are accepting on behalf of an
@@ -17,17 +17,20 @@ organization, you represent that you have authority to bind that organization.
 --------------
 
   * "Software" means the KAVACH platform and its components, including the
-    Windows Endpoint Agent, Endpoint Collector, Windows Security Companion,
-    the Raksha AI Security Copilot, associated endpoint sensors, updates, and
-    documentation.
+    Windows Endpoint Agent, Windows Endpoint Collector, Security Companion,
+    Android Mobile App, Telephony Sentinel (Caller ID & SMS Scam Intercept),
+    Raksha AI Security Copilot, Web Security Console, associated sensors,
+    updates, and documentation.
   * "Raksha AI" means the embedded artificial-intelligence security copilot
-    that provides advisory analysis and recommendations.
-  * "Telemetry" means the security-relevant technical data described in
+    powered by sovereign neural intelligence models that provides advisory
+    threat analysis and real-time guidance.
+  * "Telemetry" means the security-relevant technical indicators described in
     Section 4.
-  * "Device" means any endpoint on which the Software is installed and
-    enrolled.
+  * "Device" means any endpoint (workstation, server, or mobile device) on
+    which the Software is installed and enrolled.
   * "Authorized Administrator" means a person designated by you or your
-    organization to approve security operations and containment actions.
+    organization to approve security operations, SOC clearances, and
+    containment actions.
   * "SOAR" means security orchestration, automation, and response
     functionality.
 
@@ -38,8 +41,8 @@ organization, you represent that you have authority to bind that organization.
 KAVACH grants you a limited, non-exclusive, non-transferable, non-
 sublicensable, revocable license to install and use the Software on enrolled
 Devices solely for endpoint security monitoring, threat-intelligence
-correlation, incident detection, and authorized SOAR response within your own
-environment.
+correlation, real-time telephony scam protection, incident detection, and
+authorized SOAR response within your own environment.
 
 2.2 Reservation of Rights. The Software is licensed, not sold. KAVACH and its
 licensors retain all right, title, and interest, including all intellectual
@@ -50,10 +53,10 @@ stated.
 party or open-source components governed by their own license terms, which are
 listed in the accompanying documentation and prevail for those components.
 
-3. SECURITY ARCHITECTURE
-------------------------
+3. SECURITY ARCHITECTURE & SOC APPROVAL
+---------------------------------------
 
-3.1 Telemetry Pipeline. The Endpoint Collector uses a 16-sensor telemetry
+3.1 Telemetry Pipeline. The Endpoint Collector uses a multi-sensor telemetry
 pipeline that observes system processes, network sockets, file-system
 integrity, Windows Defender status, firewall state, and hardware posture.
 
@@ -62,20 +65,26 @@ Protection API (DPAPI) and RSA-2048 hardware-bound key pairs. Device
 authorization keys are held in Windows protected storage and are never
 transmitted in plaintext.
 
-3.3 Data Handling in Transit and at Rest. Telemetry is normalized and, during
+3.3 SOC Clearance Gating. To protect against rogue device infiltration, full
+active defense features, remediation triggers, and kernel intercepts require
+confirmation by an authorized SOC Analyst before activation.
+
+3.4 Data Handling in Transit and at Rest. Telemetry is normalized and, during
 network disruption, buffered in a local SQLite Write-Ahead Log (WAL) spool.
 Data in transit is protected using TLS 1.3 with AES-256-GCM.
 
-3.4 Multi-Tenant Isolation. The platform enforces tenant isolation so that
+3.5 Multi-Tenant Isolation. The platform enforces tenant isolation so that
 each user and enrolled Device can access only its authorized telemetry,
 incidents, and audit trails.
 
 4. DATA COLLECTION AND PRIVACY
 ------------------------------
 
-4.1 Data Collected. Telemetry collection is limited to cybersecurity
+4.1 Data Collected. Telemetry collection is strictly limited to cybersecurity
 indicators, including process hashes, execution metadata, network connection
-data, and system posture information.
+data, and system posture information. On mobile devices, phone numbers and SMS
+content evaluated for fraud are hashed and evaluated against local/remote threat
+databases without recording personal contacts.
 
 4.2 Data Not Collected. The Software does not monitor, collect, inspect, or
 exfiltrate private user documents, browser keystrokes, personal
@@ -90,10 +99,10 @@ it, including, where relevant, India's Digital Personal Data Protection Act,
 2023. Where you are an organization deploying the Software to employees or
 other individuals, you are responsible for providing any required notices and
 obtaining any required consents. Further details are set out in the KAVACH
-Privacy Notice [link].
+Privacy Policy at https://kavachcybertech.in/privacy.html.
 
 4.5 Retention and Deletion. Telemetry is retained for the period stated in
-your plan or the Privacy Notice and is deleted or anonymized thereafter,
+your plan or the Privacy Policy and is deleted or anonymized thereafter,
 unless longer retention is required by law.
 
 5. RAKSHA AI SECURITY COPILOT
@@ -108,9 +117,9 @@ action (such as isolating a Device, terminating processes, or blocking network
 access) require explicit authorization and validation by an Authorized
 Administrator before execution.
 
-5.3 Limitations of AI Output. AI-generated analysis may be incomplete,
-inaccurate, or subject to false positives and false negatives. You are
-responsible for reviewing recommendations before acting on them.
+5.3 Limitations of AI Output. AI-generated analysis may be subject to false
+positives and false negatives. You are responsible for reviewing recommendations
+before acting on them.
 
 6. RESTRICTIONS
 ---------------
@@ -128,7 +137,7 @@ You shall not, and shall not permit others to:
   * (d) copy, rent, lease, sell, sublicense, or provide the Software to third
     parties, or offer it as a service bureau;
   * (e) remove or alter any proprietary notices, labels, or markings; or
-  * (f) use the Software to build a competing product or to benchmark it for
+    (f) use the Software to build a competing product or to benchmark it for
     public release without KAVACH's prior written consent.
 
 7. UPDATES AND SUPPORT
@@ -137,8 +146,7 @@ You shall not, and shall not permit others to:
 KAVACH may provide updates, patches, and threat-intelligence content from time
 to time, which form part of the Software and are governed by this Agreement.
 Certain updates may be applied automatically to maintain security. Support is
-provided according to your subscription or support plan; absent such a plan,
-no support obligation exists.
+provided according to your subscription or support plan.
 
 8. YOUR RESPONSIBILITIES
 ------------------------
@@ -146,7 +154,7 @@ no support obligation exists.
 You are responsible for ensuring you have the right to monitor each enrolled
 Device, safeguarding administrator credentials, maintaining accurate
 enrollment records, and promptly reporting suspected vulnerabilities or misuse
-to [security contact email]. You are responsible for all activity under your
+to security@kavachcybertech.in. You are responsible for all activity under your
 accounts.
 
 9. CONFIDENTIALITY
@@ -154,9 +162,7 @@ accounts.
 
 Each party shall protect the other's non-public information disclosed in
 connection with the Software with at least reasonable care and use it only for
-the purposes of this Agreement. This obligation does not apply to information
-that is public through no fault of the recipient, independently developed,
-lawfully received from a third party, or required to be disclosed by law.
+the purposes of this Agreement.
 
 10. DISCLAIMER OF WARRANTIES
 ----------------------------
@@ -178,9 +184,7 @@ SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR FOR LOSS OF PROFITS, REVENUE,
 DATA, OR BUSINESS, ARISING FROM THE USE OF OR INABILITY TO USE THE SOFTWARE,
 EVEN IF ADVISED OF THEIR POSSIBILITY. KAVACH'S TOTAL AGGREGATE LIABILITY UNDER
 THIS AGREEMENT SHALL NOT EXCEED THE FEES PAID BY YOU FOR THE SOFTWARE IN THE
-TWELVE (12) MONTHS PRECEDING THE CLAIM [OR INR ___ IF NO FEES WERE PAID].
-Nothing in this Agreement excludes liability that cannot be excluded under
-applicable law.
+TWELVE (12) MONTHS PRECEDING THE CLAIM (OR INR 5,000 IF NO FEES WERE PAID).
 
 12. INDEMNIFICATION
 -------------------
@@ -200,48 +204,39 @@ terminated.
 Software and revoking local DPAPI device credentials.
 
 13.3 Termination by KAVACH. KAVACH may suspend or terminate this Agreement
-immediately upon written notice if you materially breach it, including Section
-6.
+immediately upon written notice if you materially breach it, including Section 6.
 
 13.4 Effect of Termination. On termination, all rights granted to you end, all
-local background services and tray companions will cease operation, and you
-must delete all copies of the Software. Sections 2.2, 6, 9, 10, 11, 12, 13.4,
-and 14 survive termination.
+local background services and mobile sentinel monitors will cease operation,
+and you must delete all copies of the Software.
 
 14. GENERAL PROVISIONS
 ----------------------
 
 14.1 Governing Law and Jurisdiction. This Agreement is governed by the laws of
-[India / specify], without regard to conflict-of-law principles. The courts at
-[city] shall have exclusive jurisdiction, subject to any mandatory dispute-
-resolution procedure set out in your commercial agreement.
+India, without regard to conflict-of-law principles. The courts at Mumbai,
+Maharashtra shall have exclusive jurisdiction.
 
 14.2 Export and Compliance. You will comply with all applicable export,
 sanctions, and cybersecurity laws in your use of the Software.
 
 14.3 Assignment. You may not assign this Agreement without KAVACH's prior
-written consent. KAVACH may assign it in connection with a merger,
-acquisition, or sale of assets.
+written consent.
 
 14.4 Severability and Waiver. If any provision is held unenforceable, the
-remainder stays in effect. Failure to enforce a provision is not a waiver.
+remainder stays in effect.
 
-14.5 Entire Agreement. This Agreement, together with the Privacy Notice and
-any signed order form, is the entire agreement regarding the Software and
-supersedes prior understandings. Where an order form conflicts with this
-Agreement, the order form prevails for that order.
+14.5 Entire Agreement. This Agreement, together with the Privacy Policy and
+any signed order form, is the entire agreement regarding the Software.
 
-14.6 Changes. KAVACH may update this Agreement for legal, security, or
-operational reasons by providing notice through the Software or its website.
-Continued use after the effective date constitutes acceptance.
-
-14.7 Notices and Contact. Legal notices: [legal@yourdomain.com]. Security
-reports: [security@yourdomain.com]. Address: [registered address].
-
+14.6 Notices and Contact.
+  * General Inquiries & Support: support@kavachcybertech.in
+  * System Communications: no-reply@kavachcybertech.in
+  * Security Vulnerability Reports: security@kavachcybertech.in
+  * Legal: legal@kavachcybertech.in
+  * Address: KAVACH Cyber Technologies, Mumbai, Maharashtra, India.
 
 ==============================================================================
-
-Copyright (c) 2026 KAVACH Cybersecurity Technologies. All rights reserved.
-KAVACH, Raksha, and related marks are trademarks of KAVACH Cybersecurity
-Technologies.
+Copyright (c) 2026 KAVACH Cyber Technologies. All rights reserved.
+KAVACH, Raksha, and related marks are trademarks of KAVACH Cyber Technologies.
 ==============================================================================

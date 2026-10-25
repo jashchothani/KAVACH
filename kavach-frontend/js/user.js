@@ -152,9 +152,9 @@
       <div style="flex:1">
         <div style="display:flex;align-items:center;gap:8px">
           <strong style="color:#0F172A;font-size:0.95rem">KAVACH Update Available</strong>
-          <span style="background:#F1F5F9;color:#0284C7;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:999px">v2.4.2</span>
+          <span style="background:#F1F5F9;color:#0284C7;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:999px">v2.5.2</span>
         </div>
-        <div style="font-size:0.82rem;color:#64748B;margin-top:2px">Neural Scam Intercept v2.4, Real-time VoIP Caller Screening & Google 2-Step Sign-in.</div>
+        <div style="font-size:0.82rem;color:#64748B;margin-top:2px">Neural Scam Intercept v2.5, Real-time VoIP Caller Screening & Google 2-Step Sign-in.</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <a href="/download.html" style="background:#059669;color:#fff;text-decoration:none;padding:7px 16px;border-radius:999px;font-size:0.82rem;font-weight:700">Update Now</a>

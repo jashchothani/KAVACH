@@ -171,8 +171,8 @@ def upload_asset(release_id, file_path, token=""):
             time.sleep(1)
             break
 
-    # 2. For large files (>80MB) or when using native streaming, use curl.exe if available
-    if file_size > 80 * 1024 * 1024:
+    # 2. For files >1MB, use fast native curl.exe with binary streaming
+    if file_size > 1 * 1024 * 1024:
         return upload_with_curl(release_id, file_path, token=token)
 
     upload_url = f"{UPLOADS_BASE}/releases/{release_id}/assets?name={filename}"
@@ -237,7 +237,7 @@ def upload_with_curl(release_id, file_path, token=""):
         elapsed = time.time() - start_time
         speed = size_mb / elapsed if elapsed > 0 else 0
         print(f"\n  [SUCCESS] {filename} uploaded via curl in {elapsed:.1f}s ({speed:.2f} MB/s)!")
-        return {"browser_download_url": f"https://github.com/{REPO}/releases/download/v2.2.1/{filename}"}
+        return {"browser_download_url": f"https://github.com/{REPO}/releases/download/v2.5.2/{filename}"}
     else:
         print(f"\n  [!] curl upload exited with code {res.returncode}")
         return None
@@ -246,7 +246,7 @@ def upload_with_curl(release_id, file_path, token=""):
 def main():
     parser = argparse.ArgumentParser(description="KAVACH Release Asset Uploader & Manager")
     parser.add_argument("--list", action="store_true", help="List all current GitHub releases and their assets")
-    parser.add_argument("--tag", default="v2.1.0", help="Release tag name to target (default: v2.1.0)")
+    parser.add_argument("--tag", default="v2.5.2", help="Release tag name to target (default: v2.5.2)")
     parser.add_argument("--create", action="store_true", help="Create new release if tag does not exist")
     parser.add_argument("--file", help="Specific file to upload (e.g., release/kavach-extension.zip)")
     parser.add_argument("--upload-all", action="store_true", help="Upload all standard release files (.exe, .apk, .zip)")
