@@ -1,23 +1,31 @@
-﻿{
-    "product":  "KAVACH Enterprise SOAR-XDR Cyber Defense Platform",
-    "version":  "2.5.2",
-    "build_timestamp_utc":  "2026-10-25 10:03:13Z",
-    "installer_file":  "KAVACH-Setup-2.5.2.exe",
-    "file_size_bytes":  173323945,
-    "file_size_mb":  "165.29 MB",
-    "sha256":  "F31296DCCFC45367122D750E5DC47A8AFF1A5E0791FD5091FA68C437EA0FBE9E",
-    "target_os":  "Windows 10 / Windows 11 (64-bit)",
-    "prerequisites":  {
-                          "min_ram":  "4 GB",
-                          "min_storage":  "500 MB",
-                          "admin_elevation":  "Required only during initial Windows Service registration"
-                      },
-    "components_included":  [
-                                "KAVACH Windows Endpoint Background Service (Session 0)",
-                                "KAVACH Flutter Desktop Companion UI (Session 1+)",
-                                "KAVACH System Tray Guardian \u0026 Emergency One-Click Shield",
-                                "16 High-Precision Operating System Telemetry Sensors",
-                                "Encrypted SQLite Offline Spool Buffer \u0026 Exponential Shipper",
-                                "Hardware DPAPI Device Identity \u0026 Cryptographic Enrollment"
-                            ]
+{
+  "product": "KAVACH Enterprise SOAR-XDR Cyber Defense Platform",
+  "version": "2.5.2",
+  "build_timestamp_utc": "2026-10-25T13:25:12.481383+00:00",
+  "installer_file": "KAVACH-Setup-2.5.2.exe",
+  "file_size_bytes": 173341583,
+  "file_size_mb": "165.31 MB",
+  "sha256": "c4cfbd24cf80e9f5b8b186aba2ae49fafea9e2a50f7db4a234fd9b29ff3f92e2",
+  "target_os": "Windows 10 / Windows 11 (64-bit)",
+  "prerequisites": {
+    "min_ram": "4 GB",
+    "min_storage": "500 MB",
+    "admin_elevation": "Required during installation for Windows Service registration"
+  },
+  "branding": {
+    "product_name": "KAVACH Cyber Defense",
+    "shield_icon": "assets/kavach.ico (32-bit RGBA 16x16 to 256x256 square multi-layer)",
+    "embedded_wizard_banner": "assets/wizard_large.bmp (164x314)",
+    "embedded_wizard_small": "assets/wizard_small.bmp (55x58)",
+    "companion_title": "KAVACH \u2014 Windows Security Companion",
+    "system_tray_tooltip": "KAVACH Cyber Defense \u2014 Active"
+  },
+  "components_included": [
+    "KAVACH Windows Endpoint Background Service (Session 0)",
+    "KAVACH Desktop Companion UI (Session 1+)",
+    "KAVACH System Tray Guardian & Emergency One-Click Shield",
+    "16 High-Precision Operating System Telemetry Sensors",
+    "Encrypted SQLite Offline Spool Buffer & Exponential Shipper",
+    "Hardware DPAPI Device Identity & Cryptographic Enrollment"
+  ]
 }

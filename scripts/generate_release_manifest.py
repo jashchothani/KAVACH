@@ -7,7 +7,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-EXE_PATH = Path("release/KAVACH-Setup-2.1.0.exe")
+EXE_PATH = Path("release/KAVACH-Setup-2.5.2.exe")
 if not EXE_PATH.exists():
     raise FileNotFoundError(f"Setup file not found: {EXE_PATH}")
 
@@ -22,7 +22,7 @@ file_size_mb = f"{round(file_size / (1024 * 1024), 2)} MB"
 
 manifest = {
     "product": "KAVACH Enterprise SOAR-XDR Cyber Defense Platform",
-    "version": "2.1.0",
+    "version": "2.5.2",
     "build_timestamp_utc": datetime.now(timezone.utc).isoformat(),
     "installer_file": EXE_PATH.name,
     "file_size_bytes": file_size,
