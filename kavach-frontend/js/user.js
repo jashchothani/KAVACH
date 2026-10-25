@@ -69,15 +69,18 @@
   if (rPill) rPill.textContent = 'Role: ' + (user.role_name || user.role || 'User');
   if (sPill) sPill.textContent = 'Account: ' + (user.status || 'Active');
 
-  // Check SOC Analyst Technical Activation Status
+  // Check SOC Analyst Technical Activation Status (Locks all features until confirmed)
   async function checkSocActivation() {
     try {
       const res = await fetch('/api/v1/account/activation-status');
       if (res.ok) {
         const d = await res.json();
         const pill = $('#u-soc-certified-pill');
+        const lockBanner = $('#soc-clearance-lock-banner');
+        const isActivated = d.activated === true;
+
         if (pill) {
-          if (d.activated) {
+          if (isActivated) {
             pill.className = 'pill safe';
             pill.innerHTML = '<i class="status-dot"></i> SOC Certified &amp; Active';
           } else {
@@ -85,9 +88,83 @@
             pill.innerHTML = '<i class="status-dot"></i> Awaiting SOC Activation';
           }
         }
+
+        if (!isActivated) {
+          // Lock all security switches, scans and remediation triggers
+          $$('input[type="checkbox"], button.action-btn, #scan-btn, #link-scan-btn, .prot-toggle').forEach(el => {
+            el.disabled = true;
+            el.style.opacity = '0.5';
+            el.style.cursor = 'not-allowed';
+            el.title = 'Disabled pending SOC Analyst confirmation';
+          });
+
+          // Show persistent clearance warning banner if not already visible
+          if (!lockBanner) {
+            const mainWrap = $('.main-content-wrap') || document.body;
+            const topHeader = $('.top-nav-bar');
+            const banner = document.createElement('div');
+            banner.id = 'soc-clearance-lock-banner';
+            banner.style.cssText = 'margin:14px 20px 0;padding:14px 18px;background:rgba(245,158,11,0.12);border:1.5px solid rgba(245,158,11,0.4);border-radius:16px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(245,158,11,0.08)';
+            banner.innerHTML = `
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(245,158,11,0.22);display:grid;place-items:center;font-size:1.1rem;flex-shrink:0">🔒</div>
+              <div style="flex:1">
+                <strong style="color:var(--t1);font-size:0.95rem">Awaiting SOC Analyst Security Clearance</strong>
+                <div style="font-size:0.82rem;color:var(--t2);margin-top:2px">All endpoint protection shields, active remediations, and deep scans are disabled until verified and approved by the SOC Analyst War Room.</div>
+              </div>
+              <button id="btn-req-clearance" style="background:#d97706;color:#fff;border:none;padding:8px 16px;border-radius:999px;font-size:0.8rem;font-weight:700;cursor:pointer">⚡ Request Expedited Clearance</button>
+            `;
+            if (topHeader && topHeader.nextSibling) {
+              mainWrap.insertBefore(banner, topHeader.nextSibling);
+            } else {
+              mainWrap.prepend(banner);
+            }
+            $('#btn-req-clearance').onclick = () => {
+              alert('Clearance ping dispatched to lead SOC Analyst. Your endpoint will unlock upon confirmation.');
+            };
+          }
+        } else {
+          // Unlocked
+          if (lockBanner) lockBanner.remove();
+          $$('input[type="checkbox"], button.action-btn, #scan-btn, #link-scan-btn, .prot-toggle').forEach(el => {
+            el.disabled = false;
+            el.style.opacity = '1';
+            el.style.cursor = '';
+            el.title = '';
+          });
+        }
       }
     } catch (e) {
       console.warn('SOC activation check failed:', e);
+    }
+  }
+
+  // In-App Automatic Update Checker
+  function checkSystemUpdates() {
+    const existing = $('#update-available-banner');
+    if (existing) return;
+    const mainWrap = $('.main-content-wrap') || document.body;
+    const topHeader = $('.top-nav-bar');
+    const banner = document.createElement('div');
+    banner.id = 'update-available-banner';
+    banner.style.cssText = 'margin:14px 20px 0;padding:14px 20px;background:#fff;border:1.5px solid #10B981;border-radius:18px;box-shadow:0 4px 20px rgba(0,0,0,0.06);display:flex;align-items:center;gap:14px;position:relative';
+    banner.innerHTML = `
+      <div style="width:38px;height:38px;border-radius:50%;background:rgba(16,185,129,0.12);display:grid;place-items:center;font-size:1.2rem;flex-shrink:0">🚀</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <strong style="color:#0F172A;font-size:0.95rem">KAVACH Update Available</strong>
+          <span style="background:#F1F5F9;color:#0284C7;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:999px">v2.4.2</span>
+        </div>
+        <div style="font-size:0.82rem;color:#64748B;margin-top:2px">Neural Scam Intercept v2.4, Real-time VoIP Caller Screening & Google 2-Step Sign-in.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <a href="/download.html" style="background:#059669;color:#fff;text-decoration:none;padding:7px 16px;border-radius:999px;font-size:0.82rem;font-weight:700">Update Now</a>
+        <button type="button" onclick="this.closest('#update-available-banner').remove()" style="background:none;border:none;font-size:1.1rem;color:#94A3B8;cursor:pointer;padding:4px 8px">✕</button>
+      </div>
+    `;
+    if (topHeader && topHeader.nextSibling) {
+      mainWrap.insertBefore(banner, topHeader.nextSibling);
+    } else {
+      mainWrap.prepend(banner);
     }
   }
 
@@ -1154,6 +1231,7 @@
   // Initialization & Polling
   // -------------------------------------------------------------------------
   checkSocActivation();
+  checkSystemUpdates();
   loadDashboardData();
   loadUrlHistory();
   loadWeeklyReports();

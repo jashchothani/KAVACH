@@ -6,6 +6,7 @@ import '../../core/routes/app_routes.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/google_prompt_modal.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../security/app_lock_pin_screen.dart';
 
 /// KAVACH Mobile User Dashboard.
@@ -33,6 +34,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   List<dynamic> _events = [];
   List<dynamic> _enrolledDevices = [];
   bool _socActivated = true;
+  bool _showUpdateBanner = true;
+  final String _latestVersion = '2.4.2';
   List<dynamic> _userWeeklyReports = [];
   bool _isPinActive = ApiService.instance.isPinEnabled();
   Map<String, dynamic>? _pendingMobileChallenge;
@@ -1091,11 +1094,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const StructuralDashboardSkeleton()
           : Stack(
               children: [
                 Column(
                   children: [
+                    if (_showUpdateBanner) _buildUpdateAvailableBanner(),
+                    if (!_socActivated) _buildAwaitingSocClearanceBanner(),
                     if (_pendingMobileChallenge != null) _buildPendingChallengeBanner(),
                     Expanded(child: _buildCurrentSection()),
                   ],
@@ -1104,6 +1109,184 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               ],
             ),
       bottomNavigationBar: _buildSpaciousBottomNav(),
+    );
+  }
+
+  // ── In-App Automatic Update Available Banner ───────────────────────────────
+  Widget _buildUpdateAvailableBanner() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                ),
+                child: const Icon(Icons.system_update_rounded, color: Color(0xFF059669), size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Update Available',
+                          style: TextStyle(color: Color(0xFF0F172A), fontSize: 13.5, fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            'v$_latestVersion',
+                            style: const TextStyle(color: Color(0xFF0284C7), fontSize: 10, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Neural Scam Intercept v2.4, Real-time VoIP Caller ID & Google 2-Step Sign-in',
+                      style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _showUpdateBanner = false),
+                child: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF059669),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Downloading KAVACH v$_latestVersion update package…'),
+                        backgroundColor: const Color(0xFF059669),
+                      ),
+                    );
+                    setState(() => _showUpdateBanner = false);
+                  },
+                  icon: const Icon(Icons.download_rounded, size: 16),
+                  label: const Text('Update Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF64748B),
+                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: () => setState(() => _showUpdateBanner = false),
+                child: const Text('Later', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Awaiting SOC Analyst Clearance Banner (Features Disabled) ──────────────
+  Widget _buildAwaitingSocClearanceBanner() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFDE68A), width: 1.3),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFEF3C7),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.lock_clock_rounded, color: Color(0xFFD97706), size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Awaiting SOC Analyst Clearance',
+                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
+                ),
+                const SizedBox(height: 3),
+                const Text(
+                  'All security controls, active remediations, and deep scans are disabled until verified and approved by the SOC Analyst War Room.',
+                  style: TextStyle(fontSize: 11.5, color: Color(0xFFB45309), height: 1.35),
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Clearance request ping dispatched to lead SOC Analyst.'),
+                        backgroundColor: Color(0xFFD97706),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    '⚡ Request Expedited SOC Clearance →',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E), decoration: TextDecoration.underline),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1221,59 +1404,89 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     );
   }
 
-  // ── 5 Clean Spacious Tabs ──────────────────────────────────────────────────
+  // ── Jio-Style Modern Navigation Bar (Ref Image 2: 'With love, from Jio') ──
   Widget _buildSpaciousBottomNav() {
+    final navItems = [
+      {'icon': Icons.shield_rounded, 'label': 'Shield'},
+      {'icon': Icons.phone_callback_rounded, 'label': 'Caller ID'},
+      {'icon': Icons.smart_toy_rounded, 'label': 'Raksha AI'},
+      {'icon': Icons.devices_rounded, 'label': 'Device'},
+      {'icon': Icons.notifications_active_rounded, 'label': 'Alerts'},
+    ];
+
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFF1F5F9), width: 1.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
+            color: Color(0x0A000000),
+            blurRadius: 16,
+            offset: Offset(0, -4),
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: BottomNavigationBar(
-          currentIndex: _selectedNavIndex.clamp(0, 4),
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          selectedFontSize: 11,
-          unselectedFontSize: 10,
-          elevation: 0,
-          onTap: (idx) => setState(() => _selectedNavIndex = idx),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shield_outlined),
-              activeIcon: Icon(Icons.shield_rounded),
-              label: 'Shield',
+      padding: EdgeInsets.fromLTRB(10, 8, 10, MediaQuery.of(context).padding.bottom + 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(navItems.length, (idx) {
+          final isSelected = _selectedNavIndex == idx;
+          final item = navItems[idx];
+          return Expanded(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedNavIndex = idx);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Circular Icon Pill (Matching Ref Image 2)
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFF0F52BA) : const Color(0xFFF1F5F9),
+                          shape: BoxShape.circle,
+                          boxShadow: isSelected
+                              ? const [
+                                  BoxShadow(
+                                    color: Color(0x330F52BA),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Icon(
+                          item['icon'] as IconData,
+                          size: 20,
+                          color: isSelected ? Colors.white : const Color(0xFF475569),
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        item['label'] as String,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                          color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.phone_callback_outlined),
-              activeIcon: Icon(Icons.phone_callback_rounded),
-              label: 'Caller ID',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.smart_toy_outlined),
-              activeIcon: Icon(Icons.smart_toy_rounded),
-              label: 'Raksha AI',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.phone_android_outlined),
-              activeIcon: Icon(Icons.phone_android_rounded),
-              label: 'Device',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_active_outlined),
-              activeIcon: Icon(Icons.notifications_active_rounded),
-              label: 'Alerts',
-            ),
-          ],
-        ),
+          );
+        }),
       ),
     );
   }
@@ -1478,9 +1691,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    onPressed: _runDeviceScan,
-                    icon: const Icon(Icons.radar_rounded, size: 18),
-                    label: const Text('Scan Phone Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                    onPressed: _socActivated ? _runDeviceScan : null,
+                    icon: Icon(_socActivated ? Icons.radar_rounded : Icons.lock_clock_rounded, size: 18),
+                    label: Text(_socActivated ? 'Scan Phone Now' : 'Scan Disabled (Awaiting SOC Clearance)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
                 ),
               const SizedBox(height: 12),
@@ -1744,11 +1957,28 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               ],
             ),
           ),
+          if (!_socActivated)
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.lock_rounded, size: 10, color: Color(0xFFD97706)),
+                  SizedBox(width: 3),
+                  Text('LOCKED', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
+                ],
+              ),
+            ),
           Switch.adaptive(
-            value: isActive,
+            value: _socActivated && isActive,
             activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
             activeThumbColor: AppColors.primary,
-            onChanged: onChanged,
+            onChanged: _socActivated ? onChanged : null,
           ),
         ],
       ),

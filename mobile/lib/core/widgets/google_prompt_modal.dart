@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Ultra-Modern Google-Style Full-Page Sign-In Verification Screen (Reference Image 4).
-/// Completely Light Themed, pure white backdrop, professional typography,
-/// device telemetry details, and instant one-tap 'Yes, it's me' / 'No, don't allow' actions.
-class GooglePromptModal extends StatelessWidget {
+/// Ultra-Modern Google-Style 2-Step Sign-In Verification Screen.
+/// Matches the exact reference design:
+/// Step 1: 'Trying to sign in from another computer?' with 'NO' and 'YES'.
+/// Step 2: 'Which number do you see on your other screen?' with 3 circular number chips and 'CANCEL'.
+class GooglePromptModal extends StatefulWidget {
   final Map<String, dynamic> challenge;
   final ValueChanged<int> onNumberSelected;
   final VoidCallback onReject;
@@ -23,7 +24,6 @@ class GooglePromptModal extends StatelessWidget {
     required ValueChanged<int> onNumberSelected,
     required VoidCallback onReject,
   }) async {
-    // Tactile alert haptics
     HapticFeedback.heavyImpact();
     Future.delayed(const Duration(milliseconds: 140), () => HapticFeedback.heavyImpact());
     Future.delayed(const Duration(milliseconds: 300), () => HapticFeedback.vibrate());
@@ -58,6 +58,15 @@ class GooglePromptModal extends StatelessWidget {
     );
   }
 
+  @override
+  State<GooglePromptModal> createState() => _GooglePromptModalState();
+}
+
+class _GooglePromptModalState extends State<GooglePromptModal> {
+  // Step 1: Prompt ('Trying to sign in from another computer?')
+  // Step 2: Number Matching ('Which number do you see on your other screen?')
+  int _currentStep = 1;
+
   Widget _buildMetaItem(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,15 +93,53 @@ class GooglePromptModal extends StatelessWidget {
     );
   }
 
+  Widget _buildAccountPill(String userEmail) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 11,
+            backgroundColor: const Color(0xFF8B1A1A),
+            child: Text(
+              (userEmail.isNotEmpty ? userEmail[0] : 'K').toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              userEmail,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF334155),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final opts = (challenge['options'] as List<dynamic>?) ?? [19, 74, 83];
-    final device = challenge['device']?.toString() ?? 'Windows 11 Workstation · Chrome';
-    final user = challenge['username']?.toString() ?? '';
-    final userEmail = challenge['email']?.toString() ??
+    final opts = (widget.challenge['options'] as List<dynamic>?) ?? [19, 74, 83];
+    final device = widget.challenge['device']?.toString() ?? 'Windows 11 Workstation · Chrome';
+    final user = widget.challenge['username']?.toString() ?? '';
+    final userEmail = widget.challenge['email']?.toString() ??
         (user.isNotEmpty ? '$user@kavachcybertech.in' : 'user@kavachcybertech.in');
-    final matchNumber = challenge['match_number']?.toString() ??
-        (opts.isNotEmpty ? opts[0].toString() : '1');
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -109,7 +156,7 @@ class GooglePromptModal extends StatelessWidget {
                     tooltip: 'Dismiss',
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      onReject();
+                      widget.onReject();
                     },
                   ),
                   Expanded(
@@ -140,220 +187,234 @@ class GooglePromptModal extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 48), // Balance spacing with close button
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
 
             const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
 
-            // Main Content Area
+            // Animated Screen Switching: Step 1 vs Step 2
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Are you trying to sign in?',
-                      style: TextStyle(
-                        fontSize: 25,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F1F1F),
-                        letterSpacing: -0.4,
-                      ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 280),
+                transitionBuilder: (child, anim) {
+                  return FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.04, 0),
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: child,
                     ),
-                    const SizedBox(height: 16),
-
-                    // User Account Avatar & Email Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundColor: const Color(0xFF8B1A1A),
-                            child: Text(
-                              (userEmail.isNotEmpty ? userEmail[0] : 'K').toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: Text(
-                              userEmail,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF334155),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // Device Telemetry Details (Reference Image 4)
-                    _buildMetaItem('Device', device),
-                    const SizedBox(height: 20),
-                    _buildMetaItem('Near', 'Mumbai, Maharashtra'),
-                    const SizedBox(height: 20),
-                    _buildMetaItem('Time', 'Just now'),
-
-                    const SizedBox(height: 28),
-
-                    // Google 2-Digit Number Matching Option
-                    if (opts.isNotEmpty) ...[
-                      const Text(
-                        'Tap the matching number shown on your screen:',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: opts.map((opt) {
-                          final n = int.tryParse(opt.toString()) ?? 0;
-                          return Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 6),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(16),
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    onNumberSelected(n);
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: const Color(0xFFCBD5E1),
-                                        width: 1.5,
-                                      ),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          color: Color(0x06000000),
-                                          blurRadius: 10,
-                                          offset: Offset(0, 3),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '$n',
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w800,
-                                          color: Color(0xFF0F172A),
-                                          letterSpacing: 1.0,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-
-            // Bottom Action Buttons: '✕ No, don't allow' & '✓ Yes, it's me'
-            Container(
-              padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).padding.bottom + 16),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                border: Border(top: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
-              ),
-              child: Row(
-                children: [
-                  // '✕ No, don't allow'
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF0F172A),
-                        side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      ),
-                      onPressed: () {
-                        HapticFeedback.heavyImpact();
-                        onReject();
-                      },
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.close_rounded, size: 18, color: Color(0xFF64748B)),
-                          SizedBox(width: 6),
-                          Text(
-                            "No, don't allow",
-                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-
-                  // '✓ Yes, it's me' (One-tap verified approval)
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        shadowColor: const Color(0x3310B981),
-                      ),
-                      onPressed: () {
-                        HapticFeedback.mediumImpact();
-                        final matchN = int.tryParse(matchNumber) ?? 1;
-                        onNumberSelected(matchN);
-                      },
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_rounded, size: 18, color: Colors.white),
-                          SizedBox(width: 6),
-                          Text(
-                            "Yes, it's me",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                  );
+                },
+                child: _currentStep == 1
+                    ? _buildStepOne(userEmail, device)
+                    : _buildStepTwo(userEmail, opts),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── Step 1: Trying to sign in from another computer? (Ref Image 1 Phone Screen 1) ──
+  Widget _buildStepOne(String userEmail, String device) {
+    return KeyedSubtree(
+      key: const ValueKey<int>(1),
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Trying to sign in from another computer?',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F1F1F),
+                      letterSpacing: -0.3,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildAccountPill(userEmail),
+                  const SizedBox(height: 32),
+                  _buildMetaItem('Device', device),
+                  const SizedBox(height: 20),
+                  _buildMetaItem('Near', 'Mumbai, Maharashtra'),
+                  const SizedBox(height: 20),
+                  _buildMetaItem('Time', 'Just now'),
+                ],
+              ),
+            ),
+          ),
+
+          // Bottom Action Row: 'NO' and 'YES' (Matching Reference Image 1)
+          Container(
+            padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF1F1F1F),
+                      side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.4),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    ),
+                    onPressed: () {
+                      HapticFeedback.heavyImpact();
+                      widget.onReject();
+                    },
+                    child: const Text(
+                      'NO',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, letterSpacing: 0.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A73E8),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    ),
+                    onPressed: () {
+                      HapticFeedback.mediumImpact();
+                      setState(() => _currentStep = 2);
+                    },
+                    child: const Text(
+                      'YES',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 0.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Step 2: Which number do you see on your other screen? (Ref Image 1 Phone Screen 2) ──
+  Widget _buildStepTwo(String userEmail, List<dynamic> opts) {
+    return KeyedSubtree(
+      key: const ValueKey<int>(2),
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Which number do you see on your other screen?',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F1F1F),
+                      letterSpacing: -0.3,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildAccountPill(userEmail),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'This extra step helps KAVACH make sure it’s really you.',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      color: Color(0xFF5F6368),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+
+                  // 3 Circular / Rounded Number Pills
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: opts.map((opt) {
+                      final n = int.tryParse(opt.toString()) ?? 0;
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(40),
+                          onTap: () {
+                            HapticFeedback.heavyImpact();
+                            widget.onNumberSelected(n);
+                          },
+                          child: Container(
+                            width: 76,
+                            height: 76,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x0A000000),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$n',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1F1F1F),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Bottom 'CANCEL' link (Matching Reference Image 1)
+          Container(
+            padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 20),
+            alignment: Alignment.center,
+            child: TextButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                widget.onReject();
+              },
+              child: const Text(
+                'CANCEL',
+                style: TextStyle(
+                  color: Color(0xFF1A73E8),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

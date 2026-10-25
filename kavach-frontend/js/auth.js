@@ -124,16 +124,13 @@
                   </svg>
                 </div>
 
-                <div class="google-check-phone-title">Check your phone</div>
-                <div class="google-check-phone-desc">KAVACH sent a notification to your phone. Tap Yes on the notification to continue</div>
+                <div class="google-check-phone-title">Check your KAVACH App</div>
+                <div class="google-check-phone-desc">KAVACH sent a notification to your phone. Tap Yes on the notification, then tap <strong style="color:var(--t1)">${r.match_number}</strong> on your phone to continue.</div>
 
-                <div class="google-match-number-chip">
-                  <span style="font-size:0.75rem;font-weight:700;color:#059669;letter-spacing:0.5px">NUMBER TO MATCH:</span>
-                  <span id="mobile-match-num" class="google-match-number-val">${r.match_number}</span>
-                </div>
+                <div id="mobile-match-num" style="font-size:3.8rem;font-weight:700;color:var(--t1);letter-spacing:2px;margin:14px 0 6px;line-height:1;font-family:'Google Sans',Roboto,Inter,sans-serif">${r.match_number}</div>
 
                 <div>
-                  <button type="button" id="btn-switch-to-email" class="google-try-another-btn">Try another way</button>
+                  <button type="button" id="btn-switch-to-email" class="google-try-another-btn">More ways to sign in</button>
                 </div>
               </div>
             </div>

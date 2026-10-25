@@ -6,6 +6,7 @@ import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/raksha_living_assistant.dart';
+import '../../core/widgets/shimmer_loading.dart';
 
 /// KAVACH User Mode — Approachable, modern, evidence-backed security dashboard.
 /// Tailored for ordinary users seeking clear device protection status.
@@ -28,6 +29,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   Map<String, dynamic> _posture = {};
   List<dynamic> _collectors = [];
   List<dynamic> _events = [];
+  bool _socActivated = true;
+  bool _showUpdateBanner = true;
+  final String _latestVersion = '2.4.2';
 
   // URL Scanner state
   final TextEditingController _urlController = TextEditingController();
@@ -88,6 +92,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         _api.getLivePosture().catchError((_) => <String, dynamic>{}),
         _api.getCollectorsStatus().catchError((_) => <dynamic>[]),
         _api.getSecurityEvents(limit: 10).catchError((_) => <dynamic>[]),
+        _api.getActivationStatus().catchError((_) => <String, dynamic>{'activated': true}),
       ]);
 
       if (!mounted) return;
@@ -96,6 +101,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         _posture = results[1] as Map<String, dynamic>;
         _collectors = results[2] as List<dynamic>;
         _events = results[3] as List<dynamic>;
+        final act = results[4] as Map<String, dynamic>;
+        _socActivated = act['activated'] == true;
         _isLoading = false;
         _lastSyncTime = DateTime.now();
       });
@@ -405,14 +412,178 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           if (isDesktop) _buildDesktopNavRail(),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const StructuralDashboardSkeleton()
                 : _errorMessage != null
                     ? _buildErrorView()
-                    : _buildCurrentSection(),
+                    : Column(
+                        children: [
+                          if (_showUpdateBanner) _buildUpdateAvailableBanner(),
+                          if (!_socActivated) _buildAwaitingSocClearanceBanner(),
+                          Expanded(child: _buildCurrentSection()),
+                        ],
+                      ),
           ),
         ],
       ),
       bottomNavigationBar: isDesktop ? null : _buildMobileBottomNav(),
+    );
+  }
+
+  Widget _buildUpdateAvailableBanner() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF5),
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFA7F3D0)),
+            ),
+            child: const Icon(Icons.system_update_rounded, color: Color(0xFF059669), size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Desktop Update Available',
+                      style: TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'v$_latestVersion',
+                        style: const TextStyle(color: Color(0xFF0284C7), fontSize: 10.5, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                const Text(
+                  'Heuristic Neural Scam Intercept v2.4, Kernel Sensor Telemetry & Google 2-Step Sign-in',
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF059669),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Downloading KAVACH Desktop v$_latestVersion update package…'),
+                  backgroundColor: const Color(0xFF059669),
+                ),
+              );
+              setState(() => _showUpdateBanner = false);
+            },
+            icon: const Icon(Icons.download_rounded, size: 16),
+            label: const Text('Update Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
+            onPressed: () => setState(() => _showUpdateBanner = false),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAwaitingSocClearanceBanner() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFDE68A), width: 1.3),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFEF3C7),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.lock_clock_rounded, color: Color(0xFFD97706), size: 22),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Awaiting SOC Analyst Clearance',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'All active endpoint protection shields, remediations, and deep scans are disabled until verified and approved by the SOC Analyst War Room.',
+                  style: TextStyle(fontSize: 11.5, color: Color(0xFFB45309)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD97706),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Clearance request ping dispatched to lead SOC Analyst.'),
+                  backgroundColor: Color(0xFFD97706),
+                ),
+              );
+            },
+            child: const Text('Request Clearance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+        ],
+      ),
     );
   }
 

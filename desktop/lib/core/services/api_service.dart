@@ -500,6 +500,23 @@ class ApiService {
     final res = await _send('GET', '/audit/logs', queryParams: {'limit': limit.toString()});
     return res['items'] is List ? res['items'] : (res['logs'] is List ? res['logs'] : []);
   }
+
+  // Account Activation by SOC Analyst
+  Future<Map<String, dynamic>> getActivationStatus() async {
+    try {
+      return await _send('GET', '/account/activation-status');
+    } catch (_) {}
+    return {'activated': true};
+  }
+
+  Future<Map<String, dynamic>> activateUser(String userEmail, {bool activated = true, String? notes}) async {
+    final body = <String, dynamic>{
+      'user_email': userEmail,
+      'activated': activated,
+    };
+    if (notes != null) body['notes'] = notes;
+    return _send('POST', '/account/activate-user', body: body);
+  }
 }
 
 class ApiException implements Exception {
