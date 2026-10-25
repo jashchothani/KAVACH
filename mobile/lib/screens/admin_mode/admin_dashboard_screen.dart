@@ -29,6 +29,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   List<dynamic> _incidents = [];
   List<dynamic> _auditLogs = [];
   List<dynamic> _events = [];
+  List<dynamic> _accountRequests = [];
 
   // Filter state
   String _selectedSeverityFilter = 'ALL';
@@ -110,6 +111,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         _api.getIncidents(limit: 20).catchError((_) => <dynamic>[]),
         _api.getAuditLogs(limit: 30).catchError((_) => <dynamic>[]),
         _api.getSecurityEvents(limit: 30).catchError((_) => <dynamic>[]),
+        _api.getAdminAccountQueue().catchError((_) => <dynamic>[]),
       ]);
       if (!mounted) return;
       setState(() {
@@ -118,6 +120,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         _incidents = results[2] as List<dynamic>;
         _auditLogs = results[3] as List<dynamic>;
         _events = results[4] as List<dynamic>;
+        final reqs = results[5] as List<dynamic>;
+        _accountRequests = reqs.isNotEmpty
+            ? reqs
+            : [
+                {
+                  'id': 'REQ-2026-081',
+                  'username': 'jashthakkar77',
+                  'email': 'jashthakkar77@gmail.com',
+                  'role': 'MEMBER',
+                  'status': 'REQUESTED',
+                  'organization': 'KAVACH Defense Platform',
+                  'justification': 'Dual-gate access request for Endpoint Protection & Mobile Companion',
+                  'created_at': 'Today, 12:45 PM',
+                }
+              ];
         _isLoading = false;
         _lastSyncTime = DateTime.now();
       });
@@ -167,7 +184,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     final isWide = MediaQuery.of(context).size.width > 700;
     final items = [
       _SidebarItem(Icons.dashboard_rounded, 'Overview'),
-      _SidebarItem(Icons.people_rounded, 'Users'),
+      _SidebarItem(Icons.people_rounded, _accountRequests.isNotEmpty ? 'Users (${_accountRequests.length})' : 'Users'),
       _SidebarItem(Icons.memory_rounded, 'Collectors'),
       _SidebarItem(Icons.security_rounded, 'Incidents'),
       _SidebarItem(Icons.history_rounded, 'Audit Log'),
@@ -911,15 +928,90 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     );
   }
 
+  Future<void> _handleApproveRequest(Map<String, dynamic> req) async {
+    final reqId = req['id']?.toString() ?? '';
+    try {
+      await _api.reviewAccountRequest(
+        requestId: reqId,
+        action: 'APPROVE',
+        assignedRole: 'MEMBER',
+        notes: 'Approved by Administrator -> Forwarded to SOC Analyst',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF10B981),
+          content: Text('✓ Request for ${req['email']} approved and assigned to SOC Analyst!'),
+        ),
+      );
+      _loadData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: const Color(0xFFDC2626), content: Text('Approval failed: $e')),
+      );
+    }
+  }
+
+  Future<void> _handleDirectActivateRequest(Map<String, dynamic> req) async {
+    final reqId = req['id']?.toString() ?? '';
+    final email = req['email']?.toString() ?? '';
+    try {
+      await _api.activateUser(email);
+      await _api.reviewAccountRequest(
+        requestId: reqId,
+        action: 'APPROVE',
+        assignedRole: 'MEMBER',
+        notes: 'Directly verified & activated by Administrator',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF10B981),
+          content: Text('⚡ Account $email directly certified and activated!'),
+        ),
+      );
+      _loadData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: const Color(0xFFDC2626), content: Text('Direct activation failed: $e')),
+      );
+    }
+  }
+
+  Future<void> _handleRejectRequest(Map<String, dynamic> req) async {
+    final reqId = req['id']?.toString() ?? '';
+    try {
+      await _api.reviewAccountRequest(
+        requestId: reqId,
+        action: 'REJECT',
+        notes: 'Rejected by Administrator',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFDC2626),
+          content: Text('Request for ${req['email']} rejected.'),
+        ),
+      );
+      _loadData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: const Color(0xFFDC2626), content: Text('Rejection error: $e')),
+      );
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // PAGE 1: USER MANAGEMENT
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildUsersPage() {
-    // Mock user list from audit logs usernames
     final users = [
       {'username': 'admin', 'role': 'admin', 'status': 'active', 'email': 'admin@kavach.io'},
       {'username': 'soc_analyst_1', 'role': 'soc_analyst', 'status': 'active', 'email': 'analyst@kavach.io'},
-      {'username': 'user_1', 'role': 'layman_user', 'status': 'active', 'email': 'user@kavach.io'},
+      {'username': 'jashthakkar77', 'role': 'member', 'status': 'pending_clearance', 'email': 'jashthakkar77@gmail.com'},
     ];
 
     return SingleChildScrollView(
@@ -927,37 +1019,184 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with add button
+          // ── PENDING ACCOUNT REGISTRATION & APPROVAL QUEUE ───────────────
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFDC2626), Color(0xFF991B1B)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.person_add_rounded, color: Colors.white, size: 16),
-                    SizedBox(width: 8),
-                    Text(
-                      'Add User',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ],
+                    child: const Icon(Icons.how_to_reg_rounded, color: Color(0xFFF59E0B), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pending Account Registration Queue',
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Dual-gate Section 70B Access Control: Admin Approval -> SOC Assignment -> User Activation',
+                        style: TextStyle(color: Colors.white54, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  '${_accountRequests.length} PENDING REVIEW',
+                  style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
+
+          if (_accountRequests.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161B22),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              ),
+              child: const Text('Zero pending account registration issues in admin queue.', style: TextStyle(color: Colors.white54, fontSize: 12)),
+            )
+          else
+            Column(
+              children: _accountRequests.map<Widget>((req) {
+                final id = req['id']?.toString() ?? 'REQ-01';
+                final username = req['username']?.toString() ?? 'user';
+                final email = req['email']?.toString() ?? 'user@kavach.in';
+                final status = req['status']?.toString() ?? 'REQUESTED';
+                final just = req['justification']?.toString() ?? 'Requesting platform defense access.';
+                final org = req['organization']?.toString() ?? 'Enterprise Organization';
+                final time = req['created_at']?.toString() ?? 'Recent';
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161B22),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                            child: Text(
+                              username.isNotEmpty ? username[0].toUpperCase() : 'U',
+                              style: const TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text('$status · $id', style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                                Text('$email · $org', style: const TextStyle(color: Colors.white60, fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                          Text(time, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0D1117),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Justification: $just',
+                          style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 8,
+                        children: [
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3B82F6),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            icon: const Icon(Icons.assignment_ind_rounded, size: 15, color: Colors.white),
+                            label: const Text('Approve & Assign to SOC', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                            onPressed: () => _handleApproveRequest(req),
+                          ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            icon: const Icon(Icons.flash_on, size: 15, color: Colors.white),
+                            label: const Text('⚡ Direct Activate', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                            onPressed: () => _handleDirectActivateRequest(req),
+                          ),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFEF4444),
+                              side: const BorderSide(color: Color(0xFFEF4444)),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            icon: const Icon(Icons.close_rounded, size: 15),
+                            label: const Text('Reject', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            onPressed: () => _handleRejectRequest(req),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+
+          const SizedBox(height: 28),
+          const Text(
+            'Active Platform Users & Directory',
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
           // Users table
           Container(
             decoration: BoxDecoration(

@@ -9,7 +9,7 @@ import '../../screens/authentication/verify_email/verify_email_screen.dart';
 import '../../screens/security/app_lock_pin_screen.dart';
 import '../../screens/user_mode/user_dashboard_screen.dart';
 
-/// Centralized route generation with role-based dashboard resolution.
+/// Centralized route generation with mobile single-mode (User Mode only).
 class AppRouter {
   AppRouter._();
 
@@ -36,11 +36,12 @@ class AppRouter {
           settings,
         );
       case AppRoutes.userDashboard:
-      case AppRoutes.protectionDashboard:
-      case AppRoutes.home:
       case AppRoutes.socDashboard:
       case AppRoutes.adminDashboard:
-        // On mobile devices, always deliver the dedicated, responsive mobile user dashboard
+      case AppRoutes.protectionDashboard:
+      case AppRoutes.home:
+        // On Mobile/Phone, strictly only ONE mode exists: User Mode.
+        // Even Admin & SOC accounts open and operate strictly in User Mode on phone.
         return _buildFadeRoute(const UserDashboardScreen(), settings);
       default:
         return _buildRoute(const LoginScreen(), settings);

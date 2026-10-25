@@ -89,8 +89,9 @@ class _LoginScreenState extends State<LoginScreen>
         Navigator.of(context).pushNamed(
           AppRoutes.verifyEmail,
           arguments: {
-            'email': res['email'] ?? _emailController.text.trim(),
+            'email': res['full_email'] ?? res['email'] ?? _emailController.text.trim(),
             'username': res['username'] ?? _emailController.text.trim(),
+            'masked_email': res['email'] ?? _emailController.text.trim(),
           },
         );
       }

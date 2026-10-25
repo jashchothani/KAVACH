@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:mobile/core/constants/app_strings.dart';
-import 'package:mobile/core/widgets/app_logo.dart';
 import 'package:mobile/main.dart';
 
 void main() {
@@ -11,11 +9,8 @@ void main() {
     await tester.pump();
 
     // Verify splash brand title and subtitle are present
-    expect(find.text(AppStrings.splashTitle), findsOneWidget);
-    expect(find.text(AppStrings.splashSubtitle), findsOneWidget);
-
-    // Verify KAVACH shield logo widget is rendered
-    expect(find.byType(AppLogo), findsOneWidget);
+    expect(find.text('KAVACH'), findsWidgets);
+    expect(find.text('SOVEREIGN SOAR-XDR · ZERO-TRUST DEFENSE'), findsOneWidget);
 
     // Advance clock past splash duration so all timers complete cleanly
     await tester.pumpAndSettle(const Duration(milliseconds: 3000));

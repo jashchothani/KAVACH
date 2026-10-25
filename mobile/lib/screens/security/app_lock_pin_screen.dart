@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/services/api_service.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_logo.dart';
 
 enum PinMode { unlock, setup, change }
 
-/// State-of-the-art animated PIN Lock & Security Screen for KAVACH Mobile.
+/// State-of-the-art modern light glassmorphic PIN Lock & Security Screen for KAVACH Mobile.
 class AppLockPinScreen extends StatefulWidget {
   final PinMode mode;
   final VoidCallback? onUnlocked;
@@ -140,7 +139,7 @@ class _AppLockPinScreenState extends State<AppLockPinScreen> with SingleTickerPr
 
     if (isUnlock) {
       title = 'KAVACH SECURE LOCK';
-      subtitle = 'Enter 4-digit PIN to access sovereign defenses';
+      subtitle = 'Enter 4-digit PIN to access sovereign mobile defenses';
     } else if (_setupStep == 1) {
       title = 'SET SECURITY PIN';
       subtitle = 'Create a 4-digit PIN to safeguard your mobile app';
@@ -150,186 +149,279 @@ class _AppLockPinScreenState extends State<AppLockPinScreen> with SingleTickerPr
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF030712),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top App Bar for Setup/Change modes
-            if (!isUnlock)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white70),
-                  onPressed: () => Navigator.of(context).pop(false),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFFFFF),
+              Color(0xFFF1F5F9),
+              Color(0xFFE2E8F0),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Top App Bar for Setup/Change modes
+                  if (!isUnlock)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF475569)),
+                        onPressed: () => Navigator.of(context).pop(false),
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 18),
+
+                  const SizedBox(height: 12),
+
+              // Glassmorphic Shield & Lock Header Card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F52BA).withValues(alpha: 0.14),
+                      blurRadius: 28,
+                      spreadRadius: 6,
+                      offset: const Offset(0, 10),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
                 ),
-              )
-            else
-              const SizedBox(height: 36),
+                child: const AppLogo(size: 64),
+              ),
+              const SizedBox(height: 20),
 
-            const Spacer(flex: 1),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 36),
+                child: Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 12.5,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
 
-            // Animated Shield & Lock Header
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.25),
-                    Colors.transparent,
+              const SizedBox(height: 30),
+
+              // Animated PIN Dots
+              AnimatedBuilder(
+                animation: _shakeAnimation,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(_shakeAnimation.value * (_shakeAnimation.value % 2 == 0 ? 1 : -1), 0),
+                    child: child,
+                  );
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(4, (index) {
+                    final isFilled = index < _enteredDigits.length;
+                    final hasError = _errorMessage.isNotEmpty;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      width: isFilled ? 18 : 14,
+                      height: isFilled ? 18 : 14,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isFilled
+                            ? (hasError ? const Color(0xFFEF4444) : const Color(0xFF0F52BA))
+                            : const Color(0xFFE2E8F0),
+                        border: Border.all(
+                          color: isFilled
+                              ? (hasError ? const Color(0xFFDC2626) : const Color(0xFF0F52BA))
+                              : const Color(0xFFCBD5E1),
+                          width: 2,
+                        ),
+                        boxShadow: isFilled
+                            ? [
+                                BoxShadow(
+                                  color: (hasError ? const Color(0xFFEF4444) : const Color(0xFF0F52BA))
+                                      .withValues(alpha: 0.35),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
+                      ),
+                    );
+                  }),
+                ),
+              ),
+
+              if (_errorMessage.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                  ),
+                  child: Text(
+                    _errorMessage,
+                    style: const TextStyle(
+                      color: Color(0xFFDC2626),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 20),
+
+              // Soft-Shadow Keypad (3 columns)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Column(
+                  children: [
+                    _buildKeypadRow(['1', '2', '3']),
+                    const SizedBox(height: 16),
+                    _buildKeypadRow(['4', '5', '6']),
+                    const SizedBox(height: 16),
+                    _buildKeypadRow(['7', '8', '9']),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Biometric verification button with soft shadow
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(36),
+                              onTap: () {
+                                HapticFeedback.mediumImpact();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Biometric verification active. You can also use PIN 1234.'),
+                                    backgroundColor: Color(0xFF0F52BA),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              child: const Center(
+                                child: Icon(Icons.fingerprint_rounded, color: Color(0xFF0F52BA), size: 34),
+                              ),
+                            ),
+                          ),
+                        ),
+                        _buildKeypadButton('0'),
+                        // Backspace button with soft shadow
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(36),
+                              onTap: _onBackspace,
+                              child: const Center(
+                                child: Icon(Icons.backspace_outlined, color: Color(0xFF475569), size: 24),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              child: const AppLogo(size: 64),
-            ),
-            const SizedBox(height: 16),
 
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2.0,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 12,
-                  height: 1.4,
+              const SizedBox(height: 20),
+
+              // Footer info
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // Animated PIN Dots
-            AnimatedBuilder(
-              animation: _shakeAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(_shakeAnimation.value * (_shakeAnimation.value % 2 == 0 ? 1 : -1), 0),
-                  child: child,
-                );
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(4, (index) {
-                  final isFilled = index < _enteredDigits.length;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 12),
-                    width: isFilled ? 18 : 14,
-                    height: isFilled ? 18 : 14,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isFilled
-                          ? (_errorMessage.isNotEmpty ? const Color(0xFFEF4444) : AppColors.primary)
-                          : Colors.transparent,
-                      border: Border.all(
-                        color: isFilled
-                            ? (_errorMessage.isNotEmpty ? const Color(0xFFEF4444) : AppColors.primary)
-                            : Colors.white30,
-                        width: 2,
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.shield_outlined, size: 12, color: Color(0xFF64748B)),
+                    SizedBox(width: 5),
+                    Text(
+                      'PROTECTED BY KAVACH HARDENED KEYSTORE',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1,
                       ),
-                      boxShadow: isFilled
-                          ? [
-                              BoxShadow(
-                                color: (_errorMessage.isNotEmpty ? const Color(0xFFEF4444) : AppColors.primary).withValues(alpha: 0.5),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                              ),
-                            ]
-                          : null,
                     ),
-                  );
-                }),
-              ),
-            ),
-
-            if (_errorMessage.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Text(
-                _errorMessage,
-                style: const TextStyle(
-                  color: Color(0xFFF87171),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  ],
                 ),
               ),
+              const SizedBox(height: 14),
             ],
-
-            const Spacer(flex: 2),
-
-            // Keypad (3 columns)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Column(
-                children: [
-                  _buildKeypadRow(['1', '2', '3']),
-                  const SizedBox(height: 16),
-                  _buildKeypadRow(['4', '5', '6']),
-                  const SizedBox(height: 16),
-                  _buildKeypadRow(['7', '8', '9']),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Biometric / Quick default hint
-                      SizedBox(
-                        width: 72,
-                        height: 72,
-                        child: IconButton(
-                          icon: const Icon(Icons.fingerprint_rounded, color: AppColors.primary, size: 34),
-                          onPressed: () {
-                            HapticFeedback.mediumImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Biometric verification active. You can also use default PIN 1234.'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      _buildKeypadButton('0'),
-                      SizedBox(
-                        width: 72,
-                        height: 72,
-                        child: IconButton(
-                          icon: const Icon(Icons.backspace_outlined, color: Colors.white70, size: 26),
-                          onPressed: _onBackspace,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const Spacer(flex: 1),
-
-            // Footer info
-            const Text(
-              'PROTECTED BY KAVACH HARDENED KEYSTORE',
-              style: TextStyle(
-                color: Colors.white24,
-                fontSize: 9.5,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
+          ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildKeypadRow(List<String> digits) {
@@ -345,19 +437,28 @@ class _AppLockPinScreenState extends State<AppLockPinScreen> with SingleTickerPr
       height: 72,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.05),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(36),
+          splashColor: const Color(0xFF0F52BA).withValues(alpha: 0.12),
+          highlightColor: const Color(0xFF0F52BA).withValues(alpha: 0.06),
           onTap: () => _onDigitPressed(digit),
           child: Center(
             child: Text(
               digit,
               style: const TextStyle(
-                color: Colors.white,
+                color: Color(0xFF0F172A),
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
               ),

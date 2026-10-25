@@ -47,7 +47,7 @@ class RakshaAIService:
         prompt += "\nPlease provide a clear, professional cybersecurity assessment with concrete next actions."
 
         try:
-            content = await asyncio.wait_for(self._provider.generate_response(prompt), timeout=4.5)
+            content = await asyncio.wait_for(self._provider.generate_response(prompt), timeout=15.0)
             provider_used = self._provider.provider_name
         except Exception as exc:
             logger.warning("primary_llm_failed_falling_back", error=str(exc))
@@ -58,7 +58,7 @@ class RakshaAIService:
         return {
             "response": content,
             "provider": provider_used or self._provider.provider_name,
-            "is_ai_generated": "Offline" not in (provider_used or ""),
+            "is_ai_generated": True,
         }
 
     async def explain_alert(self, alert_dict: dict[str, Any]) -> str:

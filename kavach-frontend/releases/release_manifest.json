@@ -1,17 +1,23 @@
-{
+﻿{
     "product":  "KAVACH Enterprise SOAR-XDR Cyber Defense Platform",
     "version":  "2.5.2",
-    "build_timestamp_utc":  "2026-10-25 06:14:00Z",
+    "build_timestamp_utc":  "2026-10-25 10:03:13Z",
     "installer_file":  "KAVACH-Setup-2.5.2.exe",
-    "file_size_bytes":  194408003,
-    "file_size_mb":  "185.4 MB",
-    "sha256":  "DBA7C660463FE5BE56E192796A8190A4F01B333E51B0AAEF2442A7DFDAB6E52D",
+    "file_size_bytes":  173323945,
+    "file_size_mb":  "165.29 MB",
+    "sha256":  "F31296DCCFC45367122D750E5DC47A8AFF1A5E0791FD5091FA68C437EA0FBE9E",
     "target_os":  "Windows 10 / Windows 11 (64-bit)",
+    "prerequisites":  {
+                          "min_ram":  "4 GB",
+                          "min_storage":  "500 MB",
+                          "admin_elevation":  "Required only during initial Windows Service registration"
+                      },
     "components_included":  [
-                                "KAVACH Flutter Desktop Enterprise App (User, SOC Analyst, Admin modes)",
-                                "KAVACH 16-Sensor Telemetry Background Collector Agent (KavachCollectorAgent.exe)",
-                                "Windows Startup Auto-Launch Registration",
-                                "Offline Telemetry Spooler \u0026 SQLite WAL Pipeline",
-                                "Browser Threat Intelligence Extension \u0026 Android Companion"
+                                "KAVACH Windows Endpoint Background Service (Session 0)",
+                                "KAVACH Flutter Desktop Companion UI (Session 1+)",
+                                "KAVACH System Tray Guardian \u0026 Emergency One-Click Shield",
+                                "16 High-Precision Operating System Telemetry Sensors",
+                                "Encrypted SQLite Offline Spool Buffer \u0026 Exponential Shipper",
+                                "Hardware DPAPI Device Identity \u0026 Cryptographic Enrollment"
                             ]
 }

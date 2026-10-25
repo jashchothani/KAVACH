@@ -55,7 +55,7 @@ Source: "..\kavach-frontend\*"; DestDir: "{app}\kavach-frontend"; Flags: ignorev
 Source: "..\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs; Permissions: users-readexec
 Source: "..\data\database\kavach.db"; DestDir: "{app}\data\database"; Flags: ignoreversion onlyifdoesntexist
 ; Compiled Flutter Windows Desktop release binary & runtime data
-Source: "..\mobile\build\windows\x64\runner\Release\*"; DestDir: "{app}\desktop"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\desktop\build\windows\x64\runner\Release\*"; DestDir: "{app}\desktop"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName} Desktop App"; Filename: "{app}\desktop\kavach.exe"; IconFilename: "{app}\assets\kavach.ico"

@@ -245,37 +245,24 @@ class ApiService {
   // ---------------------------------------------------------------------------
 
   Future<Map<String, dynamic>> login(String usernameOrEmail, String password) async {
-    try {
-      final res = await _send('POST', '/auth/login', body: {
-        'username_or_email': usernameOrEmail,
-        'password': password,
-      });
-      if (res['access_token'] != null) {
-        saveSession(res['access_token'], res);
-        return res;
-      }
-    } catch (_) {}
-
-    // Fallback: initiate login and auto-verify OTP for seamless authentication
+    // On mobile devices, keep OTP verification compulsory: trigger login-init OTP challenge
     final initRes = await _send('POST', '/auth/login-init', body: {
       'username_or_email': usernameOrEmail,
       'password': password,
     });
-    if (initRes['access_token'] != null) {
-      saveSession(initRes['access_token'], initRes);
-      return initRes;
-    }
-    if (initRes['otp_code'] != null) {
-      final verifyRes = await _send('POST', '/auth/verify-otp', body: {
-        'username_or_email': usernameOrEmail,
-        'otp_code': initRes['otp_code'],
-      });
-      if (verifyRes['access_token'] != null) {
-        saveSession(verifyRes['access_token'], verifyRes);
-      }
-      return verifyRes;
-    }
+    // Do NOT auto-save session or auto-verify so OTP screen is always enforced
     return initRes;
+  }
+
+  Future<Map<String, dynamic>> loginDirect(String usernameOrEmail, String password) async {
+    final res = await _send('POST', '/auth/login', body: {
+      'username_or_email': usernameOrEmail,
+      'password': password,
+    });
+    if (res['access_token'] != null) {
+      saveSession(res['access_token'], res);
+    }
+    return res;
   }
 
   Future<Map<String, dynamic>> register({
@@ -307,6 +294,46 @@ class ApiService {
       saveSession(res['access_token'], res);
     }
     return res;
+  }
+
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    return await _send('POST', '/auth/forgot-password', body: {
+      'email': email,
+    });
+  }
+
+  Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String resetCode,
+    required String newPassword,
+  }) async {
+    return await _send('POST', '/auth/reset-password', body: {
+      'email': email,
+      'reset_code': resetCode,
+      'new_password': newPassword,
+    });
+  }
+
+  Future<List<dynamic>> getAdminAccountQueue() async {
+    try {
+      final res = await _send('GET', '/account/requests/admin-queue');
+      if (res['requests'] is List) return res['requests'] as List<dynamic>;
+      if (res['items'] is List) return res['items'] as List<dynamic>;
+    } catch (_) {}
+    return [];
+  }
+
+  Future<Map<String, dynamic>> reviewAccountRequest({
+    required String requestId,
+    required String action,
+    String? assignedRole,
+    String? notes,
+  }) async {
+    return await _send('POST', '/account/requests/$requestId/admin-review', body: {
+      'action': action,
+      'role': assignedRole ?? 'MEMBER',
+      'notes': notes ?? 'Approved by Administrator',
+    });
   }
 
   Future<void> logout() async {

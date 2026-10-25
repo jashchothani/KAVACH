@@ -53,15 +53,23 @@ if (-not $SkipTests) {
     }
     Write-Host "  [OK] All backend tests passed." -ForegroundColor Green
 
-    Write-Host "[3/5] Verifying Flutter Codebase..." -ForegroundColor Yellow
+    Write-Host "[3/5] Verifying Flutter Mobile & Desktop Codebases..." -ForegroundColor Yellow
     Push-Location "mobile"
     & flutter analyze --no-pub
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
-        Write-Error "Flutter static analysis failed. Aborting release build."
+        Write-Error "Flutter mobile static analysis failed. Aborting release build."
     }
     Pop-Location
-    Write-Host "  [OK] Flutter analysis passed with 0 errors." -ForegroundColor Green
+
+    Push-Location "desktop"
+    & flutter analyze --no-pub
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        Write-Error "Flutter desktop static analysis failed. Aborting release build."
+    }
+    Pop-Location
+    Write-Host "  [OK] Flutter analysis passed for both mobile and desktop." -ForegroundColor Green
 } else {
     Write-Host "[2/5 & 3/5] Skipping test execution (-SkipTests enabled)." -ForegroundColor DarkGray
 }

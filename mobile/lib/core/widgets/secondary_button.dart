@@ -4,6 +4,8 @@ import '../constants/app_dimensions.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
+import 'shimmer_loading.dart';
+
 /// Outlined secondary action button variant.
 class SecondaryButton extends StatelessWidget {
   const SecondaryButton({
@@ -19,7 +21,7 @@ class SecondaryButton extends StatelessWidget {
   /// Callback when button is pressed.
   final VoidCallback? onPressed;
 
-  /// Shows a loading spinner and disables the button when true.
+  /// Shows a structural loading indicator and disables the button when true.
   final bool isLoading;
 
   @override
@@ -36,14 +38,11 @@ class SecondaryButton extends StatelessWidget {
           ),
         ),
         child: isLoading
-            ? SizedBox(
-                height: 22,
-                width: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
+            ? const StructuralInlineLoader(
+                width: 60,
+                height: 14,
+                color: AppColors.primary,
+                borderRadius: 6,
               )
             : Text(
                 text,

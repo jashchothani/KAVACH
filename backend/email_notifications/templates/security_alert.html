@@ -1,103 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<body
-    style="margin: 0; padding: 0; background-color: #f0f2f5; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; color: #1a1a2e;">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%"
-        style="background-color: #f0f2f5; padding: 40px 10px;">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Critical Security Alert — KAVACH</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #222222; -webkit-font-smoothing: antialiased;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; padding: 40px 16px;">
         <tr>
             <td align="center">
-                <table border="0" cellpadding="0" cellspacing="0" width="100%"
-                    style="max-width: 550px; background-color: #ffffff; border: 1px solid #dc2626; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(220,38,38,0.10);">
-                    <!-- Header -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px; background-color: #ffffff; text-align: left;">
+                    
+                    <!-- Clean Brand Logo -->
                     <tr>
-                        <td align="center" style="background: linear-gradient(135deg, #111827 0%, #7f1d1d 60%, #b91c1c 100%); padding: 36px 28px; text-align: center; border-bottom: 3px solid #dc2626;">
-                            <div style="margin-bottom: 16px;">
-                                <img src="cid:kavach_logo" alt="KAVACH" style="max-height: 46px; width: auto; display: inline-block; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); border: 0;" />
+                        <td style="padding: 0 0 32px 0;">
+                            <img src="cid:kavach_logo" alt="KAVACH" style="height: 42px; width: auto; display: block; border: 0;" />
+                        </td>
+                    </tr>
+
+                    <!-- Bold Clean Headline -->
+                    <tr>
+                        <td style="padding: 0 0 20px 0;">
+                            <div style="display: inline-block; background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: #dc2626; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px;">
+                                Security Alert &bull; {{ severity }}
                             </div>
-                            <div style="display: inline-block; width: 54px; height: 54px; line-height: 52px; background: rgba(220, 38, 38, 0.25); border: 1.5px solid rgba(239, 68, 68, 0.7); border-radius: 16px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4); text-align: center;">
-                                <span style="font-size: 28px; vertical-align: middle;">🚨</span>
-                            </div>
-                            <h1 style="color: #ffffff; font-size: 22px; font-weight: 900; margin: 0; letter-spacing: 2px; text-transform: uppercase;">KAVACH THREAT DETECTED</h1>
-                            <p style="color: #fca5a5; font-size: 11px; margin: 6px 0 0 0; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-                                Autonomous Endpoint Defense Active
+                            <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #111111; letter-spacing: -0.5px; line-height: 1.3;">
+                                {{ title }}
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Context & Description -->
+                    <tr>
+                        <td style="padding: 0 0 20px 0;">
+                            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #333333;">
+                                The KAVACH Autonomous Defense Engine intercepted an active security event requiring immediate operational review.
                             </p>
                         </td>
                     </tr>
-                    <!-- Content -->
-                    <tr>
-                        <td style="padding: 40px 32px; background-color: #ffffff;">
-                            <h2
-                                style="color: #dc2626; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 20px;">
-                                CRITICAL SECURITY ALERT</h2>
-                            <p style="font-size: 15px; line-height: 1.7; color: #5a6072;">
-                                KAVACH Security Engine has intercepted a high-risk malicious activity on the monitored
-                                host.
-                            </p>
 
-                            <!-- Telemetry Table -->
-                            <table border="0" cellpadding="10" cellspacing="0" width="100%"
-                                style="margin: 24px 0; font-size: 14px; background-color: #f8f9fa; border: 1px solid #e2e5ea; border-radius: 10px; color: #1a1a2e;">
+                    <!-- Clean Telemetry Metadata Table -->
+                    <tr>
+                        <td style="padding: 0 0 24px 0;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size: 14px; line-height: 1.5; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; padding: 16px 0;">
                                 <tr>
-                                    <td width="35%"
-                                        style="font-weight: 600; border-bottom: 1px solid #eef0f3; color: #5a6072;">
-                                        Threat Description:</td>
-                                    <td style="border-bottom: 1px solid #eef0f3; color: #1a1a2e; font-weight: 600;">{{
-                                        title }}</td>
+                                    <td style="padding: 6px 0; color: #737373; font-size: 13px; width: 35%;">Affected Device</td>
+                                    <td style="padding: 6px 0; color: #111111; font-weight: 600;">{{ hostname }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="font-weight: 600; border-bottom: 1px solid #eef0f3; color: #5a6072;">
-                                        Severity:</td>
-                                    <td style="border-bottom: 1px solid #eef0f3; color: #dc2626; font-weight: 700;">{{
-                                        severity }}</td>
+                                    <td style="padding: 6px 0; color: #737373; font-size: 13px;">Severity Level</td>
+                                    <td style="padding: 6px 0; color: #dc2626; font-weight: 700;">{{ severity }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="font-weight: 600; border-bottom: 1px solid #eef0f3; color: #5a6072;">
-                                        Affected Device:</td>
-                                    <td style="border-bottom: 1px solid #eef0f3; color: #1a1a2e;">{{ hostname }}</td>
+                                    <td style="padding: 6px 0; color: #737373; font-size: 13px;">Risk Score</td>
+                                    <td style="padding: 6px 0; color: #dc2626; font-weight: 700;">{{ risk_score }}/100</td>
                                 </tr>
                                 <tr>
-                                    <td style="font-weight: 600; border-bottom: 1px solid #eef0f3; color: #5a6072;">Risk
-                                        Score:</td>
-                                    <td style="border-bottom: 1px solid #eef0f3; color: #dc2626; font-weight: 700;">{{
-                                        risk_score }}/100</td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight: 600; color: #5a6072;">Timestamp:</td>
-                                    <td style="color: #1a1a2e;">{{ timestamp }}</td>
+                                    <td style="padding: 6px 0; color: #737373; font-size: 13px;">Timestamp</td>
+                                    <td style="padding: 6px 0; color: #111111; font-weight: 500;">{{ timestamp }}</td>
                                 </tr>
                             </table>
+                        </td>
+                    </tr>
 
-                            <p style="font-size: 15px; line-height: 1.7; color: #5a6072; margin-bottom: 24px;">
-                                Details: <br>
-                                <span
-                                    style="font-family: 'JetBrains Mono', monospace; background-color: #fef2f2; padding: 12px; display: block; border-radius: 8px; border: 1px solid #fee2e2; color: #8B1A1A; margin-top: 8px; font-size: 13px;">{{
-                                    description }}</span>
+                    <!-- Telemetry Detail Box -->
+                    <tr>
+                        <td style="padding: 0 0 28px 0;">
+                            <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #737373;">
+                                TECHNICAL TELEMETRY PAYLOAD
                             </p>
-
-                            <div style="text-align: center; margin: 35px 0;">
-                                <a href="{{ dashboard_url }}"
-                                    style="background: linear-gradient(135deg, #dc2626, #ef4444); color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-block; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
-                                    VIEW IN DASHBOARD
-                                </a>
+                            <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 12.5px; line-height: 1.6; color: #374151; word-break: break-all;">
+                                {{ description }}
                             </div>
                         </td>
                     </tr>
-                    <!-- Footer -->
+
+                    <!-- Action Button -->
                     <tr>
-                        <td
-                            style="background-color: #f8f9fa; padding: 24px 32px; text-align: center; border-top: 1px solid #eef0f3;">
-                            <p style="font-size: 11px; color: #8b92a5; margin: 0; line-height: 1.6;">
-                                Generated automatically by KAVACH Security Engine.<br>
-                                Emergency SOC Incident Desk: <a href="mailto:kavachcybertech@gmail.com" style="color: #dc2626; text-decoration: underline; font-weight: 600;">kavachcybertech@gmail.com</a> | Hotline: {{ soc_phone }}<br>
-                                © 2026 KAVACH. All rights reserved.
+                        <td style="padding: 0 0 32px 0;">
+                            <table border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="border-radius: 8px; background-color: #111111;">
+                                        <a href="{{ dashboard_url }}" target="_blank" style="display: inline-block; padding: 13px 26px; font-size: 14px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 8px; letter-spacing: 0.2px;">
+                                            Investigate in Defense Console &rarr;
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Security Team Footer -->
+                    <tr>
+                        <td style="padding: 0 0 40px 0; border-top: 1px solid #e5e5e5; padding-top: 24px;">
+                            <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #111111;">
+                                &mdash;Autonomous Incident Response, KAVACH
+                            </p>
+                            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #737373;">
+                                Emergency SOC Incident Desk: <a href="mailto:kavachcybertech@gmail.com" style="color: #dc2626; text-decoration: underline;">kavachcybertech@gmail.com</a> | Hotline: {{ soc_phone }}<br>
+                                &copy; 2026 KAVACH Sovereign Cyber Defense. All rights reserved.
                             </p>
                         </td>
                     </tr>
+
                 </table>
             </td>
         </tr>
     </table>
 </body>
-
 </html>

@@ -93,7 +93,96 @@ class EmailService:
             except Exception as e:
                 logger.warning("could_not_read_logo_attachment", error=str(e))
 
-        # 1. PRIMARY: AWS SNS (User-mandated primary delivery for emails & OTP notifications)
+        # 1. PRIMARY: Direct High-Speed SMTP (Zoho Pro Mail / Configured SMTP)
+        # Guarantees instant delivery directly into recipient inbox without prior subscription confirmation.
+        smtp_server = getattr(smtp, "server", None)
+        if smtp_server is None:
+            smtp_server = os.environ.get("SMTP_SERVER") or os.environ.get("NOTIFICATION_SERVER") or "smtppro.zoho.in"
+            
+        smtp_port = int(
+            getattr(smtp, "port", None)
+            or os.environ.get("SMTP_PORT")
+            or os.environ.get("NOTIFICATION_PORT")
+            or 587
+        )
+        smtp_username = getattr(smtp, "username", None)
+        if smtp_username is None:
+            smtp_username = (
+                os.environ.get("SMTP_USERNAME")
+                or os.environ.get("NOTIFICATION_USERNAME")
+                or "no-reply@kavachcybertech.in"
+            )
+            
+        smtp_password = getattr(smtp, "password", None)
+        if smtp_password is None:
+            smtp_password = (
+                os.environ.get("SMTP_PASSWORD")
+                or os.environ.get("NOTIFICATION_PASSWORD")
+                or "HQrTsqrNmu7f"
+            )
+        smtp_use_tls = getattr(smtp, "use_tls", True)
+
+        has_real_smtp = (
+            bool(smtp_server)
+            and bool(smtp_username)
+            and bool(smtp_password)
+            and "your_email" not in smtp_username
+            and "your_app_password" not in smtp_password
+        )
+
+        if has_real_smtp:
+            plain_text = f"{subject}\n\nThis is an HTML formatted security notification from KAVACH SOAR-XDR."
+            max_retries = 3
+            backoff = 2.0
+            for attempt in range(1, max_retries + 1):
+                try:
+                    def _send_sync():
+                        msg = MIMEMultipart("related")
+                        msg["Subject"] = subject
+                        msg["From"] = f"KAVACH Security Platform <{smtp_username}>"
+                        msg["To"] = to
+
+                        alt_part = MIMEMultipart("alternative")
+                        alt_part.attach(MIMEText(plain_text, "plain"))
+                        alt_part.attach(MIMEText(html_content, "html"))
+                        msg.attach(alt_part)
+
+                        if logo_bytes:
+                            from email.mime.image import MIMEImage
+                            logo_part = MIMEImage(logo_bytes, _subtype="png")
+                            logo_part.add_header("Content-ID", "<kavach_logo>")
+                            logo_part.add_header("Content-Disposition", "inline", filename="kavach_logo.png")
+                            msg.attach(logo_part)
+
+                        if attachment_path and Path(attachment_path).exists():
+                            try:
+                                from email.mime.application import MIMEApplication
+                                with open(attachment_path, "rb") as f:
+                                    att_data = f.read()
+                                att_part = MIMEApplication(att_data, _subtype="pdf")
+                                att_part.add_header("Content-Disposition", "attachment", filename=Path(attachment_path).name)
+                                msg.attach(att_part)
+                            except Exception as att_err:
+                                logger.warning("email_attachment_attach_failed", error=str(att_err))
+
+                        with smtplib.SMTP(smtp_server, smtp_port, timeout=12) as server:
+                            if smtp_use_tls:
+                                server.starttls()
+                            server.login(smtp_username, smtp_password)
+                            server.sendmail(smtp_username, to, msg.as_string())
+
+                    await asyncio.to_thread(_send_sync)
+                    logger.info("email_sent_successfully_via_smtp", recipient=to, subject=subject, attempt=attempt)
+                    return True
+                except Exception as exc:
+                    logger.warning("smtp_send_attempt_failed", recipient=to, attempt=attempt, error=str(exc))
+                    if attempt < max_retries:
+                        is_dev = os.environ.get("ENVIRONMENT") in ("development", "test")
+                        await asyncio.sleep(0.01 if is_dev else (backoff ** attempt))
+                    else:
+                        logger.error("smtp_retries_exhausted_trying_fallback", recipient=to, error=str(exc))
+
+        # 2. FALLBACK: AWS SNS (Secondary delivery & topic alert notification)
         aws_sns_topic_arn = (
             os.environ.get("AWS_SNS_TOPIC_ARN")
             or getattr(self.settings.notification, "sns_topic_arn", None)
@@ -107,22 +196,6 @@ class EmailService:
             import boto3
             sns_client = boto3.client("sns", region_name=region)
 
-            # Auto-discover or create topic if ARN not explicitly hardcoded
-            if not aws_sns_topic_arn:
-                try:
-                    topics_resp = sns_client.list_topics()
-                    for t in topics_resp.get("Topics", []):
-                        if "kavach" in t.get("TopicArn", "").lower():
-                            aws_sns_topic_arn = t.get("TopicArn")
-                            break
-                    if not aws_sns_topic_arn and topics_resp.get("Topics"):
-                        aws_sns_topic_arn = topics_resp["Topics"][0].get("TopicArn")
-                    if not aws_sns_topic_arn:
-                        created = sns_client.create_topic(Name="kavach-security-alerts")
-                        aws_sns_topic_arn = created.get("TopicArn")
-                except Exception as disc_err:
-                    logger.debug("sns_topic_discovery_skipped", error=str(disc_err))
-
             if aws_sns_topic_arn:
                 otp_code = context.get("verification_code") or context.get("otp") or context.get("reset_code")
                 clean_subject = (subject if len(subject) <= 100 else subject[:97] + "...")
@@ -133,20 +206,6 @@ class EmailService:
                         clean_subject = f"[KAVACH] OTP: {otp_code} - Security Verification"
 
                 plain_summary = self._build_plaintext_summary(clean_subject, template_name, context)
-
-                # Auto-subscribe recipient if enabled and valid email
-                auto_sub = os.environ.get("AWS_SNS_AUTO_SUBSCRIBE", "true").lower() in ("true", "1", "yes")
-                if auto_sub and to and "@" in to:
-                    try:
-                        sns_client.subscribe(
-                            TopicArn=aws_sns_topic_arn,
-                            Protocol="email",
-                            Endpoint=to,
-                            ReturnSubscriptionArn=True,
-                        )
-                    except Exception as sub_err:
-                        logger.debug("sns_auto_subscribe_skipped", error=str(sub_err))
-
                 publish_payload: dict[str, Any] = {
                     "TopicArn": aws_sns_topic_arn,
                     "Subject": clean_subject[:100],
@@ -162,7 +221,6 @@ class EmailService:
                         "DataType": "String",
                         "StringValue": str(otp_code),
                     }
-
                 resp = await asyncio.to_thread(sns_client.publish, **publish_payload)
                 msg_id = resp.get("MessageId", "unknown")
                 logger.info("email_sent_via_aws_sns", msg_id=msg_id, recipient=to, topic=aws_sns_topic_arn)
@@ -211,115 +269,8 @@ class EmailService:
                 except Exception as exc:
                     logger.warning("resend_send_failed", error=str(exc))
 
-        # If in test/development and not testing SMTP error retries, or if SMTP is unconfigured, log as mock
-        # Check if SMTP is configured with real credentials
-        # Resolve real SMTP credentials with robust fallback to Zoho Pro Mail
-        smtp_server = (
-            getattr(smtp, "server", None)
-            or os.environ.get("SMTP_SERVER")
-            or os.environ.get("NOTIFICATION_SERVER")
-            or "smtppro.zoho.in"
-        )
-        smtp_port = int(
-            getattr(smtp, "port", None)
-            or os.environ.get("SMTP_PORT")
-            or os.environ.get("NOTIFICATION_PORT")
-            or 587
-        )
-        smtp_username = (
-            getattr(smtp, "username", None)
-            or os.environ.get("SMTP_USERNAME")
-            or os.environ.get("NOTIFICATION_USERNAME")
-            or "no-reply@kavachcybertech.in"
-        )
-        smtp_password = (
-            getattr(smtp, "password", None)
-            or os.environ.get("SMTP_PASSWORD")
-            or os.environ.get("NOTIFICATION_PASSWORD")
-            or "HQrTsqrNmu7f"
-        )
-        smtp_use_tls = getattr(smtp, "use_tls", True)
-
-        has_real_smtp = (
-            bool(smtp_server)
-            and bool(smtp_username)
-            and bool(smtp_password)
-            and "your_email" not in smtp_username
-            and "your_app_password" not in smtp_password
-        )
-        is_placeholder = not has_real_smtp
-        if is_placeholder:
-            logger.info("mock_email_sent", recipient=to, subject=subject, template=template_name)
-            # Create a mock notification file for testing
-            mock_dir = Path(self.settings.paths.log_dir) / "mock_emails"
-            mock_dir.mkdir(parents=True, exist_ok=True)
-            mock_file = mock_dir / f"{to}_{template_name}.json"
-            with open(mock_file, "w") as f:
-                json.dump({"to": to, "subject": subject, "context": context}, f)
-            return True
-
-        # Plain text fallback
-        plain_text = f"{subject}\n\nThis is an HTML formatted security notification from KAVACH SOAR-XDR."
-
-        # Send with retry-with-backoff
-        max_retries = 3
-        backoff = 2.0
-        
-        for attempt in range(1, max_retries + 1):
-            try:
-                def _send_sync():
-                    # Use 'related' to embed inline attachments with Content-ID
-                    msg = MIMEMultipart("related")
-                    msg["Subject"] = subject
-                    msg["From"] = f"KAVACH Security Platform <{smtp_username}>"
-                    msg["To"] = to
-
-                    alt_part = MIMEMultipart("alternative")
-                    alt_part.attach(MIMEText(plain_text, "plain"))
-                    alt_part.attach(MIMEText(html_content, "html"))
-                    msg.attach(alt_part)
-
-                    if logo_bytes:
-                        from email.mime.image import MIMEImage
-                        logo_part = MIMEImage(logo_bytes, _subtype="png")
-                        logo_part.add_header("Content-ID", "<kavach_logo>")
-                        logo_part.add_header("Content-Disposition", "inline", filename="kavach_logo.png")
-                        msg.attach(logo_part)
-
-                    if attachment_path and Path(attachment_path).exists():
-                        try:
-                            from email.mime.application import MIMEApplication
-                            with open(attachment_path, "rb") as f:
-                                att_data = f.read()
-                            att_part = MIMEApplication(att_data, _subtype="pdf")
-                            att_part.add_header("Content-Disposition", "attachment", filename=Path(attachment_path).name)
-                            msg.attach(att_part)
-                        except Exception as att_err:
-                            logger.warning("email_attachment_attach_failed", error=str(att_err))
-                    
-                    with smtplib.SMTP(smtp_server, smtp_port, timeout=12) as server:
-                        if smtp_use_tls:
-                            server.starttls()
-                        server.login(smtp_username, smtp_password)
-                        server.sendmail(smtp_username, to, msg.as_string())
-                
-                # Execute SMTP connection in separate thread to prevent blocking event loop
-                await asyncio.to_thread(_send_sync)
-                logger.info("email_sent_successfully", recipient=to, subject=subject, attempt=attempt)
-                return True
-                
-            except Exception as exc:
-                logger.warning("email_send_attempt_failed", recipient=to, attempt=attempt, error=str(exc))
-                if attempt < max_retries:
-                    is_dev = os.environ.get("ENVIRONMENT") in ("development", "test")
-
-                    await asyncio.sleep(0.01 if is_dev else (backoff ** attempt))
-                else:
-                    logger.error("email_send_exhausted_retries", recipient=to, error=str(exc))
-                    self._write_to_dead_letter(to, template_name, subject, context, str(exc))
-                    return False
-
-        
+        # 3. If all delivery methods fail or are unconfigured, record dead letter
+        self._write_to_dead_letter(to, template_name, subject, context, "All email transports (SMTP, AWS SNS, Resend) failed or unavailable")
         return False
 
     def _build_plaintext_summary(self, subject: str, template_name: str, context: dict[str, Any]) -> str:

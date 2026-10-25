@@ -106,6 +106,37 @@ class ShimmerCircle extends StatelessWidget {
   }
 }
 
+/// Modern structural inline pulse/shimmer loading bar (zero circular spinner).
+class StructuralInlineLoader extends StatelessWidget {
+  final double width;
+  final double height;
+  final Color? color;
+  final double borderRadius;
+
+  const StructuralInlineLoader({
+    super.key,
+    this.width = 44,
+    this.height = 14,
+    this.color,
+    this.borderRadius = 8,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ShimmerLoading(
+      duration: const Duration(milliseconds: 1000),
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: color ?? const Color(0xFFCBD5E1),
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+      ),
+    );
+  }
+}
+
 /// Structural Shimmer Card placeholder.
 class ShimmerCard extends StatelessWidget {
   final double height;

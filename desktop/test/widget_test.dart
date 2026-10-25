@@ -1,23 +1,51 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:mobile/core/constants/app_strings.dart';
-import 'package:mobile/core/widgets/app_logo.dart';
-import 'package:mobile/main.dart';
+import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/widgets/primary_button.dart';
+import 'package:mobile/screens/user_mode/user_dashboard_screen.dart';
 
 void main() {
-  testWidgets('KAVACH App initializes and renders splash branding', (WidgetTester tester) async {
-    // Build KAVACH App and trigger initial frame
-    await tester.pumpWidget(const KavachApp());
+  testWidgets('UserDashboardScreen renders on desktop without assertion failure', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const UserDashboardScreen(),
+      ),
+    );
+
+    // Initial frame
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
-    // Verify splash brand title and subtitle are present
-    expect(find.text(AppStrings.splashTitle), findsOneWidget);
-    expect(find.text(AppStrings.splashSubtitle), findsOneWidget);
+    // Verify KAVACH desktop security title is rendered
+    expect(find.text('KAVACH'), findsWidgets);
+    expect(find.text('ENDPOINT CONSOLE'), findsWidgets);
+  });
 
-    // Verify KAVACH shield logo widget is rendered
-    expect(find.byType(AppLogo), findsOneWidget);
+  testWidgets('PrimaryButton renders and responds to tap', (WidgetTester tester) async {
+    bool tapped = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: Scaffold(
+          body: PrimaryButton(
+            text: 'Test Defense',
+            onPressed: () {
+              tapped = true;
+            },
+          ),
+        ),
+      ),
+    );
 
-    // Advance clock past splash duration so all timers complete cleanly
-    await tester.pumpAndSettle(const Duration(milliseconds: 3000));
+    await tester.pump();
+    expect(find.text('Test Defense'), findsOneWidget);
+    await tester.tap(find.text('Test Defense'));
+    expect(tapped, isTrue);
   });
 }

@@ -4,6 +4,8 @@ import '../constants/app_dimensions.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
+import 'shimmer_loading.dart';
+
 /// Full-width primary action button with optional loading state and gradient.
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
@@ -19,7 +21,7 @@ class PrimaryButton extends StatelessWidget {
   /// Callback when button is pressed. Disabled when [isLoading] is true.
   final VoidCallback? onPressed;
 
-  /// Shows a loading spinner and disables the button when true.
+  /// Shows a structural loading indicator and disables the button when true.
   final bool isLoading;
 
   @override
@@ -49,14 +51,11 @@ class PrimaryButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
           child: Center(
             child: isLoading
-                ? const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppColors.textOnPrimary),
-                    ),
+                ? const StructuralInlineLoader(
+                    width: 60,
+                    height: 14,
+                    color: Colors.white,
+                    borderRadius: 6,
                   )
                 : Text(text, style: AppTextStyles.buttonText),
           ),

@@ -82,19 +82,15 @@ class _LoginScreenState extends State<LoginScreen>
       );
       if (!mounted) return;
       setState(() => _isLoading = false);
-      if (ApiService.instance.isAuthenticated) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.protectionDashboard);
-      } else {
-        // Verification code dispatched strictly to registered email
-        Navigator.of(context).pushNamed(
-          AppRoutes.verifyEmail,
-          arguments: {
-            'email': _emailController.text.trim(),
-            'username': res['username'] ?? _emailController.text.trim(),
-            'masked_email': res['email'] ?? _emailController.text.trim(),
-          },
-        );
-      }
+      // Compulsory OTP verification enforced on mobile devices
+      Navigator.of(context).pushNamed(
+        AppRoutes.verifyEmail,
+        arguments: {
+          'email': res['full_email'] ?? _emailController.text.trim(),
+          'username': res['username'] ?? _emailController.text.trim(),
+          'masked_email': res['email'] ?? _emailController.text.trim(),
+        },
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);

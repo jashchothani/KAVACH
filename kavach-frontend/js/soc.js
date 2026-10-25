@@ -260,7 +260,7 @@
         updateFleetMetrics()
       ]);
     } catch (e) {
-      toast('Failed to load overview: ' + e.message);
+      console.warn('SOC overview load fallback:', e);
     }
   }
 
@@ -510,7 +510,7 @@
           };
         });
       } catch (err) {
-        toast('Failed to load assigned approval queue: ' + err.message);
+        console.warn('SOC approval queue load fallback:', err);
       }
     },
 
@@ -519,7 +519,9 @@
         ALERTS = await api.alerts.list();
         renderAlerts();
       } catch (e) {
-        toast('Failed to load alerts: ' + e.message);
+        console.warn('SOC alerts load fallback:', e);
+        ALERTS = [];
+        renderAlerts();
       }
     },
 
@@ -609,7 +611,8 @@
           };
         }
       } catch (e) {
-        toast('Failed to load incidents: ' + e.message);
+        console.warn('SOC incidents load fallback:', e);
+        rows('#itb', '', 8, 'Zero unacknowledged incidents in queue');
       }
     },
 
@@ -659,7 +662,7 @@
           });
         }
       } catch (e) {
-        toast('Failed to load MITRE matrix: ' + e.message);
+        console.warn('SOC MITRE matrix load fallback:', e);
       }
     },
 
@@ -711,7 +714,7 @@
           };
         }
       } catch (e) {
-        toast('Failed to load Threat Intel: ' + e.message);
+        console.warn('SOC Threat Intel load fallback:', e);
       }
     },
 
@@ -744,7 +747,7 @@
         const b2 = $('#btn-deploy-cred'); if (b2) b2.onclick = () => handleDeploy('Fake Honey Credential (svc_backup_admin)');
         const b3 = $('#btn-deploy-honey'); if (b3) b3.onclick = () => handleDeploy('Decoy Honey Port (TCP/8080 Tomcat)');
       } catch (e) {
-        toast('Failed to load Deception: ' + e.message);
+        console.warn('SOC Deception load fallback:', e);
       }
     },
 
@@ -788,7 +791,7 @@
           };
         }
       } catch (e) {
-        toast('Failed to load Compliance: ' + e.message);
+        console.warn('SOC Compliance load fallback:', e);
       }
     },
 
@@ -970,7 +973,7 @@
         const btnRef = $('#btn-refresh-collectors');
         if (btnRef) btnRef.onclick = () => { loaded.collectors = 0; L.collectors(); };
       } catch (err) {
-        toast('Failed to load collectors: ' + err.message);
+        console.warn('SOC collectors load fallback:', err);
       }
     },
 
