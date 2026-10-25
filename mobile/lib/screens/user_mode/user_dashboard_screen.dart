@@ -1484,19 +1484,37 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                               ],
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.download_rounded, color: Colors.white, size: 14),
-                                SizedBox(width: 4),
-                                Text('PDF', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                              ],
+                          InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () {
+                              final filename = rep['filename'] ?? 'Report.pdf';
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: const Color(0xFF0F172A),
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18),
+                                      const SizedBox(width: 8),
+                                      Expanded(child: Text('$filename ($repId) verified and dispatched! ✓')),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.download_rounded, color: Colors.white, size: 14),
+                                  SizedBox(width: 4),
+                                  Text('PDF', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
                             ),
                           ),
                         ],

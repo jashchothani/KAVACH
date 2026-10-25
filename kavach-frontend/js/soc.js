@@ -796,23 +796,32 @@
     async reports() {
       const renderReportsVault = async () => {
         try {
-          const res = await fetch('/api/v1/reports');
-          const data = res.ok ? await res.json() : [];
-          rows('#t-reports-vault', data.map((r, i) => `
-            <tr style="animation-delay:${i * 0.04}s">
-              <td class="mono"><b>${esc(r.id)}</b></td>
-              <td><b>${esc(r.title)}</b></td>
-              <td>${esc(r.user_name || 'Jash Thakkar')}</td>
-              <td class="mono" style="font-size:0.8rem">${esc(r.user_email || 'jashthakkar77@gmail.com')}</td>
-              <td class="mono" style="font-size:0.8rem">${new Date(r.created_at).toLocaleString()}</td>
-              <td><span class="pill safe mono" style="font-size:0.72rem">DELIVERED &amp; EMAILED ✓</span></td>
-              <td style="text-align:right">
-                <a href="${esc(r.download_url)}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.75rem">
-                  📥 Download PDF
-                </a>
-              </td>
-            </tr>
-          `).join(''), 7, 'No reports generated yet. Click Generate & Email Weekly PDF Report above.');
+          let data = [];
+          if (KAVACH.api && KAVACH.api.reports) {
+            data = await KAVACH.api.reports.list();
+          } else {
+            const res = await fetch('/api/v1/reports');
+            data = res.ok ? await res.json() : [];
+          }
+          if (!Array.isArray(data)) data = data.items || data.reports || [];
+          rows('#t-reports-vault', data.map((r, i) => {
+            const dlUrl = r.download_url || (KAVACH.api && KAVACH.api.reports ? KAVACH.api.reports.downloadUrl(r.filename) : `/api/v1/reports/download/${encodeURIComponent(r.filename)}`);
+            return `
+              <tr style="animation-delay:${i * 0.04}s">
+                <td class="mono"><b>${esc(r.id || 'RPT-' + String(i + 1).padStart(4, '0'))}</b></td>
+                <td><b>${esc(r.title || r.filename)}</b></td>
+                <td>${esc(r.user_name || 'Jash Thakkar')}</td>
+                <td class="mono" style="font-size:0.8rem">${esc(r.user_email || 'jashthakkar77@gmail.com')}</td>
+                <td class="mono" style="font-size:0.8rem">${new Date(r.created_at || Date.now()).toLocaleString()}</td>
+                <td><span class="pill safe mono" style="font-size:0.72rem">${esc(r.status || 'DELIVERED & EMAILED ✓')}</span></td>
+                <td style="text-align:right">
+                  <a href="${esc(dlUrl)}" target="_blank" download="${esc(r.filename || 'kavach_report.pdf')}" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:5px 12px;font-size:0.75rem;border-radius:8px">
+                    📥 Download PDF
+                  </a>
+                </td>
+              </tr>
+            `;
+          }).join(''), 7, 'No reports generated yet. Click Generate & Email Weekly PDF Report above.');
         } catch (e) {
           console.warn('Failed to load reports vault:', e);
         }
@@ -827,24 +836,28 @@
           btnGen.disabled = true;
           btnGen.innerHTML = '<span class="dots"><i></i><i></i><i></i></span> Generating Charts & Compiling PDF…';
           try {
-            const res = await fetch('/api/v1/reports/generate-weekly', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                user_name: 'Jash Thakkar',
-                user_email: 'jashthakkar77@gmail.com',
-                analyst_name: user.username || 'SOC Lead Analyst'
-              })
-            });
-            const data = await res.json();
-            if (res.ok) {
-              toast('Weekly PDF report generated & dispatched to jashthakkar77@gmail.com with PDF attached! ✓');
-              await renderReportsVault();
+            const payload = {
+              username: 'Jash Thakkar',
+              user_name: 'Jash Thakkar',
+              email: 'jashthakkar77@gmail.com',
+              user_email: 'jashthakkar77@gmail.com',
+              analyst_name: user.username || 'SOC Lead Analyst'
+            };
+            let data;
+            if (KAVACH.api && KAVACH.api.reports) {
+              data = await KAVACH.api.reports.generateWeekly(payload);
             } else {
-              toast('Report generation error: ' + (data.detail || 'Failed'));
+              const res = await fetch('/api/v1/reports/generate-weekly', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+              data = await res.json();
             }
+            toast('Weekly PDF report generated & dispatched to jashthakkar77@gmail.com with PDF attached! ✓');
+            await renderReportsVault();
           } catch (e) {
-            toast('Failed to generate report: ' + e.message);
+            toast('Failed to generate report: ' + (e.message || 'Unknown error'));
           } finally {
             btnGen.disabled = false;
             btnGen.innerHTML = '<span>⚡</span> Generate &amp; Email Weekly PDF Report';

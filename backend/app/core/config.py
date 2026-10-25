@@ -60,6 +60,7 @@ class PathSettings(BaseSettings):
     export_dir: Path = _ROOT_DIR / "data" / "exports"
     demo_dir: Path = _ROOT_DIR / "data" / "demo"
     json_log_dir: Path = _BACKEND_DIR / "logs" / "json_logs"
+    reports_dir: Path = _BACKEND_DIR / "reports"
 
     @property
     def log_subdirs(self) -> dict[str, Path]:
@@ -84,7 +85,7 @@ class PathSettings(BaseSettings):
 
     def ensure_directories(self) -> None:
         """Create essential data directories if not present."""
-        for d in [self.data_dir, self.db_dir, self.log_dir, self.model_dir, self.export_dir, self.demo_dir, self.json_log_dir]:
+        for d in [self.data_dir, self.db_dir, self.log_dir, self.model_dir, self.export_dir, self.demo_dir, self.json_log_dir, self.reports_dir]:
             try:
                 d.mkdir(parents=True, exist_ok=True)
             except (PermissionError, OSError):

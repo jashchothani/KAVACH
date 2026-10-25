@@ -213,12 +213,12 @@ class EmailService:
 
         # If in test/development and not testing SMTP error retries, or if SMTP is unconfigured, log as mock
         # Check if SMTP is configured with real credentials
-        # Resolve real SMTP credentials with robust fallback to Gmail App Password
+        # Resolve real SMTP credentials with robust fallback to Zoho Pro Mail
         smtp_server = (
             getattr(smtp, "server", None)
             or os.environ.get("SMTP_SERVER")
             or os.environ.get("NOTIFICATION_SERVER")
-            or "smtp.gmail.com"
+            or "smtppro.zoho.in"
         )
         smtp_port = int(
             getattr(smtp, "port", None)
@@ -230,13 +230,13 @@ class EmailService:
             getattr(smtp, "username", None)
             or os.environ.get("SMTP_USERNAME")
             or os.environ.get("NOTIFICATION_USERNAME")
-            or "jashthakkar77@gmail.com"
+            or "no-reply@kavachcybertech.in"
         )
         smtp_password = (
             getattr(smtp, "password", None)
             or os.environ.get("SMTP_PASSWORD")
             or os.environ.get("NOTIFICATION_PASSWORD")
-            or "pbsugwsmyxvkhavw"
+            or "HQrTsqrNmu7f"
         )
         smtp_use_tls = getattr(smtp, "use_tls", True)
 

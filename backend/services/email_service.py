@@ -7,6 +7,9 @@ light-themed HTML email templates and dynamic radial gradient styling.
 
 from __future__ import annotations
 
+import asyncio
+import os
+import smtplib
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -50,6 +53,7 @@ class EmailService:
         is_alert: bool = False,
         action_url: str | None = None,
         action_text: str | None = None,
+        attachment_path: Path | str | None = None,
     ) -> bool:
         """Send a formatted email notification via SMTP, applying gradient header styling."""
         settings = self._settings.notification
@@ -267,6 +271,20 @@ class EmailService:
                     except Exception as img_err:
                         logger.warning("failed_to_attach_logo_image", error=str(img_err))
 
+                # Attach PDF document or report if provided
+                if attachment_path:
+                    try:
+                        from email.mime.application import MIMEApplication
+                        ap = Path(attachment_path)
+                        if ap.exists():
+                            with open(ap, "rb") as af:
+                                doc_attachment = MIMEApplication(af.read(), _subtype="pdf")
+                                doc_attachment.add_header("Content-Disposition", "attachment", filename=ap.name)
+                                msg.attach(doc_attachment)
+                                logger.info("email_attachment_added", filename=ap.name)
+                    except Exception as att_err:
+                        logger.warning("failed_to_attach_document", error=str(att_err))
+
                 # SMTP Logic
                 with smtplib.SMTP(settings.server, settings.port, timeout=10) as server:
                     if settings.use_tls:
@@ -321,6 +339,28 @@ class EmailService:
             is_alert=False,
             action_url=action_url,
             action_text=action_text,
+        )
+
+    async def send_report_email(
+        self,
+        subject: str,
+        body: str,
+        recipient: str | None = None,
+        recipient_name: str = "User",
+        attachment_path: Path | str | None = None,
+        action_url: str | None = None,
+        action_text: str | None = None,
+    ) -> bool:
+        """Convenience method to send a weekly security report with attached PDF document."""
+        return await self.send_notification(
+            subject=subject,
+            body=body,
+            recipient=recipient,
+            recipient_name=recipient_name,
+            is_alert=False,
+            action_url=action_url or "https://kavachcybertech.in/user.html",
+            action_text=action_text or "VIEW REPORT IN PORTAL",
+            attachment_path=attachment_path,
         )
 
 

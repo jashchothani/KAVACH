@@ -1108,33 +1108,43 @@
   });
 
   // Weekly Security Reports Loader
+  // Weekly Security Reports Loader
   async function loadWeeklyReports() {
     const tbody = $('#user-weekly-reports-body');
     if (!tbody) return;
     try {
-      const res = await fetch('/api/v1/reports');
-      if (!res.ok) throw new Error('Failed to fetch reports');
-      const reports = await res.json();
+      let reports = [];
+      if (window.KAVACH && KAVACH.api && KAVACH.api.reports) {
+        reports = await KAVACH.api.reports.list();
+      } else {
+        const res = await fetch('/api/v1/reports');
+        if (!res.ok) throw new Error('Failed to fetch reports');
+        reports = await res.json();
+      }
+      if (!Array.isArray(reports)) reports = reports.items || reports.reports || [];
       if (!reports.length) {
         tbody.innerHTML = '<tr><td colspan="5" class="empty">No weekly reports have been generated yet. Your assigned SOC Analyst will compile your first weekly digest.</td></tr>';
         return;
       }
-      tbody.innerHTML = reports.map((r, i) => `
-        <tr style="animation-delay:${i * 0.05}s">
-          <td>
-            <b style="color:var(--text-primary)">${esc(r.title)}</b>
-            <div class="mono" style="font-size:0.75rem;color:var(--text-muted)">${esc(r.id)} • Prepared by ${esc(r.analyst_name || 'SOC Analyst')}</div>
-          </td>
-          <td>${esc(r.period || 'Last 7 Days')}</td>
-          <td class="mono" style="font-size:0.8rem">${new Date(r.created_at).toLocaleString()}</td>
-          <td><span class="pill ok mono" style="font-size:0.72rem">CERTIFIED &amp; EMAILED ✓</span></td>
-          <td style="text-align:right">
-            <a href="${esc(r.download_url)}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-size:0.75rem">
-              📥 Download PDF
-            </a>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = reports.map((r, i) => {
+        const dlUrl = r.download_url || (window.KAVACH && KAVACH.api && KAVACH.api.reports ? KAVACH.api.reports.downloadUrl(r.filename) : `/api/v1/reports/download/${encodeURIComponent(r.filename)}`);
+        return `
+          <tr style="animation-delay:${i * 0.05}s">
+            <td>
+              <b style="color:var(--text-primary)">${esc(r.title || r.filename)}</b>
+              <div class="mono" style="font-size:0.75rem;color:var(--text-muted)">${esc(r.id || 'RPT-' + String(i + 1).padStart(4, '0'))} • Prepared by ${esc(r.analyst_name || 'SOC Analyst')}</div>
+            </td>
+            <td>${esc(r.period || 'Last 7 Days')}</td>
+            <td class="mono" style="font-size:0.8rem">${new Date(r.created_at || Date.now()).toLocaleString()}</td>
+            <td><span class="pill ok mono" style="font-size:0.72rem">${esc(r.status || 'CERTIFIED & EMAILED ✓')}</span></td>
+            <td style="text-align:right">
+              <a href="${esc(dlUrl)}" target="_blank" download="${esc(r.filename || 'kavach_report.pdf')}" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:5px 12px;font-size:0.75rem;border-radius:8px">
+                📥 Download PDF
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join('');
     } catch (e) {
       tbody.innerHTML = `<tr><td colspan="5" class="empty">Error loading reports: ${esc(e.message)}</td></tr>`;
     }

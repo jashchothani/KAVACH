@@ -136,6 +136,11 @@
       users: params => get('/account/users', params),
       suspend: (id, reason) => post(`/account/users/${id}/suspend`, { reason }),
       reactivate: id => post(`/account/users/${id}/reactivate`, {})
+    },
+    reports: {
+      list: () => get('/reports'),
+      generateWeekly: data => post('/reports/generate-weekly', data),
+      downloadUrl: filename => `${C.apiBase}/reports/download/${encodeURIComponent(filename)}`
     }
   };
   window.KAVACH = { api, session, isAnalystRole, isAdminRole, roleName, normalizeRole, isOffline: () => offline,

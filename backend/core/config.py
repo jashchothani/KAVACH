@@ -142,12 +142,12 @@ class NotificationSettings(BaseSettings):
     """Notification / email configuration."""
     model_config = SettingsConfigDict(env_prefix="SMTP_", env_file=".env", extra="ignore")
 
-    server: str = Field(default="smtp.gmail.com", alias="NOTIFICATION_SERVER", description="SMTP server")
+    server: str = Field(default="smtppro.zoho.in", alias="NOTIFICATION_SERVER", description="SMTP server")
     port: int = Field(default=587, alias="NOTIFICATION_PORT", description="SMTP port")
-    username: str = Field(default="jashthakkar77@gmail.com", alias="NOTIFICATION_USERNAME", description="SMTP username")
-    password: str = Field(default="pbsugwsmyxvkhavw", alias="NOTIFICATION_PASSWORD", description="SMTP password")
+    username: str = Field(default="no-reply@kavachcybertech.in", alias="NOTIFICATION_USERNAME", description="SMTP username")
+    password: str = Field(default="HQrTsqrNmu7f", alias="NOTIFICATION_PASSWORD", description="SMTP password")
     use_tls: bool = Field(default=True, description="Use TLS")
-    soc_email: str = Field(default="kavachcybertech@gmail.com", alias="SOC_EMAIL")
+    soc_email: str = Field(default="no-reply@kavachcybertech.in", alias="SOC_EMAIL")
     soc_phone: str = Field(default="9004976777", alias="SOC_PHONE")
     sns_topic_arn: str = Field(default="", alias="AWS_SNS_TOPIC_ARN")
     sns_auto_subscribe: bool = Field(default=True, alias="AWS_SNS_AUTO_SUBSCRIBE")

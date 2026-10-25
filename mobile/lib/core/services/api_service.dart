@@ -664,7 +664,9 @@ class ApiService {
   Future<Map<String, dynamic>> generateWeeklyReport({required String userName, required String userEmail, String? analystName}) async {
     return _send('POST', '/reports/generate-weekly', body: {
       'user_name': userName,
+      'username': userName,
       'user_email': userEmail,
+      'email': userEmail,
       'analyst_name': analystName ?? 'SOC Analyst',
     });
   }
@@ -674,6 +676,7 @@ class ApiService {
       final res = await _send('GET', '/reports');
       if (res['items'] is List) return res['items'] as List<dynamic>;
       if (res['reports'] is List) return res['reports'] as List<dynamic>;
+      if (res['result'] is List) return res['result'] as List<dynamic>;
     } catch (_) {}
     return [];
   }

@@ -171,7 +171,10 @@ def upload_asset(release_id, file_path, token=""):
             time.sleep(1)
             break
 
-    # 2. Upload with streaming file reader and generous 1800s timeout
+    # 2. For large files (>80MB) or when using native streaming, use curl.exe if available
+    if file_size > 80 * 1024 * 1024:
+        return upload_with_curl(release_id, file_path, token=token)
+
     upload_url = f"{UPLOADS_BASE}/releases/{release_id}/assets?name={filename}"
     upload_headers = get_headers(token)
     upload_headers.update({
@@ -187,7 +190,7 @@ def upload_asset(release_id, file_path, token=""):
             upload_url,
             data=reader,
             headers=upload_headers,
-            timeout=(30, 1800)  # 30s connect, 1800s (30m) transfer
+            timeout=(30, 3600)  # 30s connect, 3600s (1 hour) transfer
         )
         reader.close()
         print()  # newline after progress bar
@@ -204,7 +207,39 @@ def upload_asset(release_id, file_path, token=""):
             return None
     except Exception as e:
         reader.close()
-        print(f"\n  [!] Error uploading {filename}: {e}")
+        print(f"\n  [!] Error uploading {filename}: {e}. Retrying with native curl...")
+        return upload_with_curl(release_id, file_path, token=token)
+
+
+def upload_with_curl(release_id, file_path, token=""):
+    filename = os.path.basename(file_path)
+    file_size = os.path.getsize(file_path)
+    size_mb = file_size / (1024 * 1024)
+    content_type = "application/x-msdownload" if filename.endswith(".exe") else "application/octet-stream"
+    upload_url = f"{UPLOADS_BASE}/releases/{release_id}/assets?name={filename}"
+
+    print(f"  [*] Using high-reliability native curl for {filename} ({size_mb:.2f} MB)...")
+    cmd = [
+        "curl.exe",
+        "-X", "POST",
+        "-H", f"Authorization: Bearer {token}",
+        "-H", f"Content-Type: {content_type}",
+        "-H", f"Content-Length: {file_size}",
+        "--data-binary", f"@{file_path}",
+        "--progress-bar",
+        "--retry", "3",
+        "--retry-delay", "5",
+        upload_url
+    ]
+    start_time = time.time()
+    res = subprocess.run(cmd)
+    if res.returncode == 0:
+        elapsed = time.time() - start_time
+        speed = size_mb / elapsed if elapsed > 0 else 0
+        print(f"\n  [SUCCESS] {filename} uploaded via curl in {elapsed:.1f}s ({speed:.2f} MB/s)!")
+        return {"browser_download_url": f"https://github.com/{REPO}/releases/download/v2.2.1/{filename}"}
+    else:
+        print(f"\n  [!] curl upload exited with code {res.returncode}")
         return None
 
 
