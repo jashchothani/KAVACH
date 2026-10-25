@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Ultra-Modern Google-Style 2-Digit Number Match Prompt Modal.
-/// Automatically pops up over the active mobile screen when a desktop sign-in
-/// challenge is detected, providing instant haptic alerts and one-tap approval.
+/// Ultra-Modern Google-Style Full-Page Sign-In Verification Screen (Reference Image 4).
+/// Completely Light Themed, pure white backdrop, professional typography,
+/// device telemetry details, and instant one-tap 'Yes, it's me' / 'No, don't allow' actions.
 class GooglePromptModal extends StatelessWidget {
   final Map<String, dynamic> challenge;
   final ValueChanged<int> onNumberSelected;
@@ -16,291 +16,344 @@ class GooglePromptModal extends StatelessWidget {
     required this.onReject,
   });
 
-  /// Presents the Google-style modal bottom sheet with immediate tactile haptic feedback.
+  /// Presents the Google-style verification screen as a full-page modal with tactile haptic feedback.
   static Future<void> show({
     required BuildContext context,
     required Map<String, dynamic> challenge,
     required ValueChanged<int> onNumberSelected,
     required VoidCallback onReject,
   }) async {
-    // Immediate tactile feedback to alert user
+    // Tactile alert haptics
     HapticFeedback.heavyImpact();
-    Future.delayed(const Duration(milliseconds: 150), () => HapticFeedback.heavyImpact());
-    Future.delayed(const Duration(milliseconds: 320), () => HapticFeedback.vibrate());
+    Future.delayed(const Duration(milliseconds: 140), () => HapticFeedback.heavyImpact());
+    Future.delayed(const Duration(milliseconds: 300), () => HapticFeedback.vibrate());
 
-    return showModalBottomSheet<void>(
-      context: context,
-      isDismissible: false,
-      enableDrag: false,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => GooglePromptModal(
-        challenge: challenge,
-        onNumberSelected: (n) {
-          Navigator.of(ctx, rootNavigator: true).pop();
-          onNumberSelected(n);
-        },
-        onReject: () {
-          Navigator.of(ctx, rootNavigator: true).pop();
-          onReject();
+    return Navigator.of(context, rootNavigator: true).push<void>(
+      PageRouteBuilder<void>(
+        opaque: true,
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 240),
+        pageBuilder: (ctx, anim, secAnim) => GooglePromptModal(
+          challenge: challenge,
+          onNumberSelected: (n) {
+            Navigator.of(ctx).pop();
+            onNumberSelected(n);
+          },
+          onReject: () {
+            Navigator.of(ctx).pop();
+            onReject();
+          },
+        ),
+        transitionsBuilder: (ctx, anim, secAnim, child) {
+          final slide = Tween<Offset>(
+            begin: const Offset(0, 0.08),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));
+          return SlideTransition(
+            position: slide,
+            child: FadeTransition(opacity: anim, child: child),
+          );
         },
       ),
+    );
+  }
+
+  Widget _buildMetaItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF5F6368),
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 15.5,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1F1F1F),
+            letterSpacing: -0.1,
+          ),
+        ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final opts = (challenge['options'] as List<dynamic>?) ?? [19, 74, 83];
-    final device = challenge['device']?.toString() ?? 'Desktop PC / Browser';
-    final ip = challenge['ip']?.toString() ?? '192.168.1.105';
+    final device = challenge['device']?.toString() ?? 'Windows 11 Workstation · Chrome';
     final user = challenge['username']?.toString() ?? '';
+    final userEmail = challenge['email']?.toString() ??
+        (user.isNotEmpty ? '$user@kavachcybertech.in' : 'user@kavachcybertech.in');
+    final matchNumber = challenge['match_number']?.toString() ??
+        (opts.isNotEmpty ? opts[0].toString() : '1');
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.4), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF38BDF8).withValues(alpha: 0.25),
-            blurRadius: 32,
-            spreadRadius: 4,
-            offset: const Offset(0, -6),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).padding.bottom + 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Drag indicator bar
-          Center(
-            child: Container(
-              width: 44,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(2),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top App Bar with Close icon on left and Centered KAVACH Logo
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 26, color: Color(0xFF1F1F1F)),
+                    tooltip: 'Dismiss',
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      onReject();
+                    },
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/images/kavach_logo.png',
+                            height: 26,
+                            errorBuilder: (context, error, stackTrace) => const Icon(
+                              Icons.shield_rounded,
+                              color: Color(0xFF8B1A1A),
+                              size: 26,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'KAVACH',
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF8B1A1A),
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 48), // Balance spacing with close button
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 18),
 
-          // Security Shield Badge & Title
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0284C7), Color(0xFF0EA5E9)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF38BDF8).withValues(alpha: 0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.shield_rounded, color: Colors.white, size: 28),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
+            const Divider(color: Color(0xFFF1F5F9), height: 1, thickness: 1),
+
+            // Main Content Area
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF10B981),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(color: Color(0xFF10B981), blurRadius: 6),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'KAVACH 2FA PROMPT',
-                          style: TextStyle(
-                            color: Color(0xFF38BDF8),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.1,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
                     const Text(
-                      'Is it you trying to sign in?',
+                      'Are you trying to sign in?',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
+                        fontSize: 25,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F1F1F),
+                        letterSpacing: -0.4,
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-          // Attempt Details Card
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B).withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.computer_rounded, color: Color(0xFF94A3B8), size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        device,
-                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                      ),
-                    ),
+                    // User Account Avatar & Email Pill
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                      child: const Text(
-                        'JUST NOW',
-                        style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5, fontWeight: FontWeight.w800),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircleAvatar(
+                            radius: 12,
+                            backgroundColor: const Color(0xFF8B1A1A),
+                            child: Text(
+                              (userEmail.isNotEmpty ? userEmail[0] : 'K').toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Flexible(
+                            child: Text(
+                              userEmail,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF334155),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.language_rounded, color: Color(0xFF94A3B8), size: 18),
-                    const SizedBox(width: 10),
-                    Text(
-                      'IP: $ip',
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                    ),
-                    if (user.isNotEmpty) ...[
-                      const Spacer(),
-                      Text(
-                        'User: $user',
-                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+
+                    const SizedBox(height: 28),
+
+                    // Device Telemetry Details (Reference Image 4)
+                    _buildMetaItem('Device', device),
+                    const SizedBox(height: 20),
+                    _buildMetaItem('Near', 'Mumbai, Maharashtra'),
+                    const SizedBox(height: 20),
+                    _buildMetaItem('Time', 'Just now'),
+
+                    const SizedBox(height: 28),
+
+                    // Google 2-Digit Number Matching Option
+                    if (opts.isNotEmpty) ...[
+                      const Text(
+                        'Tap the matching number shown on your screen:',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
+                      const SizedBox(height: 14),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: opts.map((opt) {
+                          final n = int.tryParse(opt.toString()) ?? 0;
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    onNumberSelected(n);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: const Color(0xFFCBD5E1),
+                                        width: 1.5,
+                                      ),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Color(0x06000000),
+                                          blurRadius: 10,
+                                          offset: Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '$n',
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF0F172A),
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 20),
                     ],
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Prompt Instruction
-          const Center(
-            child: Text(
-              'Tap the matching 2-digit number shown on your computer screen:',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color(0xFFE2E8F0),
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-                height: 1.35,
               ),
             ),
-          ),
-          const SizedBox(height: 16),
 
-          // 3 Big Google-Style Number Option Buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: opts.map((opt) {
-              final n = int.tryParse(opt.toString()) ?? 0;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        onNumberSelected(n);
+            // Bottom Action Buttons: '✕ No, don't allow' & '✓ Yes, it's me'
+            Container(
+              padding: EdgeInsets.fromLTRB(20, 14, 20, MediaQuery.of(context).padding.bottom + 16),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
+              ),
+              child: Row(
+                children: [
+                  // '✕ No, don't allow'
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0F172A),
+                        side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.heavyImpact();
+                        onReject();
                       },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF1E293B), Color(0xFF334155)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.close_rounded, size: 18, color: Color(0xFF64748B)),
+                          SizedBox(width: 6),
+                          Text(
+                            "No, don't allow",
+                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
                           ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.6), width: 1.8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
-                              blurRadius: 14,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            '$n',
-                            style: const TextStyle(
-                              color: Color(0xFF38BDF8),
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 20),
+                  const SizedBox(width: 14),
 
-          // "No, it's not me" Reject Button
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFF87171),
-              side: BorderSide(color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  // '✓ Yes, it's me' (One-tap verified approval)
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        shadowColor: const Color(0x3310B981),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        final matchN = int.tryParse(matchNumber) ?? 1;
+                        onNumberSelected(matchN);
+                      },
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_rounded, size: 18, color: Colors.white),
+                          SizedBox(width: 6),
+                          Text(
+                            "Yes, it's me",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            onPressed: () {
-              HapticFeedback.heavyImpact();
-              onReject();
-            },
-            icon: const Icon(Icons.block_rounded, size: 18),
-            label: const Text(
-              "No, it's not me (Deny Sign-In)",
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

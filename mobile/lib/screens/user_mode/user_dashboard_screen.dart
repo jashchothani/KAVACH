@@ -687,33 +687,60 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
+        height: MediaQuery.of(context).size.height * 0.75,
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 24,
+              offset: Offset(0, -4),
+            ),
+          ],
         ),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(2)),
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(3)),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             Row(
               children: [
-                const Icon(Icons.notifications_active_rounded, color: AppColors.primary, size: 24),
-                const SizedBox(width: 10),
-                const Text(
-                  'Security Notifications',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.notifications_active_rounded, color: AppColors.primary, size: 22),
+                ),
+                const SizedBox(width: 12),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Security Notifications',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A), letterSpacing: -0.2),
+                    ),
+                    Text(
+                      'Real-time endpoint and telephony alerts',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
+                  ],
                 ),
                 const Spacer(),
                 TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  ),
                   onPressed: () {
                     setState(() {
                       for (var n in _notifications) {
@@ -722,51 +749,146 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                     });
                     Navigator.pop(ctx);
                   },
-                  child: const Text('Mark All Read', style: TextStyle(fontSize: 12)),
+                  child: const Text('Mark All Read', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                 ),
               ],
             ),
-            const Divider(),
+            const SizedBox(height: 16),
+            const Divider(color: Color(0xFFF1F5F9), height: 1),
+            const SizedBox(height: 14),
             Expanded(
               child: _notifications.isEmpty
-                  ? const Center(child: Text('No active notifications.'))
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF8FAFC),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.notifications_off_outlined, color: Color(0xFF94A3B8), size: 36),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'All Caught Up',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'No pending security notifications.',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    )
                   : ListView.separated(
                       itemCount: _notifications.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (ctx, i) {
                         final item = _notifications[i];
                         final isUnread = item['is_unread'] == true;
                         final sev = item['severity'] ?? 'INFO';
-                        final color = sev == 'CRITICAL' ? const Color(0xFFEF4444) : (sev == 'SAFE' ? const Color(0xFF10B981) : AppColors.primary);
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
+                        final color = sev == 'CRITICAL'
+                            ? const Color(0xFFDC2626)
+                            : (sev == 'SAFE' ? const Color(0xFF059669) : const Color(0xFF0284C7));
+                        final bgPill = sev == 'CRITICAL'
+                            ? const Color(0xFFFEF2F2)
+                            : (sev == 'SAFE' ? const Color(0xFFECFDF5) : const Color(0xFFF0F9FF));
+
+                        return Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: isUnread ? Colors.white : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: isUnread ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0),
+                              width: 1.2,
                             ),
-                            child: Icon(
-                              sev == 'CRITICAL' ? Icons.warning_amber_rounded : Icons.shield_rounded,
-                              color: color,
-                              size: 20,
-                            ),
+                            boxShadow: isUnread
+                                ? const [
+                                    BoxShadow(
+                                      color: Color(0x08000000),
+                                      blurRadius: 10,
+                                      offset: Offset(0, 3),
+                                    ),
+                                  ]
+                                : null,
                           ),
-                          title: Text(
-                            item['title'] ?? 'Alert',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600,
-                              color: const Color(0xFF0F172A),
-                            ),
-                          ),
-                          subtitle: Text(
-                            item['desc'] ?? '',
-                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                          ),
-                          trailing: Text(
-                            item['time'] ?? '',
-                            style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(9),
+                                decoration: BoxDecoration(
+                                  color: bgPill,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  sev == 'CRITICAL' ? Icons.warning_amber_rounded : Icons.shield_rounded,
+                                  color: color,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            item['title'] ?? 'Alert',
+                                            style: TextStyle(
+                                              fontSize: 13.5,
+                                              fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600,
+                                              color: const Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: bgPill,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            sev,
+                                            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: color),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['desc'] ?? '',
+                                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.35),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          item['time'] ?? 'Just now',
+                                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                                        ),
+                                        if (isUnread)
+                                          Container(
+                                            width: 7,
+                                            height: 7,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF0284C7),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       },
@@ -970,10 +1092,15 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
+          : Stack(
               children: [
-                if (_pendingMobileChallenge != null) _buildPendingChallengeBanner(),
-                Expanded(child: _buildCurrentSection()),
+                Column(
+                  children: [
+                    if (_pendingMobileChallenge != null) _buildPendingChallengeBanner(),
+                    Expanded(child: _buildCurrentSection()),
+                  ],
+                ),
+                if (_showFloatingCallerOverlay) _buildRisingBottomCallerOverlay(),
               ],
             ),
       bottomNavigationBar: _buildSpaciousBottomNav(),
@@ -984,20 +1111,16 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     final opts = (_pendingMobileChallenge!['options'] as List<dynamic>?) ?? [19, 74, 83];
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 10, 14, 4),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5), width: 1.5),
-        boxShadow: [
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+        boxShadow: const [
           BoxShadow(
-            color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Color(0x0A000000),
+            blurRadius: 16,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -1009,58 +1132,89 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.phonelink_lock_rounded, color: Color(0xFF38BDF8), size: 16),
+                child: const Icon(Icons.shield_rounded, color: Color(0xFF8B1A1A), size: 18),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               const Expanded(
-                child: Text(
-                  '🔐 DESKTOP SIGN-IN REQUEST',
-                  style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Are you trying to sign in?',
+                      style: TextStyle(color: Color(0xFF0F172A), fontSize: 13.5, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'Google-Style Desktop Verification',
+                      style: TextStyle(color: Color(0xFF64748B), fontSize: 10.5),
+                    ),
+                  ],
                 ),
               ),
               GestureDetector(
                 onTap: () => setState(() => _pendingMobileChallenge = null),
-                child: const Icon(Icons.close_rounded, color: Colors.white54, size: 16),
+                child: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8), size: 18),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Sign-in initiated on ${_pendingMobileChallenge!['device'] ?? 'Desktop'} (${_pendingMobileChallenge!['ip'] ?? '192.168.1.105'}). Tap the matching number shown on your desktop screen:',
-            style: const TextStyle(color: Colors.white, fontSize: 11.5, height: 1.3),
-          ),
           const SizedBox(height: 10),
+          Text(
+            'Sign-in initiated on ${_pendingMobileChallenge!['device'] ?? 'Desktop Workstation'}. Tap the matching number shown on your computer screen:',
+            style: const TextStyle(color: Color(0xFF334155), fontSize: 12, height: 1.35),
+          ),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: opts.map((opt) {
               final n = int.tryParse(opt.toString()) ?? 0;
               return ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF38BDF8),
+                  backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFF0F172A),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  elevation: 2,
+                  side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
                 ),
                 onPressed: () => _handleApproveChallenge(n),
                 child: Text('$n', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
               );
             }).toList(),
           ),
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton.icon(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFF87171),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFDC2626),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                ),
+                onPressed: () => _handleApproveChallenge(-1),
+                icon: const Icon(Icons.close_rounded, size: 14),
+                label: const Text("No, don't allow", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
               ),
-              onPressed: () => _handleApproveChallenge(-1),
-              icon: const Icon(Icons.block_rounded, size: 14),
-              label: const Text("Deny / Not Me", style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-            ),
+              const SizedBox(width: 14),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                onPressed: () {
+                  final matchN = int.tryParse(_pendingMobileChallenge!['match_number']?.toString() ?? '') ??
+                      (opts.isNotEmpty ? int.tryParse(opts[0].toString()) ?? 1 : 1);
+                  _handleApproveChallenge(matchN);
+                },
+                icon: const Icon(Icons.check_rounded, size: 14),
+                label: const Text("Yes, it's me", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ],
       ),
@@ -1197,21 +1351,18 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           ),
         ),
 
-        // Hero Score Card
+        // Hero Score Card (Modern Light Theme - Ref Images 1 & 3)
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+            boxShadow: const [
               BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.25),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                color: Color(0x08000000),
+                blurRadius: 20,
+                offset: Offset(0, 4),
               ),
             ],
           ),
@@ -1224,12 +1375,12 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                     alignment: Alignment.center,
                     children: [
                       SizedBox(
-                        width: 78,
-                        height: 78,
+                        width: 80,
+                        height: 80,
                         child: CircularProgressIndicator(
                           value: (score / 100.0).clamp(0.0, 1.0),
-                          strokeWidth: 7,
-                          backgroundColor: Colors.white12,
+                          strokeWidth: 8,
+                          backgroundColor: const Color(0xFFF1F5F9),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             isHealthy ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                           ),
@@ -1238,9 +1389,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       Text(
                         '$score',
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
+                          color: Color(0xFF0F172A),
+                          fontSize: 26,
                           fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ],
@@ -1251,34 +1403,43 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(6),
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFA7F3D0)),
                           ),
-                          child: const Text(
-                            'EXCELLENT PROTECTION',
-                            style: TextStyle(
-                              color: Color(0xFF34D399),
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.8,
-                            ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.verified_rounded, size: 12, color: Color(0xFF059669)),
+                              SizedBox(width: 4),
+                              Text(
+                                'EXCELLENT PROTECTION',
+                                style: TextStyle(
+                                  color: Color(0xFF059669),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 6),
                         const Text(
                           'Your Phone is Fully Shielded',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         const Text(
-                          'All 16 real-time sensors guarding against scams, malware & network attacks.',
-                          style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.3),
+                          'All 16 real-time sensors active against scams, malware & network attacks.',
+                          style: TextStyle(color: Color(0xFF64748B), fontSize: 11.5, height: 1.3),
                         ),
                       ],
                     ),
@@ -1290,15 +1451,19 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               if (_isFullScanning)
                 Column(
                   children: [
-                    LinearProgressIndicator(
-                      value: _scanProgress,
-                      backgroundColor: Colors.white12,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: _scanProgress,
+                        minHeight: 6,
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       _scanStatusText,
-                      style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: Color(0xFF059669), fontSize: 11.5, fontWeight: FontWeight.bold),
                     ),
                   ],
                 )
@@ -1309,12 +1474,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
+                      elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 13),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     onPressed: _runDeviceScan,
                     icon: const Icon(Icons.radar_rounded, size: 18),
-                    label: const Text('Scan Phone Now', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: const Text('Scan Phone Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
                   ),
                 ),
               const SizedBox(height: 12),
@@ -1323,7 +1489,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                 children: [
                   Text(
                     'AWS Cloud Sync: ${_lastSyncTime.hour.toString().padLeft(2, '0')}:${_lastSyncTime.minute.toString().padLeft(2, '0')}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 10),
+                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5, fontWeight: FontWeight.w500),
                   ),
                   if (_errorMessage != null)
                     GestureDetector(
@@ -1332,7 +1498,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                         children: [
                           Icon(Icons.refresh, color: Color(0xFFF59E0B), size: 12),
                           SizedBox(width: 4),
-                          Text('Retry Sync', style: TextStyle(color: Color(0xFFF59E0B), fontSize: 10, fontWeight: FontWeight.bold)),
+                          Text('Retry Sync', style: TextStyle(color: Color(0xFFF59E0B), fontSize: 10.5, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -1594,21 +1760,18 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       children: [
-        // 1. Real-Time Telephony Protection Header Card
+        // 1. Real-Time Telephony Protection Header Card (Light Theme)
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+            boxShadow: const [
               BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.25),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: Color(0x06000000),
+                blurRadius: 14,
+                offset: Offset(0, 3),
               ),
             ],
           ),
@@ -1620,23 +1783,24 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
+                      color: const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFA7F3D0)),
                     ),
-                    child: const Icon(Icons.verified_user_rounded, color: Color(0xFF10B981), size: 20),
+                    child: const Icon(Icons.verified_user_rounded, color: Color(0xFF059669), size: 20),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'KAVACH Live Caller ID Sentinel',
-                          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                          style: TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.w800),
                         ),
                         Text(
                           '● Carrier Intercept Active · Zero-Trust Telephony',
-                          style: TextStyle(color: Color(0xFF34D399), fontSize: 10.5, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Color(0xFF059669), fontSize: 10.5, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -1646,7 +1810,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               const SizedBox(height: 10),
               const Text(
                 'Directly screening incoming calls, SMS messages, and VoIP packets against the live KAVACH ML threat intelligence engine hosted on AWS.',
-                style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.35),
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 11.5, height: 1.35),
               ),
             ],
           ),
@@ -1924,24 +2088,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
 
         const SizedBox(height: 16),
 
-        // 3. Truecaller-Style Floating Caller ID Pop-up Card (Interactive Preview)
-        if (_showFloatingCallerOverlay)
-          Container(
-          padding: const EdgeInsets.all(16),
+        // 3. Live Caller ID Sentinel & Simulation Panel (Modern Light Theme)
+        Container(
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F172A),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+            boxShadow: const [
               BoxShadow(
-                color: (_simulatedIsThreat ? const Color(0xFFEF4444) : const Color(0xFF10B981)).withValues(alpha: 0.25),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                color: Color(0x06000000),
+                blurRadius: 14,
+                offset: Offset(0, 3),
               ),
             ],
-            border: Border.all(
-              color: (_simulatedIsThreat ? const Color(0xFFEF4444) : const Color(0xFF10B981)).withValues(alpha: 0.4),
-              width: 1.5,
-            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1949,283 +2109,166 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
-                      color: (_simulatedIsThreat ? const Color(0xFFEF4444) : const Color(0xFF10B981)).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(6),
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _simulatedIsThreat ? Icons.warning_amber_rounded : Icons.verified_user_rounded,
-                          color: _simulatedIsThreat ? const Color(0xFFF87171) : const Color(0xFF34D399),
-                          size: 13,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _simulatedIsThreat ? 'LIVE CALLER ID · FRAUD INTERCEPT' : 'LIVE CALLER ID · VERIFIED SENDER',
-                          style: TextStyle(
-                            color: _simulatedIsThreat ? const Color(0xFFF87171) : const Color(0xFF34D399),
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: const Icon(Icons.phone_in_talk_rounded, color: AppColors.primary, size: 18),
                   ),
-                  const Spacer(),
-                  const Text('System Overlay', style: TextStyle(color: Colors.white38, fontSize: 10)),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => setState(() => _showFloatingCallerOverlay = false),
-                    child: const Icon(Icons.close_rounded, color: Colors.white54, size: 16),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Caller Details Row
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: (_simulatedIsThreat ? const Color(0xFFEF4444) : const Color(0xFF10B981)).withValues(alpha: 0.25),
-                    child: Icon(
-                      _simulatedIsThreat ? Icons.person_off_rounded : Icons.person_rounded,
-                      color: _simulatedIsThreat ? const Color(0xFFEF4444) : const Color(0xFF10B981),
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
+                  const SizedBox(width: 10),
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _simulatedCallerName,
-                          style: TextStyle(
-                            color: _simulatedIsThreat ? const Color(0xFFFCA5A5) : Colors.white,
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _simulatedIncomingCaller,
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                          'Live Caller ID & SMS Sentinel',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
                         Text(
-                          _simulatedCarrier,
-                          style: const TextStyle(color: Colors.white60, fontSize: 10.5),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          'Bottom slide-up overlay with carrier telemetry & verified caller ticks',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                         ),
                       ],
                     ),
                   ),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      foregroundColor: AppColors.primary,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _simulatedIncomingCaller = '+91 98200 12345';
+                        _simulatedCallerName = 'Jash Thakkar (Security Lead)';
+                        _simulatedCarrier = 'Reliance Jio 5G · Mumbai Telecom Circle';
+                        _simulatedIsThreat = false;
+                        _showFloatingCallerOverlay = true;
+                      });
+                      _triggerNativeCallOverlay(
+                        number: '+91 98200 12345',
+                        name: 'Jash Thakkar (Security Lead)',
+                        carrier: 'Reliance Jio 5G · Mumbai Telecom Circle',
+                        isThreat: false,
+                        riskScore: 4.0,
+                      );
+                    },
+                    icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                    label: const Text('Test Live', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
-              const SizedBox(height: 12),
-
-              // Risk & Reports Pill
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _simulatedIsThreat ? Icons.report_problem_rounded : Icons.shield_rounded,
-                      color: _simulatedIsThreat ? const Color(0xFFEF4444) : const Color(0xFF10B981),
-                      size: 15,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        _simulatedIsThreat
-                            ? 'Threat Score: 96% · Reported by 1,420 users as extortion/scam'
-                            : 'Carrier Validated · Clean registry, 0 extortion complaints',
-                        style: const TextStyle(color: Colors.white70, fontSize: 10.5),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 14),
+              const Text(
+                'Test Rising Bottom Pop-Up Scenarios:',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
               ),
-              const SizedBox(height: 12),
-
-              // Truecaller Action Buttons (Block, Report, Dismiss)
-              Row(
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF4444),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 9),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      icon: const Icon(Icons.block_rounded, size: 14),
-                      label: const Text('Block Caller', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      onPressed: () {
-                        setState(() {
-                          _blockedCallers.removeWhere((c) => c['number'] == _simulatedIncomingCaller);
-                          _blockedCallers.insert(0, {
-                            'number': _simulatedIncomingCaller,
-                            'label': _simulatedCallerName,
-                            'risk': 'BLOCKED BY SENTINEL',
-                            'time': 'Just now',
-                            'type': 'Blocked by User',
-                            'is_threat': true,
-                          });
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('✓ Number $_simulatedIncomingCaller blocked successfully.')),
-                        );
-                      },
-                    ),
+                  // 1. Verified Telecom Caller
+                  ActionChip(
+                    avatar: const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF059669)),
+                    label: const Text('✓ Verified Caller (Jio 5G)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                    backgroundColor: const Color(0xFFECFDF5),
+                    side: const BorderSide(color: Color(0xFFA7F3D0)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    onPressed: () {
+                      setState(() {
+                        _simulatedIncomingCaller = '+91 90049 76777';
+                        _simulatedCallerName = 'KAVACH Cyber Defense Desk';
+                        _simulatedCarrier = 'Jio 5G · Mumbai Telecom Circle';
+                        _simulatedIsThreat = false;
+                        _showFloatingCallerOverlay = true;
+                      });
+                      _triggerNativeCallOverlay(
+                        number: '+91 90049 76777',
+                        name: 'KAVACH Cyber Defense Desk',
+                        carrier: 'Jio 5G · Mumbai Telecom Circle',
+                        isThreat: false,
+                        riskScore: 5.0,
+                      );
+                    },
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF334155),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 9),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      icon: const Icon(Icons.security_update_warning_rounded, size: 14),
-                      label: const Text('Report 1930', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Dispatched incident report for $_simulatedIncomingCaller to Cyber Crime Portal 1930.'),
-                            backgroundColor: const Color(0xFF0F172A),
-                          ),
-                        );
-                      },
-                    ),
+                  // 2. Fraud Impersonator Call
+                  ActionChip(
+                    avatar: const Icon(Icons.warning_amber_rounded, size: 14, color: Color(0xFFDC2626)),
+                    label: const Text('🚨 Digital Arrest (+92)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
+                    backgroundColor: const Color(0xFFFEF2F2),
+                    side: const BorderSide(color: Color(0xFFFECACA)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    onPressed: () {
+                      setState(() {
+                        _simulatedIncomingCaller = '+92 300 9876543';
+                        _simulatedCallerName = '🚨 Fake CBI Digital Arrest Impersonator';
+                        _simulatedCarrier = 'Mobilink Jazz Pakistan · Gateway VOIP';
+                        _simulatedIsThreat = true;
+                        _showFloatingCallerOverlay = true;
+                      });
+                      _triggerNativeCallOverlay(
+                        number: '+92 300 9876543',
+                        name: '🚨 Fake CBI Digital Arrest Impersonator',
+                        carrier: 'Mobilink Jazz Pakistan · Gateway VOIP',
+                        isThreat: true,
+                        riskScore: 98.0,
+                      );
+                    },
+                  ),
+                  // 3. Verified SMS Sender
+                  ActionChip(
+                    avatar: const Icon(Icons.sms_rounded, size: 14, color: Color(0xFF0284C7)),
+                    label: const Text('✓ Verified SMS (Airtel)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                    backgroundColor: const Color(0xFFF0F9FF),
+                    side: const BorderSide(color: Color(0xFFBAE6FD)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    onPressed: () {
+                      setState(() {
+                        _simulatedIncomingCaller = 'VK-HDFCBK';
+                        _simulatedCallerName = 'HDFC Bank Secure Banking';
+                        _simulatedCarrier = 'Airtel Enterprise SMS Gateway';
+                        _simulatedIsThreat = false;
+                        _showFloatingCallerOverlay = true;
+                      });
+                      _triggerNativeCallOverlay(
+                        number: 'VK-HDFCBK',
+                        name: 'HDFC Bank Secure Banking',
+                        carrier: 'Airtel Enterprise SMS Gateway',
+                        isThreat: false,
+                        riskScore: 2.0,
+                      );
+                    },
+                  ),
+                  // 4. Job Task Fraud Call
+                  ActionChip(
+                    avatar: const Icon(Icons.report_problem_rounded, size: 14, color: Color(0xFFD97706)),
+                    label: const Text('⚠ Task Scam (+234)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
+                    backgroundColor: const Color(0xFFFFFBEB),
+                    side: const BorderSide(color: Color(0xFFFDE68A)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    onPressed: () {
+                      setState(() {
+                        _simulatedIncomingCaller = '+234 802 3456789';
+                        _simulatedCallerName = '⚠️ Part-Time Telegram Job Scam';
+                        _simulatedCarrier = 'MTN Nigeria · International VOIP';
+                        _simulatedIsThreat = true;
+                        _showFloatingCallerOverlay = true;
+                      });
+                      _triggerNativeCallOverlay(
+                        number: '+234 802 3456789',
+                        name: '⚠️ Part-Time Telegram Job Scam',
+                        carrier: 'MTN Nigeria · International VOIP',
+                        isThreat: true,
+                        riskScore: 94.0,
+                      );
+                    },
                   ),
                 ],
-              ),
-
-              const SizedBox(height: 12),
-              // Preset Test Switchers
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    const Text('Test Overlay:', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _simulatedIncomingCaller = '+92 300 9876543';
-                          _simulatedCallerName = '🚨 Digital Arrest / CBI Officer Impersonator';
-                          _simulatedCarrier = 'Mobilink Jazz Pakistan · International Gateway';
-                          _simulatedIsThreat = true;
-                        });
-                        _triggerNativeCallOverlay(
-                          number: '+92 300 9876543',
-                          name: '🚨 Digital Arrest / CBI Officer Impersonator',
-                          carrier: 'Mobilink Jazz Pakistan · International Gateway',
-                          isThreat: true,
-                          riskScore: 96.0,
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: const Color(0xFFEF4444).withValues(alpha: 0.25), borderRadius: BorderRadius.circular(6)),
-                        child: const Text('🚨 Digital Arrest (+92)', style: TextStyle(color: Color(0xFFFCA5A5), fontSize: 10, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _simulatedIncomingCaller = '+234 802 3456789';
-                          _simulatedCallerName = '⚠️ Part-Time Task Fraud Syndicate';
-                          _simulatedCarrier = 'MTN Nigeria · Lagos Regional';
-                          _simulatedIsThreat = true;
-                        });
-                        _triggerNativeCallOverlay(
-                          number: '+234 802 3456789',
-                          name: '⚠️ Part-Time Task Fraud Syndicate',
-                          carrier: 'MTN Nigeria · Lagos Regional',
-                          isThreat: true,
-                          riskScore: 92.0,
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: const Color(0xFFF59E0B).withValues(alpha: 0.25), borderRadius: BorderRadius.circular(6)),
-                        child: const Text('⚠️ Task Fraud (+234)', style: TextStyle(color: Color(0xFFFDE68A), fontSize: 10, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _simulatedIncomingCaller = '+91 90049 76777';
-                          _simulatedCallerName = '✅ KAVACH Cyber Defense Contact';
-                          _simulatedCarrier = 'Reliance Jio Infocomm · Mumbai & Maharashtra';
-                          _simulatedIsThreat = false;
-                        });
-                        _triggerNativeCallOverlay(
-                          number: '+91 90049 76777',
-                          name: '✅ KAVACH Cyber Defense Contact',
-                          carrier: 'Reliance Jio Infocomm · Mumbai & Maharashtra',
-                          isThreat: false,
-                          riskScore: 8.0,
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.25), borderRadius: BorderRadius.circular(6)),
-                        child: const Text('✅ Verified Safe (+91)', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 10, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),
-        )
-        else
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white12),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.phone_in_talk_rounded, color: AppColors.primary, size: 20),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Caller Overlay Minimized', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold)),
-                      Text('Sentinel running in background for incoming calls & SMS', style: TextStyle(color: Colors.white54, fontSize: 10)),
-                    ],
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => setState(() => _showFloatingCallerOverlay = true),
-                  child: const Text('Show Preview', style: TextStyle(color: AppColors.primary, fontSize: 11.5, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-          ),
+        ),
 
         const SizedBox(height: 18),
 
@@ -2915,47 +2958,52 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       children: [
-        // Multi-Device Fleet Banner
+        // Multi-Device Fleet Banner (Light Theme)
         Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x06000000),
+                blurRadius: 12,
+                offset: Offset(0, 3),
+              ),
+            ],
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.devices_rounded, color: Color(0xFF38BDF8), size: 22),
+                child: const Icon(Icons.devices_rounded, color: Color(0xFF0284C7), size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Zero-Trust Device Fleet', style: TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold)),
+                    const Text('Zero-Trust Device Fleet', style: TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.bold)),
                     Text(
                       '${2 + _enrolledDevices.length} Connected Devices · PC Workstation, Mobile & Endpoints',
-                      style: const TextStyle(color: Colors.white70, fontSize: 10.5),
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(6),
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
                 ),
-                child: const Text('ALL SYNCED', style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                child: const Text('ALL SYNCED', style: TextStyle(color: Color(0xFF059669), fontSize: 9.5, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -3340,4 +3388,270 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
       ),
     );
   }
+
+  Widget _buildRisingBottomCallerOverlay() {
+    return Positioned(
+      left: 12,
+      right: 12,
+      bottom: 12,
+      child: AnimatedSlide(
+        offset: _showFloatingCallerOverlay ? Offset.zero : const Offset(0, 1.2),
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: _simulatedIsThreat ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 30,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top drag indicator
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // Header Row: Green Tick Verified Badge & Close button
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _simulatedIsThreat ? const Color(0xFFFEF2F2) : const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _simulatedIsThreat ? const Color(0xFFFECACA) : const Color(0xFFA7F3D0),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _simulatedIsThreat ? Icons.warning_amber_rounded : Icons.check_circle_rounded,
+                          color: _simulatedIsThreat ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                          size: 14,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          _simulatedIsThreat ? '🚨 FRAUD CALLER ALERT' : '✓ VERIFIED CALLER',
+                          style: TextStyle(
+                            color: _simulatedIsThreat ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  const Text(
+                    'Live System Overlay',
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _showFloatingCallerOverlay = false),
+                    child: const Icon(Icons.close_rounded, color: Color(0xFF64748B), size: 20),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Caller Details Row
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: _simulatedIsThreat ? const Color(0xFFFEE2E2) : const Color(0xFFECFDF5),
+                    child: Icon(
+                      _simulatedIsThreat ? Icons.person_off_rounded : Icons.verified_user_rounded,
+                      color: _simulatedIsThreat ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _simulatedCallerName,
+                          style: TextStyle(
+                            color: _simulatedIsThreat ? const Color(0xFFDC2626) : const Color(0xFF0F172A),
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _simulatedIncomingCaller,
+                          style: const TextStyle(
+                            color: Color(0xFF334155),
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Current Telecom Carrier Line (Prominent as requested)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F9FF),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFBAE6FD)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.cell_tower_rounded, color: Color(0xFF0284C7), size: 16),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '📶 Telecom Carrier: $_simulatedCarrier',
+                        style: const TextStyle(
+                          color: Color(0xFF0369A1),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Telecom Registry Status Card
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _simulatedIsThreat ? const Color(0xFFFFF1F2) : const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _simulatedIsThreat ? Icons.report_problem_rounded : Icons.verified_rounded,
+                      color: _simulatedIsThreat ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                      size: 15,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _simulatedIsThreat
+                            ? 'Extortion Alert · Flagged by National Cyber Crime Registry 1930'
+                            : 'Carrier Validated · Clean telecom registry record, 0 complaints',
+                        style: TextStyle(
+                          color: _simulatedIsThreat ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Action Buttons Row: Block & Report 1930
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFDC2626),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(Icons.block_rounded, size: 15),
+                      label: const Text('Block Caller', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        setState(() {
+                          _blockedCallers.removeWhere((c) => c['number'] == _simulatedIncomingCaller);
+                          _blockedCallers.insert(0, {
+                            'number': _simulatedIncomingCaller,
+                            'label': _simulatedCallerName,
+                            'risk': 'BLOCKED BY SENTINEL',
+                            'time': 'Just now',
+                            'type': 'Blocked by User',
+                            'is_threat': true,
+                          });
+                          _showFloatingCallerOverlay = false;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('✓ Number $_simulatedIncomingCaller added to blocklist.'),
+                            backgroundColor: const Color(0xFFDC2626),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0F172A),
+                        side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                        backgroundColor: const Color(0xFFF8FAFC),
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(Icons.shield_outlined, size: 15),
+                      label: const Text('Report 1930', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        setState(() => _showFloatingCallerOverlay = false);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Dispatched incident report to National Cyber Crime Portal (1930).'),
+                            backgroundColor: Color(0xFF059669),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
+

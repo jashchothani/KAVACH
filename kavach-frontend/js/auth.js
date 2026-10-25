@@ -84,38 +84,61 @@
         let twoFaWrap = $('#twofa-dual-wrap');
         const pane2 = document.querySelectorAll('.pane')[1];
         if (!twoFaWrap) {
+          const origH2 = pane2.querySelector('h2');
           const origSub = pane2.querySelector('p.sub');
+          if (origH2) origH2.style.display = 'none';
           if (origSub) origSub.style.display = 'none';
 
+          const avatarChar = (emailDisplay || 'K').trim().charAt(0).toUpperCase();
+
           pane2.insertAdjacentHTML('afterbegin', `
-            <div id="twofa-dual-wrap" style="margin-bottom:14px">
-              <div class="twofa-nav" style="display:flex;background:rgba(255,255,255,0.06);border-radius:12px;padding:3px;margin:8px 0 16px;border:1px solid rgba(255,255,255,0.1)">
-                <button type="button" id="tab-mobile" style="flex:1;padding:8px 10px;border:none;background:rgba(56,189,248,0.22);color:#38bdf8;border-radius:9px;font-size:0.8rem;font-weight:700;cursor:pointer;transition:0.2s;display:flex;align-items:center;justify-content:center;gap:6px">
-                  <span>📲 Mobile Prompt</span>
-                </button>
-                <button type="button" id="tab-email" style="flex:1;padding:8px 10px;border:none;background:transparent;color:#94a3b8;border-radius:9px;font-size:0.8rem;font-weight:700;cursor:pointer;transition:0.2s;display:flex;align-items:center;justify-content:center;gap:6px">
-                  <span>📧 Email OTP</span>
-                </button>
+            <div id="twofa-dual-wrap" class="google-verify-card">
+              <!-- Google-Style Header (Ref Image 5) -->
+              <div class="google-brand-header">
+                <img src="assets/logo.png" alt="KAVACH">
+              </div>
+              <h2 class="google-verify-title">Verify it’s you</h2>
+              <p class="google-verify-sub">KAVACH wants to make sure it’s you trying to access your security console</p>
+
+              <!-- Account Pill Chip -->
+              <div class="google-account-pill">
+                <span class="google-avatar">${avatarChar}</span>
+                <span class="google-account-email">${emailDisplay}</span>
+                <svg class="google-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
               </div>
 
-              <div id="view-mobile" style="padding:16px 12px;background:rgba(56,189,248,0.06);border:1.5px solid rgba(56,189,248,0.3);border-radius:16px;text-align:center;box-shadow:0 0 24px rgba(56,189,248,0.12)">
-                <div style="font-size:0.75rem;color:#38bdf8;font-weight:800;letter-spacing:0.8px">GOOGLE-STYLE 2-DIGIT CHALLENGE</div>
-                <div style="font-size:0.9rem;color:#f8fafc;margin:6px 0 2px;font-weight:600">Open your <b>KAVACH Mobile App</b></div>
-                <div style="font-size:0.8rem;color:#94a3b8">Tap the matching number on your phone:</div>
-                <div id="mobile-match-num" style="font-size:3.4rem;font-weight:900;color:#38bdf8;letter-spacing:6px;margin:8px 0;line-height:1;text-shadow:0 0 20px rgba(56,189,248,0.6)">--</div>
-                <div style="display:inline-flex;align-items:center;gap:6px;font-size:0.78rem;color:#34d399;background:rgba(16,185,129,0.12);padding:4px 10px;border-radius:999px;margin-bottom:10px">
-                  <span style="width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981;display:inline-block"></span>
-                  Waiting for phone tap…
+              <!-- Main Mobile Prompt View (Google Phone Illustration) -->
+              <div id="view-mobile" style="text-align:center">
+                <div class="google-phone-art">
+                  <div class="google-signal-ring"></div>
+                  <svg class="google-phone-svg" viewBox="0 0 100 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="14" y="8" width="72" height="124" rx="14" fill="#FFFFFF" stroke="#0F172A" stroke-width="3"/>
+                    <rect x="38" y="14" width="24" height="3" rx="1.5" fill="#475569"/>
+                    <rect x="18" y="22" width="64" height="98" rx="6" fill="#F8FAFC"/>
+                    <rect x="22" y="38" width="56" height="44" rx="7" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.2"/>
+                    <circle cx="30" cy="48" r="4.5" fill="#C8272D"/>
+                    <rect x="38" y="46" width="28" height="4" rx="2" fill="#334155"/>
+                    <rect x="28" y="56" width="44" height="3" rx="1.5" fill="#94A3B8"/>
+                    <rect x="40" y="66" width="32" height="11" rx="5.5" fill="#10B981"/>
+                    <path d="M52 71.5l2.5 2.5 4.5-4.5" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
                 </div>
+
+                <div class="google-check-phone-title">Check your phone</div>
+                <div class="google-check-phone-desc">KAVACH sent a notification to your phone. Tap Yes on the notification to continue</div>
+
+                <div class="google-match-number-chip">
+                  <span style="font-size:0.75rem;font-weight:700;color:#059669;letter-spacing:0.5px">NUMBER TO MATCH:</span>
+                  <span id="mobile-match-num" class="google-match-number-val">${r.match_number}</span>
+                </div>
+
                 <div>
-                  <button type="button" id="btn-switch-to-email" class="lnk" style="font-size:0.8rem;color:#94a3b8;text-decoration:underline;cursor:pointer;background:none;border:none">Prefer entering code? Switch to Email OTP →</button>
+                  <button type="button" id="btn-switch-to-email" class="google-try-another-btn">Try another way</button>
                 </div>
               </div>
             </div>
           `);
 
-          const tabMob = $('#tab-mobile');
-          const tabEm = $('#tab-email');
           const viewMob = $('#view-mobile');
           const f2 = $('#f2');
           const metaP = pane2.querySelector('p.meta');
@@ -124,38 +147,44 @@
           let emailOtpDispatched = false;
 
           const showMob = () => {
-            tabMob.style.background = 'rgba(56,189,248,0.22)';
-            tabMob.style.color = '#38bdf8';
-            tabEm.style.background = 'transparent';
-            tabEm.style.color = '#94a3b8';
             viewMob.style.display = 'block';
             f2.style.display = 'none';
             if (metaP) metaP.style.display = 'none';
           };
 
           const showEm = async () => {
-            tabEm.style.background = 'rgba(56,189,248,0.22)';
-            tabEm.style.color = '#38bdf8';
-            tabMob.style.background = 'transparent';
-            tabMob.style.color = '#94a3b8';
             viewMob.style.display = 'none';
             f2.style.display = 'block';
             if (metaP) metaP.style.display = 'block';
+
+            // Add Return to phone link if not already present
+            let backToMob = $('#back-to-phone-prompt');
+            if (!backToMob) {
+              f2.insertAdjacentHTML('afterend', `
+                <div id="back-to-phone-prompt" style="text-align:center;margin-top:10px">
+                  <button type="button" id="btn-return-to-phone" class="google-try-another-btn" style="font-size:0.8rem">← Back to phone verification</button>
+                </div>
+              `);
+              $('#btn-return-to-phone').onclick = showMob;
+            } else {
+              backToMob.style.display = 'block';
+            }
+
             ins[0].focus();
 
-            // Strictly send email OTP ONLY when the user chooses Email OTP
+            // Strictly send email OTP ONLY when the user clicks 'Try another way'
             if (!emailOtpDispatched) {
               emailOtpDispatched = true;
               try {
                 let note = $('#email-otp-notice');
                 if (!note) {
-                  f2.insertAdjacentHTML('afterbegin', '<div id="email-otp-notice" style="font-size:0.8rem;color:#38bdf8;text-align:center;margin-bottom:12px;font-weight:600;padding:6px 12px;background:rgba(56,189,248,0.1);border-radius:8px;border:1px solid rgba(56,189,248,0.25)">Sending verification code…</div>');
+                  f2.insertAdjacentHTML('afterbegin', '<div id="email-otp-notice" style="font-size:0.8rem;color:#0284c7;text-align:center;margin-bottom:12px;font-weight:600;padding:6px 12px;background:rgba(2,132,199,0.08);border-radius:8px;border:1px solid rgba(2,132,199,0.2)">Sending verification code…</div>');
                   note = $('#email-otp-notice');
                 }
-                note.style.color = '#38bdf8';
+                note.style.color = '#0284c7';
                 note.textContent = 'Sending verification code to ' + emailDisplay + '…';
                 await api.auth.requestOtp(ident);
-                note.style.color = '#34d399';
+                note.style.color = '#059669';
                 note.textContent = '✓ Verification code sent to ' + emailDisplay;
                 tick();
               } catch (ex) {
@@ -165,16 +194,16 @@
             }
           };
 
-          tabMob.onclick = showMob;
-          tabEm.onclick = showEm;
           if (switchToEm) switchToEm.onclick = showEm;
 
-          // Default strictly to mobile prompt tab
+          // Default strictly to Google phone verification
           showMob();
         } else {
           twoFaWrap.style.display = 'block';
-          const tabMob = $('#tab-mobile');
-          if (tabMob) tabMob.click();
+          const viewMob = $('#view-mobile');
+          if (viewMob) viewMob.style.display = 'block';
+          const f2 = $('#f2');
+          if (f2) f2.style.display = 'none';
         }
 
         const mn = $('#mobile-match-num');

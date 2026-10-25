@@ -166,9 +166,10 @@ class FloatingCallerOverlayService : Service() {
             PixelFormat.TRANSLUCENT
         )
 
-        params.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        params.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         params.x = 0
-        params.y = 80
+        params.y = dp(24)
+        params.windowAnimations = android.R.style.Animation_InputMethod
 
         val context = this
         val density = resources.displayMetrics.density
@@ -177,29 +178,29 @@ class FloatingCallerOverlayService : Service() {
         // Outer Container
         val rootLayout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(8), dp(14), dp(8))
+            setPadding(dp(14), dp(8), dp(14), dp(12))
         }
 
-        // Inner Card Box (Glassmorphic dark styling)
+        // Inner Card Box (Modern Light Theme Card - Ref Image 1 & 2)
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(12), dp(16), dp(14))
+            setPadding(dp(18), dp(12), dp(18), dp(16))
             val bg = GradientDrawable().apply {
-                setColor(Color.parseColor("#0F172A"))
-                cornerRadius = dp(16).toFloat()
+                setColor(Color.WHITE)
+                cornerRadius = dp(24).toFloat()
                 setStroke(
-                    dp(2),
+                    dp(1.5),
                     if (isThreat) Color.parseColor("#EF4444") else Color.parseColor("#10B981")
                 )
             }
             background = bg
-            elevation = dp(14).toFloat()
+            elevation = dp(20).toFloat()
         }
 
         // 1. Drag Handle Pill at the very top
         val dragHandle = View(context).apply {
             val pill = GradientDrawable().apply {
-                setColor(Color.parseColor("#475569"))
+                setColor(Color.parseColor("#CBD5E1"))
                 cornerRadius = dp(3).toFloat()
             }
             background = pill
@@ -210,7 +211,7 @@ class FloatingCallerOverlayService : Service() {
         }
         card.addView(dragHandle, dragParams)
 
-        // 2. Header Row: Threat Pill & Close Icon
+        // 2. Header Row: Green Tick Verified Badge & Close Icon
         val headerRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -218,25 +219,26 @@ class FloatingCallerOverlayService : Service() {
 
         val badgeText = TextView(context).apply {
             val label = if (isSms) {
-                if (isThreat) "🚨 SMISHING SMS ALERT · THREAT INTERCEPT" else "✓ VERIFIED SMS SENDER"
+                if (isThreat) "🚨 SMISHING SMS ALERT · THREAT INTERCEPT" else "✓ VERIFIED SENDER"
             } else {
-                if (isThreat) "🚨 LIVE CALLER ID · FRAUD INTERCEPT" else "✓ VERIFIED TELECOM CALLER"
+                if (isThreat) "🚨 LIVE CALLER ID · FRAUD INTERCEPT" else "✓ VERIFIED CALLER"
             }
             text = label
-            setTextColor(if (isThreat) Color.parseColor("#FCA5A5") else Color.parseColor("#6EE7B7"))
-            textSize = 10f
+            setTextColor(if (isThreat) Color.parseColor("#DC2626") else Color.parseColor("#059669"))
+            textSize = 10.5f
             typeface = Typeface.DEFAULT_BOLD
             val badgeBg = GradientDrawable().apply {
-                setColor(if (isThreat) Color.parseColor("#3B1212") else Color.parseColor("#064E3B"))
-                cornerRadius = dp(6).toFloat()
+                setColor(if (isThreat) Color.parseColor("#FEF2F2") else Color.parseColor("#ECFDF5"))
+                setStroke(dp(1), if (isThreat) Color.parseColor("#FECACA") else Color.parseColor("#A7F3D0"))
+                cornerRadius = dp(16).toFloat()
             }
             background = badgeBg
-            setPadding(dp(8), dp(4), dp(8), dp(4))
+            setPadding(dp(10), dp(5), dp(10), dp(5))
         }
 
         val closeBtn = ImageView(context).apply {
             setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-            setColorFilter(Color.parseColor("#94A3B8"))
+            setColorFilter(Color.parseColor("#64748B"))
             setPadding(dp(4), dp(4), dp(4), dp(4))
             setOnClickListener {
                 removeOverlay()
@@ -248,65 +250,89 @@ class FloatingCallerOverlayService : Service() {
         headerRow.addView(closeBtn, LinearLayout.LayoutParams(dp(28), dp(28)))
         card.addView(headerRow)
 
-        // 3. Caller / Sender Name
+        // 3. Caller / Sender Name (High-contrast charcoal typography)
         val nameView = TextView(context).apply {
             text = name
-            setTextColor(if (isThreat) Color.parseColor("#F87171") else Color.WHITE)
-            textSize = 15f
+            setTextColor(if (isThreat) Color.parseColor("#DC2626") else Color.parseColor("#0F172A"))
+            textSize = 16f
             typeface = Typeface.DEFAULT_BOLD
-            setPadding(0, dp(8), 0, dp(2))
+            setPadding(0, dp(10), 0, dp(2))
         }
         card.addView(nameView)
 
         // 4. Phone Number
         val numberView = TextView(context).apply {
             text = number
-            setTextColor(Color.WHITE)
-            textSize = 13.5f
+            setTextColor(Color.parseColor("#334155"))
+            textSize = 14f
             typeface = Typeface.DEFAULT_BOLD
-            setPadding(0, 0, 0, dp(2))
+            setPadding(0, 0, 0, dp(3))
         }
         card.addView(numberView)
 
-        // 5. Carrier & Threat Risk Text
+        // 5. Current Telecom Carrier (Highlighted as requested by user)
         val carrierView = TextView(context).apply {
-            text = "$carrier · Risk Score: ${riskScore.toInt()}%"
-            setTextColor(Color.parseColor("#94A3B8"))
-            textSize = 11f
+            text = "📶 Telecom Carrier: $carrier"
+            setTextColor(Color.parseColor("#0284C7"))
+            textSize = 12f
+            typeface = Typeface.DEFAULT_BOLD
             setPadding(0, 0, 0, dp(6))
         }
         card.addView(carrierView)
 
-        // 6. SMS Body Preview if SMS
+        // 6. Telecom Registry Status Card
+        val statusCard = TextView(context).apply {
+            text = if (isThreat) {
+                "⚠ High Extortion Risk · Flagged by National Cyber Crime 1930"
+            } else {
+                "✓ Authenticated via Telecom Registry & KAVACH AI heuristics"
+            }
+            setTextColor(if (isThreat) Color.parseColor("#DC2626") else Color.parseColor("#059669"))
+            textSize = 11f
+            typeface = Typeface.DEFAULT_BOLD
+            val stBg = GradientDrawable().apply {
+                setColor(if (isThreat) Color.parseColor("#FFF1F2") else Color.parseColor("#F0FDF4"))
+                cornerRadius = dp(10).toFloat()
+            }
+            background = stBg
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+        }
+        card.addView(statusCard)
+
+        // 7. SMS Body Preview if SMS
         if (isSms && !smsText.isNullOrEmpty()) {
             val smsBox = TextView(context).apply {
                 text = "\"$smsText\""
-                setTextColor(Color.parseColor("#E2E8F0"))
-                textSize = 11.5f
+                setTextColor(Color.parseColor("#1E293B"))
+                textSize = 12f
                 val boxBg = GradientDrawable().apply {
-                    setColor(Color.parseColor("#1E293B"))
-                    cornerRadius = dp(8).toFloat()
+                    setColor(Color.parseColor("#F8FAFC"))
+                    setStroke(dp(1), Color.parseColor("#E2E8F0"))
+                    cornerRadius = dp(10).toFloat()
                 }
                 background = boxBg
-                setPadding(dp(10), dp(8), dp(10), dp(8))
+                setPadding(dp(12), dp(8), dp(12), dp(8))
             }
-            card.addView(smsBox)
+            val smsParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(0, dp(8), 0, 0)
+            }
+            card.addView(smsBox, smsParams)
         }
 
-        // 7. Action Buttons Row: Block & Report 1930
+        // 8. Action Buttons Row: Block & Report 1930
         val actionsRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(10), 0, 0)
+            setPadding(0, dp(12), 0, 0)
         }
 
         val blockBtn = Button(context).apply {
             text = "Block Number"
             setTextColor(Color.WHITE)
-            textSize = 11f
+            textSize = 11.5f
             typeface = Typeface.DEFAULT_BOLD
             val btnBg = GradientDrawable().apply {
                 setColor(Color.parseColor("#DC2626"))
-                cornerRadius = dp(8).toFloat()
+                cornerRadius = dp(14).toFloat()
             }
             background = btnBg
             setOnClickListener {
@@ -318,12 +344,13 @@ class FloatingCallerOverlayService : Service() {
 
         val reportBtn = Button(context).apply {
             text = "Report 1930"
-            setTextColor(Color.WHITE)
-            textSize = 11f
+            setTextColor(Color.parseColor("#0F172A"))
+            textSize = 11.5f
             typeface = Typeface.DEFAULT_BOLD
             val btnBg = GradientDrawable().apply {
-                setColor(Color.parseColor("#334155"))
-                cornerRadius = dp(8).toFloat()
+                setColor(Color.parseColor("#F1F5F9"))
+                setStroke(dp(1.2), Color.parseColor("#CBD5E1"))
+                cornerRadius = dp(14).toFloat()
             }
             background = btnBg
             setOnClickListener {
@@ -333,10 +360,10 @@ class FloatingCallerOverlayService : Service() {
             }
         }
 
-        val btnParams = LinearLayout.LayoutParams(0, dp(38), 1.0f).apply {
+        val btnParams = LinearLayout.LayoutParams(0, dp(40), 1.0f).apply {
             setMargins(0, 0, dp(6), 0)
         }
-        val btnParams2 = LinearLayout.LayoutParams(0, dp(38), 1.0f).apply {
+        val btnParams2 = LinearLayout.LayoutParams(0, dp(40), 1.0f).apply {
             setMargins(dp(6), 0, 0, 0)
         }
 

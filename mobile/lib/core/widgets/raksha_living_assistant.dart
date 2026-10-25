@@ -128,10 +128,10 @@ class _RakshaLivingAssistantWidgetState
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF090D16),
+      color: const Color(0xFFF8FAFC),
       child: Column(
         children: [
-          // ── 1. Clean ChatGPT Top Header Bar ──
+          // ── 1. Clean Top Header Bar (Light Theme) ──
           _buildHeader(),
 
           // ── 2. Message Conversation Stream ──
@@ -152,7 +152,7 @@ class _RakshaLivingAssistantWidgetState
           // ── 3. Quick Suggestion Prompt Chips ──
           _buildQuickActionChips(),
 
-          // ── 4. ChatGPT Bottom Input Pill ──
+          // ── 4. Bottom Input Pill ──
           _buildChatInputBar(),
         ],
       ),
@@ -162,10 +162,10 @@ class _RakshaLivingAssistantWidgetState
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+      decoration: const BoxDecoration(
+        color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          bottom: BorderSide(color: Color(0xFFE2E8F0)),
         ),
       ),
       child: Row(
@@ -185,11 +185,11 @@ class _RakshaLivingAssistantWidgetState
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(Icons.shield_rounded,
-                        color: Color(0xFF38BDF8), size: 20),
+                        color: Color(0xFF8B1A1A), size: 20),
                   ),
                 ),
               ),
@@ -202,7 +202,7 @@ class _RakshaLivingAssistantWidgetState
                   decoration: BoxDecoration(
                     color: const Color(0xFF10B981),
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF0F172A), width: 2),
+                    border: Border.all(color: Colors.white, width: 2),
                   ),
                 ),
               ),
@@ -221,7 +221,7 @@ class _RakshaLivingAssistantWidgetState
                     const Text(
                       'Raksha AI',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF0F172A),
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
@@ -231,20 +231,19 @@ class _RakshaLivingAssistantWidgetState
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 1.5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        color: const Color(0xFFECFDF5),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.bolt, size: 10, color: Color(0xFF34D399)),
+                          Icon(Icons.bolt, size: 10, color: Color(0xFF059669)),
                           SizedBox(width: 2),
                           Text(
                             'NVIDIA NIM',
                             style: TextStyle(
-                              color: Color(0xFF34D399),
+                              color: Color(0xFF059669),
                               fontSize: 9.5,
                               fontFamily: 'monospace',
                               fontWeight: FontWeight.w700,
@@ -256,10 +255,10 @@ class _RakshaLivingAssistantWidgetState
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(
+                const Text(
                   'Sovereign Cybersecurity Intelligence',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: Color(0xFF64748B),
                     fontSize: 11,
                   ),
                 ),
@@ -270,9 +269,9 @@ class _RakshaLivingAssistantWidgetState
           // Clear button
           IconButton(
             tooltip: 'Clear chat',
-            icon: Icon(
+            icon: const Icon(
               Icons.delete_outline_rounded,
-              color: Colors.white.withValues(alpha: 0.6),
+              color: Color(0xFF64748B),
               size: 20,
             ),
             onPressed: _clearChat,
@@ -299,18 +298,18 @@ class _RakshaLivingAssistantWidgetState
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2563EB),
+                  color: const Color(0xFF0F172A),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(18),
                     topRight: Radius.circular(18),
                     bottomLeft: Radius.circular(18),
                     bottomRight: Radius.circular(4),
                   ),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
-                      color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                      color: Color(0x0C000000),
                       blurRadius: 10,
-                      offset: const Offset(0, 3),
+                      offset: Offset(0, 3),
                     ),
                   ],
                 ),
@@ -329,7 +328,7 @@ class _RakshaLivingAssistantWidgetState
               width: 28,
               height: 28,
               decoration: const BoxDecoration(
-                color: Color(0xFF3B82F6),
+                color: Color(0xFF8B1A1A),
                 shape: BoxShape.circle,
               ),
               child: const Center(
@@ -348,7 +347,7 @@ class _RakshaLivingAssistantWidgetState
       );
     }
 
-    // Assistant row (clean ChatGPT layout)
+    // Assistant row (clean light layout)
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(
@@ -365,9 +364,9 @@ class _RakshaLivingAssistantWidgetState
                 'assets/images/raksha_avatar.jpg',
                 fit: BoxFit.cover,
                 errorBuilder: (ctx, err, stack) => Container(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFF1F5F9),
                   child: const Icon(Icons.shield_rounded,
-                      color: Color(0xFF38BDF8), size: 16),
+                      color: Color(0xFF8B1A1A), size: 16),
                 ),
               ),
             ),
@@ -379,16 +378,21 @@ class _RakshaLivingAssistantWidgetState
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B).withValues(alpha: 0.7),
+                color: Colors.white,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(4),
                   topRight: Radius.circular(18),
                   bottomLeft: Radius.circular(18),
                   bottomRight: Radius.circular(18),
                 ),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.06),
-                ),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x06000000),
+                    blurRadius: 10,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,7 +403,7 @@ class _RakshaLivingAssistantWidgetState
                       const Text(
                         'Raksha AI',
                         style: TextStyle(
-                          color: Color(0xFF60A5FA),
+                          color: Color(0xFF0F172A),
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -410,13 +414,13 @@ class _RakshaLivingAssistantWidgetState
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 1),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF38BDF8).withValues(alpha: 0.12),
+                            color: const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             provider,
                             style: const TextStyle(
-                              color: Color(0xFF38BDF8),
+                              color: Color(0xFF64748B),
                               fontSize: 9,
                               fontFamily: 'monospace',
                               fontWeight: FontWeight.w600,
@@ -436,12 +440,12 @@ class _RakshaLivingAssistantWidgetState
                             ),
                           );
                         },
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
                           child: Icon(
                             Icons.copy_rounded,
                             size: 14,
-                            color: Colors.white.withValues(alpha: 0.5),
+                            color: Color(0xFF94A3B8),
                           ),
                         ),
                       ),
@@ -453,7 +457,7 @@ class _RakshaLivingAssistantWidgetState
                   SelectableText(
                     text,
                     style: const TextStyle(
-                      color: Color(0xFFE2E8F0),
+                      color: Color(0xFF1E293B),
                       fontSize: 13.5,
                       height: 1.55,
                     ),
@@ -483,9 +487,9 @@ class _RakshaLivingAssistantWidgetState
                 'assets/images/raksha_avatar.jpg',
                 fit: BoxFit.cover,
                 errorBuilder: (ctx, err, stack) => Container(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFF1F5F9),
                   child: const Icon(Icons.shield_rounded,
-                      color: Color(0xFF38BDF8), size: 16),
+                      color: Color(0xFF8B1A1A), size: 16),
                 ),
               ),
             ),
@@ -494,26 +498,26 @@ class _RakshaLivingAssistantWidgetState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Text(
                   'Raksha is analyzing…',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: Color(0xFF64748B),
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
                   ),
@@ -546,8 +550,8 @@ class _RakshaLivingAssistantWidgetState
         itemBuilder: (ctx, idx) {
           final item = chips[idx];
           return ActionChip(
-            backgroundColor: const Color(0xFF1E293B).withValues(alpha: 0.8),
-            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+            backgroundColor: Colors.white,
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -560,7 +564,7 @@ class _RakshaLivingAssistantWidgetState
                 Text(
                   item['title']!,
                   style: const TextStyle(
-                    color: Color(0xFFCBD5E1),
+                    color: Color(0xFF334155),
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -577,10 +581,10 @@ class _RakshaLivingAssistantWidgetState
   Widget _buildChatInputBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+      decoration: const BoxDecoration(
+        color: Colors.white,
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          top: BorderSide(color: Color(0xFFE2E8F0)),
         ),
       ),
       child: SafeArea(
@@ -590,23 +594,23 @@ class _RakshaLivingAssistantWidgetState
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withValues(alpha: 0.8),
+                  color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: TextField(
                   controller: _textController,
                   focusNode: _focusNode,
-                  style: const TextStyle(color: Colors.white, fontSize: 13.5),
-                  decoration: InputDecoration(
+                  style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13.5),
+                  decoration: const InputDecoration(
                     hintText: 'Message Raksha AI…',
                     hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: Color(0xFF94A3B8),
                       fontSize: 13,
                     ),
                     border: InputBorder.none,
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   ),
                   onSubmitted: (_) => _handleSendMessage(),
                 ),
@@ -614,12 +618,12 @@ class _RakshaLivingAssistantWidgetState
             ),
             const SizedBox(width: 8),
 
-            // Send Button (circular arrow up)
+            // Send Button
             Container(
               width: 42,
               height: 42,
               decoration: const BoxDecoration(
-                color: Color(0xFF2563EB),
+                color: Color(0xFF0F172A),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
