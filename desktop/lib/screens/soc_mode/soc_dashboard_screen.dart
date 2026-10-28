@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/raksha_living_assistant.dart';
 
 /// KAVACH SOC Analyst Mode — High-density, professional threat investigation workspace.
 /// Engineered for security operations center analysts requiring real-time telemetry,

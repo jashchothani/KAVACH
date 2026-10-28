@@ -1693,7 +1693,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     alignment: Alignment.centerLeft,
                     child: InkWell(
                       onTap: () {
-                        setState(() => _currentSectionIndex = 4); // Switch to Raksha AI Copilot
+                        setState(() => _selectedNavIndex = 5); // Switch to Raksha AI Copilot
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('✨ Analyzing "$title" with Raksha AI Copilot...'),
