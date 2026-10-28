@@ -1343,8 +1343,7 @@
   // Auto-refresh every 30 seconds when window is active
   setInterval(() => {
     if (!document.hidden) {
-      switchPage(window.location.hash || '#overview');
-  checkSocActivation();
+      checkSocActivation();
       loadDashboardData();
       loadWeeklyReports();
     }

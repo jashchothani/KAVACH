@@ -10,7 +10,110 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/user.css">
+  <link rel="stylesheet" href="css/user.css?v=2.6.2">
+  <!-- Guaranteed Multi-Page View Engine & Tab Navigation Styles -->
+  <style>
+    /* Absolute Enforcement of Multi-Page Views */
+    .page-view {
+      display: none !important;
+    }
+    .page-view.active {
+      display: block !important;
+      animation: pageViewFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .page-view#view-raksha-ai.active {
+      display: flex !important;
+      flex-direction: column;
+      min-height: calc(100vh - 135px);
+    }
+    @keyframes pageViewFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Modern Top Horizontal Navigation Bar */
+    .sub-nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 24px;
+      background: rgba(9, 14, 26, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      overflow-x: auto;
+      scrollbar-width: none;
+      position: sticky;
+      top: 64px;
+      z-index: 30;
+    }
+    .sub-nav-tabs::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+    .tab-btn.active {
+      background: rgba(2, 132, 199, 0.18);
+      border-color: rgba(56, 189, 248, 0.5);
+      color: #38bdf8;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+    }
+    .tab-btn .tab-icon {
+      font-size: 1.05rem;
+    }
+
+    /* Raksha AI Full-Screen Interface */
+    .page-view#view-raksha-ai .chatgpt-card {
+      min-height: calc(100vh - 145px);
+      max-height: calc(100vh - 145px);
+      display: flex;
+      flex-direction: column;
+      border-radius: 20px;
+      background: rgba(13, 21, 39, 0.88);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 24px rgba(56, 189, 248, 0.12);
+      overflow: hidden;
+    }
+    .page-view#view-raksha-ai .chatgpt-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .page-view#view-raksha-ai .chatgpt-stream {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .page-view#view-raksha-ai .chatgpt-prompts-row {
+      padding: 12px 24px;
+      flex-wrap: wrap;
+      background: rgba(9, 14, 26, 0.7);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .page-view#view-raksha-ai .chatgpt-input-form {
+      padding: 16px 24px 20px;
+      background: rgba(10, 16, 30, 0.98);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
 </head>
 <body>
   <!-- Ambient background elements -->
@@ -136,6 +239,21 @@
           <button class="ib" id="out" title="Sign out" aria-label="Sign out">⏻</button>
         </div>
       </header>
+      <!-- Multi-Page Quick Navigation Tabs -->
+      <nav class="sub-nav-tabs" id="sub-nav-tabs" aria-label="Dashboard Pages">
+        <button class="tab-btn active" data-page="overview"><span class="tab-icon">📊</span> Overview</button>
+        <button class="tab-btn" data-page="protection"><span class="tab-icon">🛡️</span> Protection</button>
+        <button class="tab-btn" data-page="threat-center"><span class="tab-icon">🚨</span> Threat Center</button>
+        <button class="tab-btn" data-page="raksha-ai"><span class="tab-icon">🤖</span> Raksha AI Copilot</button>
+        <button class="tab-btn" data-page="link-scanner"><span class="tab-icon">🔗</span> Link Scanner</button>
+        <button class="tab-btn" data-page="activity"><span class="tab-icon">⏱</span> Activity</button>
+        <button class="tab-btn" data-page="weekly-reports"><span class="tab-icon">📑</span> Reports</button>
+        <button class="tab-btn" data-page="device-health"><span class="tab-icon">💻</span> Hardware</button>
+        <button class="tab-btn" data-page="score-breakdown"><span class="tab-icon">📈</span> Score</button>
+        <button class="tab-btn" data-page="device-overview"><span class="tab-icon">⚙️</span> Collectors</button>
+        <button class="tab-btn" data-page="privacy"><span class="tab-icon">🔒</span> Privacy</button>
+      </nav>
+
 
       <!-- Notification Drawer -->
       <div class="drawer-backdrop" id="notif-backdrop"></div>
@@ -610,7 +728,137 @@
   </div><!-- /.app-layout -->
 
   <!-- Frontend Scripts -->
-  <script src="js/api.js"></script>
-  <script src="js/user.js"></script>
+  <script src="js/api.js?v=2.6.2"></script>
+  <script src="js/user.js?v=2.6.2"></script>
+
+  <!-- Instant Client-Side Multi-Page Router -->
+  <script>
+    (function () {
+      var validPages = [
+        'overview', 'protection', 'threat-center', 'raksha-ai',
+        'link-scanner', 'activity', 'weekly-reports', 'device-health',
+        'score-breakdown', 'privacy', 'device-overview'
+      ];
+
+      var titleMap = {
+        'overview': 'Security Overview & Health',
+        'protection': 'Endpoint Protection Center',
+        'threat-center': 'Threat Center & Detection Alerts',
+        'raksha-ai': 'Raksha AI Sovereign Copilot',
+        'link-scanner': 'URL Security & Phishing Inspector',
+        'activity': 'Security Events & Audit Stream',
+        'weekly-reports': 'Weekly Security Digests & Audit Reports',
+        'device-health': 'Device Health & Hardware Diagnostics',
+        'score-breakdown': 'Security Score Breakdown & Metrics',
+        'privacy': 'Privacy & CERT-In Compliance Matrix',
+        'device-overview': 'Enrolled Device & 16 Telemetry Collectors'
+      };
+
+      function activatePage(hash) {
+        hash = (hash || window.location.hash || '#overview').replace('#', '').toLowerCase().trim();
+        if (validPages.indexOf(hash) === -1) {
+          // fuzzy match
+          var found = null;
+          for (var f = 0; f < validPages.length; f++) {
+            if (hash.indexOf(validPages[f]) !== -1 || validPages[f].indexOf(hash) !== -1) {
+              found = validPages[f];
+              break;
+            }
+          }
+          hash = found || 'overview';
+        }
+
+        // 1. Switch active page view
+        var allViews = document.querySelectorAll('.page-view');
+        for (var i = 0; i < allViews.length; i++) {
+          allViews[i].classList.remove('active');
+        }
+        var targetView = document.getElementById('view-' + hash);
+        if (targetView) {
+          targetView.classList.add('active');
+        }
+
+        // 2. Highlight sub-nav tabs
+        var tabBtns = document.querySelectorAll('.sub-nav-tabs .tab-btn');
+        for (var j = 0; j < tabBtns.length; j++) {
+          if (tabBtns[j].getAttribute('data-page') === hash) {
+            tabBtns[j].classList.add('active');
+          } else {
+            tabBtns[j].classList.remove('active');
+          }
+        }
+
+        // 3. Highlight sidebar links
+        var navItems = document.querySelectorAll('#sidebar-nav .nav-item');
+        for (var k = 0; k < navItems.length; k++) {
+          var sec = navItems[k].getAttribute('data-section') || (navItems[k].getAttribute('href') || '').replace('#', '');
+          if (sec === hash) {
+            navItems[k].classList.add('active');
+          } else {
+            navItems[k].classList.remove('active');
+          }
+        }
+
+        // 4. Update title
+        var titleEl = document.getElementById('page-title');
+        if (titleEl && titleMap[hash]) {
+          titleEl.textContent = titleMap[hash];
+        }
+
+        // 5. Scroll main container to top
+        var mainWrap = document.querySelector('.main-content-wrap');
+        if (mainWrap) mainWrap.scrollTop = 0;
+        window.scrollTo(0, 0);
+      }
+
+      window.KAVACH_NAV = {
+        goTo: function(page) {
+          window.location.hash = '#' + page;
+          activatePage(page);
+        }
+      };
+
+      window.addEventListener('hashchange', function() {
+        activatePage(window.location.hash);
+      });
+
+      document.addEventListener('click', function(e) {
+        var tab = e.target.closest('.sub-nav-tabs .tab-btn');
+        if (tab) {
+          e.preventDefault();
+          var p = tab.getAttribute('data-page');
+          if (p) {
+            window.location.hash = '#' + p;
+            activatePage(p);
+          }
+          return;
+        }
+
+        var nav = e.target.closest('#sidebar-nav .nav-item');
+        if (nav) {
+          var s = nav.getAttribute('data-section') || (nav.getAttribute('href') || '').replace('#', '');
+          if (s && s.indexOf('mailto:') === -1) {
+            e.preventDefault();
+            window.location.hash = '#' + s;
+            activatePage(s);
+            var sb = document.getElementById('sidebar');
+            var bd = document.getElementById('sidebar-backdrop');
+            if (sb && sb.classList.contains('mobile-open')) {
+              sb.classList.remove('mobile-open');
+              if (bd) bd.classList.remove('active');
+            }
+          }
+        }
+      });
+
+      // Initial execution
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { activatePage(); });
+      } else {
+        activatePage();
+      }
+    })();
+  </script>
 </body>
+
 </html>

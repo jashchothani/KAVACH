@@ -195,3 +195,4 @@ class RakshaRAG:
             blocks.append(f"- Firewall Status: {fw}")
 
         return "\n".join(blocks)
+
