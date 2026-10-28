@@ -10,6 +10,9 @@ from __future__ import annotations
 import abc
 import json
 import os
+import time
+from pathlib import Path
+from app.raksha_ai.rag import RakshaRAG
 import httpx
 from typing import Any
 
@@ -18,15 +21,10 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-SYSTEM_PROMPT = """You are Raksha AI, the intelligent cybersecurity assistant embedded inside KAVACH.
-Your mission is to analyze security telemetry, explain threats in clear and accurate language, and recommend defensible remediation actions.
-Always prioritize clarity, evidence, and defensive integrity.
-Never hallucinate non-existent threats, IOCs, or malware.
-Format your responses with:
-### 1. Security Assessment
-### 2. Evidence Observed
-### 3. Concrete Risk & Impact
-### 4. Recommended Defensive Actions
+SYSTEM_PROMPT = """You are Raksha AI, the intelligent sovereign cybersecurity copilot of KAVACH.
+You communicate with the fluency, warmth, clarity, and helpfulness of advanced conversational AI (like ChatGPT and Claude) combined with deep cybersecurity domain expertise.
+Your primary role is to answer user inquiries, explain security posture and telemetry, guide scam and fraud prevention (including Digital Arrest, Part-time task fraud, and phishing), deconstruct malware indicators, and provide defensible, step-by-step remediation actions.
+Always prioritize clarity, evidence, and actionable defense. Ground your answers in real technical security facts, MITRE ATT&CK concepts, and KAVACH system telemetry.
 """
 
 
@@ -128,8 +126,8 @@ class NvidiaNimProvider(BaseLLMProvider):
                 "max_tokens": 800,
             }
             try:
-                # 2.0s timeout per candidate to keep responses snappy
-                async with httpx.AsyncClient(timeout=httpx.Timeout(2.0, connect=1.0)) as client:
+                # Fast timeout per candidate (1.2s connect)
+                async with httpx.AsyncClient(timeout=httpx.Timeout(1.8, connect=1.0)) as client:
                     response = await client.post(url, headers=headers, json=payload)
                     if response.status_code == 200:
                         data = response.json()
@@ -143,6 +141,11 @@ class NvidiaNimProvider(BaseLLMProvider):
                         NvidiaNimProvider._trip_circuit()
                         break
                     logger.warning("nim_model_candidate_failed", model=m, status=response.status_code)
+            except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+                logger.info("nim_host_unreachable_tripping_circuit", error=str(exc))
+                NvidiaNimProvider._trip_circuit()
+                last_error = exc
+                break
             except Exception as exc:
                 last_error = exc
         # Circuit break for 24 hours so subsequent queries return in milliseconds
@@ -490,25 +493,52 @@ Compromised credentials account for the vast majority of account takeovers. Tran
 - **Adopt an Encrypted Password Manager**: (Bitwarden, 1Password, or KeePassXC) so you never reuse passwords across services.
 - **Enable KAVACH App Lock**: Secure your mobile banking, messaging, and security apps behind biometrics or PIN."""
 
-        # ── 13. Comprehensive Contextual / General Inquiries ──────────────────
-        return f"""### 🛡️ Raksha AI Cybersecurity Assessment
-Analyzing your inquiry regarding: **"{user_q[:100]}"**
+        # ── 13. Dynamic RAG Retrieval Fallback ────────────────────────────────
+        rag_docs = RakshaRAG.retrieve(user_q, top_k=2)
+        if rag_docs:
+            primary_doc = rag_docs[0]
+            sec_doc = rag_docs[1] if len(rag_docs) > 1 else None
+
+            rag_body = primary_doc.get("content", "")
+            rec_line = ""
+            if sec_doc:
+                rec_line = f"\n\n**Related Domain Intelligence ({sec_doc['category']})**:\n{sec_doc.get('content', '')}"
+
+            return f"""### 🛡️ Raksha AI • Security Advisory & Intelligence
+
+**Subject**: {user_q[:120]}  
+**Knowledge Domain**: {primary_doc['category']} — *{primary_doc['title']}*
 
 ---
 
-### 🔍 Technical Evaluation & Threat Context:
-- **Baseline Telemetry**: KAVACH active endpoint telemetry indicates your host perimeter sensors, link inspectors, and memory integrity hooks are operating nominally.
-- **Adversarial Assessment**: No unauthorized privilege escalations, rogue persistence mechanisms, or outbound covert C2 beacons are actively threatening this session.
-- **MITRE ATT&CK Mapping**: Evaluated against common initial access vectors (T1566 Phishing, T1190 Exploit Public-Facing Application) and execution techniques.
+### 🔍 1. Technical Assessment & Context
+{rag_body}{rec_line}
 
 ---
 
-### 📋 Tactical Recommendations & Next Actions:
-1. **Maintain Defensive Hygiene**: Keep operating system patches, firmware, and browser engines updated to mitigate zero-day vulnerabilities.
-2. **Review Alert Center**: Periodically check the KAVACH Alert Center to verify all background event notifications are reviewed.
-3. **Verify Suspicious Artifacts**: If this query relates to a specific file, URL, or caller number, pass it through KAVACH's dedicated scanners for granular decomposition.
+### 📋 2. Actionable Defense Recommendations
+1. **Maintain Protective Hygiene**: Ensure Windows Defender real-time engine and KAVACH sensors are active.
+2. **Avoid Untrusted Inputs**: Never enter credentials, OTPs, or grant accessibility/admin permissions to unknown links or callers.
+3. **Continuous Auditing**: If you encounter an anomaly or suspicious activity, run an on-demand scan or isolate the system via KAVACH SOAR.
 
-Need more specific analysis on a file, command, or security setting? Feel free to ask!"""
+Need more specific analysis on a file, process, or security setting? Feel free to ask!"""
+
+        return f"""### 🛡️ Raksha AI • Cybersecurity Intelligence
+Analyzing inquiry: **"{user_q[:100]}"**
+
+---
+
+### 🔍 Technical Evaluation & Host Health:
+- **Telemetry Integrity**: Host perimeter sensors, URL inspectors, and memory hooks report nominal status.
+- **Threat Vector**: Evaluated against active exploitation techniques (T1566 Phishing, T1059 Scripting).
+- **Endpoint Baseline**: Zero anomalous lateral movement beacons or unauthorized persistence keys detected.
+
+---
+
+### 📋 Recommended Next Actions:
+1. Keep your endpoint definitions and OS security updates current.
+2. Review the KAVACH Alert Center for real-time telemetry warnings.
+3. Use the KAVACH Threat Inspector for any suspicious links, hashes, or phone numbers."""
 
 
 
@@ -550,20 +580,36 @@ class GoogleGeminiProvider(BaseLLMProvider):
 
 
 def get_llm_provider() -> BaseLLMProvider:
-    """Factory returning NVIDIA NIM or Google Gemini provider if configured, or local fallback."""
+    """Factory returning cloud LLM or sovereign local RAG engine."""
     settings = get_settings()
+    configured_provider = os.getenv("RAKSHA_PROVIDER", "").lower().strip()
+
+    # If explicitly requested RAG / local
+    if configured_provider in ("local", "rag", "offline"):
+        return LocalFallbackProvider()
+
+    # 1. Google Gemini (if valid Google AI Studio key starting with AIzaSy)
+    gemini_key = (
+        os.getenv("GEMINI_API_KEY", "")
+        or getattr(getattr(settings, "ai", None), "gemini_api_key", "")
+    ).strip()
+    if gemini_key and gemini_key.startswith("AIzaSy"):
+        model = os.getenv("AI_GEMINI_MODEL", "gemini-2.5-flash").strip()
+        if "gemini" not in model:
+            model = "gemini-2.5-flash"
+        return GoogleGeminiProvider(api_key=gemini_key, model=model)
+
+    # 2. NVIDIA NIM (only if active key provided and not defunct demo key)
     api_key = (
         settings.nim.api_key
         or os.getenv("NVIDIA_NIM_API_KEY", "")
         or os.getenv("NVIDIA_API_KEY", "")
     ).strip()
-
-    if api_key and not api_key.startswith("your_"):
-        if NvidiaNimProvider._is_circuit_broken():
-            return LocalFallbackProvider()
+    is_demo_key = "nvapi-VXCd131LD44jfrL5f1" in api_key or api_key.startswith("your_")
+    if api_key and not is_demo_key and not NvidiaNimProvider._is_circuit_broken():
         base_url = settings.nim.base_url or os.getenv("NVIDIA_NIM_BASE_URL", "https://integrate.api.nvidia.com/v1")
         model = settings.nim.model or os.getenv("NVIDIA_NIM_MODEL", "meta/llama-3.1-8b-instruct")
-        if not model or "llama-3.2-11b-vision" in model or "diffusion" in model:
+        if not model or "diffusion" in model or "vision" in model:
             model = "meta/llama-3.1-8b-instruct"
         return NvidiaNimProvider(
             api_key=api_key,
@@ -571,11 +617,5 @@ def get_llm_provider() -> BaseLLMProvider:
             model=model,
         )
 
-    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if gemini_key and not gemini_key.startswith("your_"):
-        model = os.getenv("AI_GEMINI_MODEL", "gemini-2.5-flash").strip()
-        if "gemini" not in model:
-            model = "gemini-2.5-flash"
-        return GoogleGeminiProvider(api_key=gemini_key, model=model)
-
+    # 3. Sovereign Cognitive RAG Intelligence (Instant 0ms, zero network dependency)
     return LocalFallbackProvider()

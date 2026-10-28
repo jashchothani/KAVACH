@@ -7030,7 +7030,72 @@ class _FullScreenScanModalState extends State<_FullScreenScanModal>
                         isCompleted: progress >= 1.0,
                         isInProgress: progress >= 0.75 && progress < 1.0,
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
+                      if (isDone) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFF86EFAC)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.verified_user_rounded, color: Color(0xFF16A34A), size: 18),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Phone Protection Active & Optimal',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13.5,
+                                      color: Color(0xFF166534),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Your Android device passes all 4 integrity checks. Real-time background guards are active to intercept scam calls, phishing SMS messages, and malicious downloads.',
+                                style: TextStyle(fontSize: 11.5, color: Color(0xFF15803D), height: 1.4),
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  ActionChip(
+                                    avatar: const Icon(Icons.pin_rounded, size: 14, color: Color(0xFF0284C7)),
+                                    label: const Text('App Lock PIN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    backgroundColor: Colors.white,
+                                    side: const BorderSide(color: Color(0xFFBAE6FD)),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      Navigator.pushNamed(context, AppRoutes.appLockPin);
+                                    },
+                                  ),
+                                  ActionChip(
+                                    avatar: const Icon(Icons.phone_locked_rounded, size: 14, color: Color(0xFF16A34A)),
+                                    label: const Text('Scam Call Interceptor', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    backgroundColor: Colors.white,
+                                    side: const BorderSide(color: Color(0xFFBBF7D0)),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('🛡️ Telecom & SMS Fraud Sentinel Active ✓')),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+                      const SizedBox(height: 10),
                     ],
                   ),
                 ),

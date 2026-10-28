@@ -69,6 +69,86 @@
   if (rPill) rPill.textContent = 'Role: ' + (user.role_name || user.role || 'User');
   if (sPill) sPill.textContent = 'Account: ' + (user.status || 'Active');
 
+  // -------------------------------------------------------------------------
+  // Multi-Page SPA Router System
+  // -------------------------------------------------------------------------
+  const PAGE_TITLES = {
+    'overview': 'Security Overview & Health',
+    'weekly-reports': 'Weekly Security Digests & Audit Reports',
+    'protection': 'Endpoint Protection Center',
+    'device-health': 'Device Health & Hardware Diagnostics',
+    'activity': 'Security Events & Audit Stream',
+    'threat-center': 'Threat Center & Detection Alerts',
+    'link-scanner': 'URL Security & Phishing Inspector',
+    'raksha-ai': 'Raksha AI Sovereign Copilot',
+    'score-breakdown': 'Security Score Breakdown & Metrics',
+    'privacy': 'Privacy & CERT-In Compliance Matrix',
+    'device-overview': 'Enrolled Device & 16 Telemetry Collectors'
+  };
+
+  function switchPage(pageId) {
+    if (!pageId) pageId = 'overview';
+    pageId = pageId.replace(/^#/, '').toLowerCase().trim();
+    if (!PAGE_TITLES[pageId]) {
+      const found = Object.keys(PAGE_TITLES).find(k => k === pageId || pageId.includes(k));
+      pageId = found || 'overview';
+    }
+
+    // Hide all page views
+    document.querySelectorAll('.page-view').forEach(pv => {
+      pv.classList.remove('active');
+    });
+
+    // Show target page view
+    const targetView = document.getElementById('view-' + pageId);
+    if (targetView) {
+      targetView.classList.add('active');
+    }
+
+    // Update sidebar navigation active state
+    document.querySelectorAll('#sidebar-nav .nav-item').forEach(item => {
+      const section = item.getAttribute('data-section') || (item.getAttribute('href') || '').replace('#', '');
+      if (section === pageId) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    // Update top bar page title
+    const titleEl = document.getElementById('page-title');
+    if (titleEl && PAGE_TITLES[pageId]) {
+      titleEl.textContent = PAGE_TITLES[pageId];
+    }
+
+    // Scroll main view container to top smoothly
+    const mainWrap = document.querySelector('.main-content-wrap');
+    if (mainWrap) mainWrap.scrollTop = 0;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  window.addEventListener('hashchange', () => {
+    switchPage(window.location.hash);
+  });
+
+  document.querySelectorAll('#sidebar-nav a[data-section]').forEach(link => {
+    link.addEventListener('click', e => {
+      const section = link.getAttribute('data-section');
+      if (section) {
+        e.preventDefault();
+        window.location.hash = '#' + section;
+        switchPage(section);
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        if (sidebar && sidebar.classList.contains('mobile-open')) {
+          sidebar.classList.remove('mobile-open');
+          if (backdrop) backdrop.classList.remove('active');
+        }
+      }
+    });
+  });
+
+
   // Check SOC Analyst Technical Activation Status (Locks all features until confirmed)
   async function checkSocActivation() {
     try {
@@ -736,12 +816,21 @@
               <div class="threat-detail">
                 <b>What happened:</b> ${esc(t.what_happened || t.description || 'Suspicious process activity detected.')}
               </div>
-              <div class="threat-action">
-                <span>🛡 Safe Recommended Action:</span> ${esc(t.recommended_action || 'Endpoint isolated via KAVACH network quarantine rules.')}
+              <div class="threat-action" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+                <div style="flex:1"><span>🛡 Recommended Action:</span> ${esc(t.recommended_action || 'Endpoint isolated via KAVACH network quarantine rules.')}</div>
+                <button class="btn-explain-raksha" data-title="${esc(t.name || t.title)}" data-id="${esc(t.id || '')}">✨ Explain with Raksha AI</button>
               </div>
             </div>
           `;
         }).join('');
+
+        threatsEl.querySelectorAll('.btn-explain-raksha').forEach(btn => {
+          btn.onclick = () => {
+            const title = btn.getAttribute('data-title') || 'Security Alert';
+            switchPage('raksha-ai');
+            handleUserQuestion(`Explain this security alert: "${title}". What threat does it indicate and what containment steps should I follow?`);
+          };
+        });
       } else {
         threatsEl.innerHTML = `
           <div class="empty">
@@ -1244,6 +1333,7 @@
   // -------------------------------------------------------------------------
   // Initialization & Polling
   // -------------------------------------------------------------------------
+  switchPage(window.location.hash || '#overview');
   checkSocActivation();
   checkSystemUpdates();
   loadDashboardData();
@@ -1253,7 +1343,8 @@
   // Auto-refresh every 30 seconds when window is active
   setInterval(() => {
     if (!document.hidden) {
-      checkSocActivation();
+      switchPage(window.location.hash || '#overview');
+  checkSocActivation();
       loadDashboardData();
       loadWeeklyReports();
     }

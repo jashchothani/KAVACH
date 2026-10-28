@@ -17,6 +17,7 @@ from typing import Any
 
 from app.core.logging import get_logger
 from app.raksha_ai.provider import get_llm_provider, LocalFallbackProvider, GoogleGeminiProvider
+from app.raksha_ai.rag import RakshaRAG
 from app.raksha_ai.sanitizer import sanitize_telemetry, sanitize_text
 
 logger = get_logger(__name__)
@@ -36,18 +37,21 @@ class RakshaAIService:
         }
 
     async def chat(self, user_message: str, context: str = "") -> dict[str, Any]:
-        """Interactive security advisory chat."""
+        """Interactive security advisory chat with RAG enrichment and sub-second fallback."""
         clean_msg = sanitize_text(user_message)
         clean_ctx = sanitize_text(context)
 
-        prompt = f"User Question: {clean_msg}\n"
+        # Retrieve relevant sovereign domain knowledge
+        rag_context = RakshaRAG.format_context_for_prompt(clean_msg)
+
+        prompt = f"User Question: {clean_msg}\n\n{rag_context}\n"
         if clean_ctx:
             prompt += f"\nCurrent System Context:\n{clean_ctx}\n"
 
         prompt += "\nPlease provide a clear, professional cybersecurity assessment with concrete next actions."
 
         try:
-            content = await asyncio.wait_for(self._provider.generate_response(prompt), timeout=15.0)
+            content = await asyncio.wait_for(self._provider.generate_response(prompt), timeout=4.0)
             provider_used = self._provider.provider_name
         except Exception as exc:
             logger.warning("primary_llm_failed_falling_back", error=str(exc))

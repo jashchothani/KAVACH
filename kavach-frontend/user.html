@@ -157,124 +157,205 @@
       <span id="err-text">Cannot connect to KAVACH Server.</span>
     </div>
 
-    <!-- Status Strip / Identity Badges -->
-    <section class="card rise" style="padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span class="pill ok" id="u-status-pill">Account: Active</span>
-        <span class="pill bad" id="u-role-pill">Role: User</span>
-        <span class="pill info" id="u-device-pill">Endpoint: Enrolled</span>
-        <span class="pill ok" id="conn-status"><i style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></i> Live Connected</span>
-        <span style="font-size:0.8rem;color:var(--text-muted);display:flex;align-items:center;gap:6px">
-          <i style="color:#60a5fa">🛡</i> CERT-In Data Minimization Active: Zero personal files or browser history collected.
-        </span>
-      </div>
-      <div id="u-elevated-links" style="display:flex;gap:8px"></div>
-    </section>
+    <!-- PAGE 1: Overview & Hero Score -->
+    <div class="page-view active" id="view-overview">
+      <!-- Status Strip / Identity Badges -->
+      <section class="card rise" style="padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="pill ok" id="u-status-pill">Account: Active</span>
+          <span class="pill bad" id="u-role-pill">Role: User</span>
+          <span class="pill info" id="u-device-pill">Endpoint: Enrolled</span>
+          <span class="pill ok" id="conn-status"><i style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></i> Live Connected</span>
+          <span style="font-size:0.8rem;color:var(--text-muted);display:flex;align-items:center;gap:6px">
+            <i style="color:#60a5fa">🛡</i> CERT-In Data Minimization Active: Zero personal files or browser history collected.
+          </span>
+        </div>
+        <div id="u-elevated-links" style="display:flex;gap:8px"></div>
+      </section>
 
-    <!-- SECTION 1: Overview & Hero Score -->
-    <section class="card hero rise" id="overview">
-      <div class="ring-wrapper">
-        <div class="ring" id="ring">
-          <svg viewBox="0 0 36 36" aria-hidden="true">
-            <circle class="bg" cx="18" cy="18" r="15.9"/>
-            <circle class="fg" id="fg" cx="18" cy="18" r="15.9"/>
-          </svg>
-          <div>
-            <b id="score">—</b>
-            <small>Security score</small>
+      <section class="card hero rise" id="overview">
+        <div class="ring-wrapper">
+          <div class="ring" id="ring">
+            <svg viewBox="0 0 36 36" aria-hidden="true">
+              <circle class="bg" cx="18" cy="18" r="15.9"/>
+              <circle class="fg" id="fg" cx="18" cy="18" r="15.9"/>
+            </svg>
+            <div>
+              <b id="score">—</b>
+              <small>Security score</small>
+            </div>
+          </div>
+          <span class="pill ok" id="score-pill">Calculating Posture</span>
+        </div>
+
+        <div class="hero-content">
+          <h1 id="hello">Checking your protection…</h1>
+          <p id="banner">Querying live security posture directly from your host endpoint.</p>
+          <div class="hero-actions">
+            <button class="btn" id="scan">
+              <span class="btn-text">Run security check</span>
+            </button>
+            <div class="meta" id="checked">
+              <i></i> Reading live system diagnostics…
+            </div>
           </div>
         </div>
-        <span class="pill ok" id="score-pill">Calculating Posture</span>
-      </div>
+      </section>
 
-      <div class="hero-content">
-        <h1 id="hello">Checking your protection…</h1>
-        <p id="banner">Querying live security posture directly from your host endpoint.</p>
-        <div class="hero-actions">
-          <button class="btn" id="scan">
-            <span class="btn-text">Run security check</span>
-          </button>
-          <div class="meta" id="checked">
-            <i></i> Reading live system diagnostics…
+      <!-- Quick Glance Grid -->
+      <section class="g4 rise" style="margin-top:16px">
+        <div class="card tile" onclick="window.location.hash='#protection'">
+          <div class="tile-top">
+            <div class="ic">🛡</div>
+            <span class="st" id="st-av"><i></i>Active</span>
           </div>
+          <b>Antivirus</b>
+          <div class="tile-desc" id="desc-av">Windows Defender Antivirus</div>
+          <div class="tile-footer"><span id="version-av">Definitions: checking…</span></div>
         </div>
-      </div>
-    </section>
+        <div class="card tile" onclick="window.location.hash='#protection'">
+          <div class="tile-top">
+            <div class="ic">🧱</div>
+            <span class="st" id="st-fw"><i></i>Active</span>
+          </div>
+          <b>Firewall</b>
+          <div class="tile-desc" id="desc-fw">Domain, Private, Public</div>
+          <div class="tile-footer"><span id="profiles-fw">All profiles shielded</span></div>
+        </div>
+        <div class="card tile" onclick="window.location.hash='#protection'">
+          <div class="tile-top">
+            <div class="ic">📶</div>
+            <span class="st" id="st-wf"><i></i>Encrypted</span>
+          </div>
+          <b>Wi-Fi & Network</b>
+          <div class="tile-desc" id="desc-wf">Connected to Wi-Fi</div>
+          <div class="tile-footer"><span id="security-wf">WPA2/WPA3 Personal</span></div>
+        </div>
+        <div class="card tile" onclick="window.location.hash='#device-overview'">
+          <div class="tile-top">
+            <div class="ic">⚡</div>
+            <span class="st" id="st-coll"><i></i>Monitoring</span>
+          </div>
+          <b>Collectors Health</b>
+          <div class="tile-desc" id="desc-coll">16 daemons active</div>
+          <div class="tile-footer"><span id="events-coll">Zero drops · Spooler OK</span></div>
+        </div>
+      </section>
+    </div>
 
-    <!-- SECTION 2: Protection Center -->
-    <section class="g4 rise" id="protection">
-      <!-- Antivirus Card -->
-      <div class="card tile" id="t-av">
-        <div class="tile-top">
-          <div class="ic">🛡</div>
-          <span class="st" id="st-av"><i></i>Active</span>
-        </div>
-        <b>Antivirus</b>
-        <div class="tile-desc" id="desc-av">Windows Defender Antivirus</div>
-        <div class="tile-footer">
-          <span id="version-av">Definitions: checking…</span>
-        </div>
-      </div>
-
-      <!-- Firewall Card -->
-      <div class="card tile" id="t-fw">
-        <div class="tile-top">
-          <div class="ic">🧱</div>
-          <span class="st" id="st-fw"><i></i>Active</span>
-        </div>
-        <b>Firewall</b>
-        <div class="tile-desc" id="desc-fw">Domain, Private, Public</div>
-        <div class="tile-footer">
-          <span id="profiles-fw">All profiles shielded</span>
-        </div>
-      </div>
-
-      <!-- Network / Wi-Fi Card -->
-      <div class="card tile" id="t-wf">
-        <div class="tile-top">
-          <div class="ic">📶</div>
-          <span class="st" id="st-wf"><i></i>Encrypted</span>
-        </div>
-        <b>Wi-Fi & Network</b>
-        <div class="tile-desc" id="desc-wf">Connected to Wi-Fi</div>
-        <div class="tile-footer">
-          <span id="security-wf">WPA2/WPA3 Personal</span>
-        </div>
-      </div>
-
-      <!-- Monitoring Collectors Card -->
-      <div class="card tile" id="t-collectors">
-        <div class="tile-top">
-          <div class="ic">⚡</div>
-          <span class="st" id="st-coll"><i></i>Monitoring</span>
-        </div>
-        <b>Collectors Health</b>
-        <div class="tile-desc" id="desc-coll">16 daemons active</div>
-        <div class="tile-footer">
-          <span id="events-coll">Zero drops · Spooler OK</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 3 & 4: Security Score Breakdown & Device Health -->
-    <section class="g2 rise">
-      <!-- Security Score Breakdown (Section 3) -->
-      <div class="card" id="score-breakdown">
+    <!-- PAGE 2: Weekly Reports -->
+    <div class="page-view" id="view-weekly-reports">
+      <section class="card rise" id="weekly-reports">
         <div class="card-head">
-          <h3><span>📊</span> Security Score Breakdown</h3>
-          <span class="pill info" id="breakdown-total">Calculated from Real Telemetry</span>
+          <h3><span>📑</span> Weekly Security PDF Digests &amp; Audit Reports</h3>
+          <span class="pill ok" id="user-reports-count-pill">● SYNCHRONIZED</span>
         </div>
-        <span class="cap">Exact point contributions verified by KAVACH Risk Engine</span>
-        <div id="reasons" style="margin-bottom:16px">
-          <div class="empty">Evaluating real host security parameters…</div>
-        </div>
-        <div id="categories-breakdown" style="padding-top:10px;border-top:1px solid var(--border-subtle)"></div>
-      </div>
+        <span class="cap">Comprehensive weekly cyber protection reports generated and signed by your assigned SOC Analyst, detailing blocked threats, cross-device resource posture, and executive security score. Automatically emailed to your inbox.</span>
 
-      <!-- Device Health (Section 4) -->
+        <div class="table-wrap" style="margin-top:14px">
+          <table class="data-table" id="user-weekly-reports-table">
+            <thead>
+              <tr>
+                <th>Report Title</th>
+                <th>Period</th>
+                <th>Generated At</th>
+                <th>Status</th>
+                <th style="text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="user-weekly-reports-body">
+              <tr><td colspan="5" class="empty">Loading weekly security reports…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- PAGE 3: Protection Center -->
+    <div class="page-view" id="view-protection">
+      <section class="g4 rise" id="protection">
+        <!-- Antivirus Card -->
+        <div class="card tile" id="t-av">
+          <div class="tile-top">
+            <div class="ic">🛡</div>
+            <span class="st"><i></i>Active</span>
+          </div>
+          <b>Antivirus</b>
+          <div class="tile-desc">Windows Defender Antivirus</div>
+          <div class="tile-footer"><span id="version-av-prot">Real-Time Protection Enforced</span></div>
+        </div>
+
+        <!-- Firewall Card -->
+        <div class="card tile" id="t-fw">
+          <div class="tile-top">
+            <div class="ic">🧱</div>
+            <span class="st"><i></i>Active</span>
+          </div>
+          <b>Firewall</b>
+          <div class="tile-desc">Domain, Private, Public</div>
+          <div class="tile-footer"><span id="profiles-fw-prot">All profiles shielded</span></div>
+        </div>
+
+        <!-- Network / Wi-Fi Card -->
+        <div class="card tile" id="t-wf">
+          <div class="tile-top">
+            <div class="ic">📶</div>
+            <span class="st"><i></i>Encrypted</span>
+          </div>
+          <b>Wi-Fi & Network</b>
+          <div class="tile-desc">Connected to Wi-Fi</div>
+          <div class="tile-footer"><span id="security-wf-prot">WPA2/WPA3 Personal</span></div>
+        </div>
+
+        <!-- Monitoring Collectors Card -->
+        <div class="card tile" id="t-collectors">
+          <div class="tile-top">
+            <div class="ic">⚡</div>
+            <span class="st"><i></i>Monitoring</span>
+          </div>
+          <b>Collectors Health</b>
+          <div class="tile-desc">16 daemons active</div>
+          <div class="tile-footer"><span>Zero drops · Spooler OK</span></div>
+        </div>
+      </section>
+
+      <!-- Advanced Defense Shield Modules -->
+      <section class="card rise" style="margin-top:16px">
+        <div class="card-head">
+          <h3><span>🛡️</span> Sovereign Endpoint Defense Guardrails</h3>
+          <span class="pill ok">ALL SYSTEMS ACTIVE</span>
+        </div>
+        <span class="cap">Granular kernel-level and user-space hooks protecting your workstation</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:14px;margin-top:16px">
+          <div style="padding:14px;border-radius:12px;background:var(--bg-glass);border:1px solid var(--border-subtle)">
+            <b style="color:var(--text-primary)">⚡ Real-Time Process Sentinel</b>
+            <p style="font-size:0.83rem;color:var(--text-secondary);margin-top:4px">Intercepts unverified executables and prevents injection into system processes.</p>
+            <span class="pill ok" style="margin-top:8px">ACTIVE</span>
+          </div>
+          <div style="padding:14px;border-radius:12px;background:var(--bg-glass);border:1px solid var(--border-subtle)">
+            <b style="color:var(--text-primary)">📁 File Integrity Monitor (FIM)</b>
+            <p style="font-size:0.83rem;color:var(--text-secondary);margin-top:4px">Cryptographic SHA-256 baseline watches System32, drivers, and startup persistence hives.</p>
+            <span class="pill ok" style="margin-top:8px">ACTIVE</span>
+          </div>
+          <div style="padding:14px;border-radius:12px;background:var(--bg-glass);border:1px solid var(--border-subtle)">
+            <b style="color:var(--text-primary)">🔒 USB Storage Gatekeeper</b>
+            <p style="font-size:0.83rem;color:var(--text-secondary);margin-top:4px">Blocks rogue Mass Storage devices from auto-executing malicious script drops.</p>
+            <span class="pill ok" style="margin-top:8px">ACTIVE</span>
+          </div>
+          <div style="padding:14px;border-radius:12px;background:var(--bg-glass);border:1px solid var(--border-subtle)">
+            <b style="color:var(--text-primary)">🌐 Egress Socket Watchdog</b>
+            <p style="font-size:0.83rem;color:var(--text-secondary);margin-top:4px">Monitors outbound socket handshakes and blocks known C2 beacon destinations.</p>
+            <span class="pill ok" style="margin-top:8px">ACTIVE</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- PAGE 4: Devices & Hardware Health -->
+    <div class="page-view" id="view-device-health">
       <div class="card" id="device-health">
         <div class="card-head">
-          <h3><span>💻</span> Device Health & Hardware</h3>
+          <h3><span>💻</span> Device Health & Hardware Diagnostics</h3>
           <span class="pill ok" id="dev-status-pill">Hardware Healthy</span>
         </div>
         <span class="cap" id="devcap">Querying real host hardware and OS…</span>
@@ -283,17 +364,30 @@
         </div>
         <div id="os-details" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-subtle);font-size:0.82rem;color:var(--text-secondary);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"></div>
       </div>
-    </section>
+    </div>
 
-    <!-- SECTION 5 & 6: Threat Center & Recent Activity -->
-    <section class="g2 rise">
-      <!-- Threat Center (Section 5) -->
+    <!-- PAGE 5: Security Events & Activity Timeline -->
+    <div class="page-view" id="view-activity">
+      <div class="card" id="activity">
+        <div class="card-head">
+          <h3><span>⏱</span> Security Events & Audit Trail</h3>
+          <span class="pill ok">Live Stream</span>
+        </div>
+        <span class="cap">Chronological timeline of system, security, and collector events</span>
+        <div class="timeline" id="activity-timeline">
+          <div class="empty">Loading recent event timeline…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 6: Threat Center -->
+    <div class="page-view" id="view-threat-center">
       <div class="card" id="threat-center">
         <div class="card-head">
-          <h3><span>🚨</span> Threat Center</h3>
+          <h3><span>🚨</span> Threat Center &amp; Detection Alerts</h3>
           <span class="pill bad" id="active-threats-count">0 Active Threats</span>
         </div>
-        <span class="cap">Real security incidents and endpoint detections</span>
+        <span class="cap">Real security incidents, MITRE ATT&amp;CK mappings, and AI explanations</span>
         <div id="threats">
           <div class="empty">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -304,26 +398,13 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Recent Activity (Section 6) -->
-      <div class="card" id="activity">
-        <div class="card-head">
-          <h3><span>⏱</span> Recent Activity & Audit Trail</h3>
-          <span class="pill ok">Live Stream</span>
-        </div>
-        <span class="cap">Chronological timeline of system, security, and collector events</span>
-        <div class="timeline" id="activity-timeline">
-          <div class="empty">Loading recent event timeline…</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 7 & 8: Link Scanner & Raksha AI -->
-    <section class="g2 rise">
-      <!-- Link Scanner (Section 7) -->
+    <!-- PAGE 7: URL & Link Scanner -->
+    <div class="page-view" id="view-link-scanner">
       <div class="card" id="link-scanner">
         <div class="card-head">
-          <h3><span>🔗</span> Is this link safe?</h3>
+          <h3><span>🔗</span> Is this link safe? (URL Phishing Inspector)</h3>
           <span class="pill purple">Heuristic Engine</span>
         </div>
         <span class="cap">Paste any URL or suspicious link before opening it in your browser</span>
@@ -337,19 +418,21 @@
           <div class="url-history-chips" id="url-history"></div>
         </div>
       </div>
+    </div>
 
-      <!-- Raksha AI Assistant (Section 8: Clean ChatGPT Style) -->
+    <!-- PAGE 8: Raksha AI Copilot (Dedicated Full-Screen ChatGPT Experience) -->
+    <div class="page-view" id="view-raksha-ai">
       <div class="card chatgpt-card" id="raksha-ai">
         <div class="chatgpt-header">
           <div class="chatgpt-header-left">
             <div class="chatgpt-avatar-wrap">
               <img src="assets/raksha_avatar.jpg" alt="Raksha AI" class="chatgpt-avatar-img" onerror="this.src='assets/logo.png'">
-              <span class="online-indicator" title="Connected to NVIDIA NIM"></span>
+              <span class="online-indicator" title="Sovereign RAG Intelligence Online"></span>
             </div>
             <div class="chatgpt-title-meta">
               <div class="chatgpt-name">
                 Raksha AI
-                <span class="chatgpt-model-badge" id="raksha-provider-pill"><span class="badge-dot"></span> NVIDIA NIM</span>
+                <span class="chatgpt-model-badge" id="raksha-provider-pill"><span class="badge-dot"></span> Sovereign RAG Intelligence</span>
               </div>
               <span class="chatgpt-subtitle">Sovereign Cybersecurity Intelligence • Real-Time Endpoint Defense</span>
             </div>
@@ -357,7 +440,7 @@
           <div class="chatgpt-header-right">
             <button class="chatgpt-action-btn" id="btn-clear-chat" type="button" title="Clear conversation">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg>
-              <span>Clear</span>
+              <span>Clear Chat</span>
             </button>
           </div>
         </div>
@@ -372,10 +455,11 @@
               <div class="ai-bubble-content">
                 <div class="ai-meta">
                   <span class="ai-name">Raksha AI</span>
-                  <span class="ai-provider-tag">NVIDIA NIM</span>
+                  <span class="ai-provider-tag">RAG Sovereign Copilot</span>
                 </div>
                 <div class="ai-text-body">
-                  Hello! I am <strong>Raksha AI</strong>, your sovereign cybersecurity intelligence assistant powered by NVIDIA NIM. I analyze real-time host telemetry, explain threat detections, verify URLs, and recommend tactical defensive actions.<br><br>
+                  Namaste! I am <strong>Raksha AI</strong>, your sovereign cybersecurity intelligence assistant grounded in live host diagnostics and the KAVACH knowledge base.<br><br>
+                  I analyze real-time host telemetry, explain threat detections, deconstruct digital scams (like "Digital Arrest" extortions), verify URLs, and recommend tactical defensive actions.<br><br>
                   How can I assist your endpoint security today?
                 </div>
               </div>
@@ -384,6 +468,9 @@
 
           <!-- Quick Starter Prompts -->
           <div class="chatgpt-prompts-row" id="ai-prompts">
+            <button class="chatgpt-chip" type="button" data-prompt="What is a Digital Arrest scam and how do I protect myself?">
+              <span class="chip-icon">🚨</span> Digital Arrest Scam
+            </button>
             <button class="chatgpt-chip" type="button" data-prompt="Is my current Wi-Fi connection secure?">
               <span class="chip-icon">📶</span> Is my Wi-Fi secure?
             </button>
@@ -393,11 +480,11 @@
             <button class="chatgpt-chip" type="button" data-prompt="How do I spot phishing links and fake login pages?">
               <span class="chip-icon">🎣</span> Spotting phishing
             </button>
-            <button class="chatgpt-chip" type="button" data-prompt="What active protection is Windows Defender providing right now?">
-              <span class="chip-icon">🧱</span> Defender protection
-            </button>
             <button class="chatgpt-chip" type="button" data-prompt="How does KAVACH guard against ransomware encryption?">
               <span class="chip-icon">⚠️</span> Ransomware defense
+            </button>
+            <button class="chatgpt-chip" type="button" data-prompt="Should I use port 587 or port 25 for sending emails on AWS EC2?">
+              <span class="chip-icon">📧</span> Port 587 vs 25
             </button>
           </div>
 
@@ -413,118 +500,112 @@
               </button>
             </div>
             <div class="chatgpt-disclaimer">
-              Raksha AI provides advisory guidance. Endpoint telemetry is sanitized locally in-memory before inference.
+              Raksha AI provides sovereign advisory guidance grounded in KAVACH RAG telemetry. Personal documents are never inspected.
             </div>
           </form>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- SECTION 9: Privacy & Telemetry Minimization Matrix -->
-    <section class="card rise" id="privacy">
-      <div class="card-head">
-        <h3><span>🔒</span> Privacy & Data Telemetry Matrix (CERT-In Compliance)</h3>
-        <span class="pill ok" id="vault-status-badge">180-Day Vault: COMPLIANT</span>
+    <!-- PAGE 9: Score Breakdown -->
+    <div class="page-view" id="view-score-breakdown">
+      <div class="card" id="score-breakdown">
+        <div class="card-head">
+          <h3><span>📊</span> Security Score Breakdown</h3>
+          <span class="pill info" id="breakdown-total">Calculated from Real Telemetry</span>
+        </div>
+        <span class="cap">Exact point contributions verified by KAVACH Risk Engine</span>
+        <div id="reasons" style="margin-bottom:16px">
+          <div class="empty">Evaluating real host security parameters…</div>
+        </div>
+        <div id="categories-breakdown" style="padding-top:10px;border-top:1px solid var(--border-subtle)"></div>
       </div>
-      <span class="cap">KAVACH operates under statutory Indian data minimization principles (Section 70B IT Act). We never inspect, collect, or store personal files.</span>
-      <div style="overflow-x:auto">
-        <table class="privacy-table">
-          <thead>
-            <tr>
-              <th>Data Category</th>
-              <th>Collection Policy</th>
-              <th>KAVACH Guarantee</th>
-              <th>Statutory Retention</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><b style="color:var(--text-primary)">Personal Documents & Photos</b></td>
-              <td><span class="pill ok">❌ NEVER COLLECTED</span></td>
-              <td>Zero file body inspection. Word, PDF, photos, and personal folders are never scanned or uploaded.</td>
-              <td>None (Zero data kept)</td>
-            </tr>
-            <tr>
-              <td><b style="color:var(--text-primary)">Browsing History & Cookies</b></td>
-              <td><span class="pill ok">❌ NEVER RECORDED</span></td>
-              <td>Zero website history, search queries, or session cookies collected. Only on-demand Link Scanner queries are analyzed.</td>
-              <td>None</td>
-            </tr>
-            <tr>
-              <td><b style="color:var(--text-primary)">Keystrokes & Passwords</b></td>
-              <td><span class="pill ok">❌ NEVER LOGGED</span></td>
-              <td>Zero keylogging capability. Passwords and credentials never leave your host memory.</td>
-              <td>None</td>
-            </tr>
-            <tr>
-              <td><b style="color:var(--text-primary)">System Security Telemetry</b></td>
-              <td><span class="pill info">✔ MINIMAL TELEMETRY</span></td>
-              <td>Process execution names, network destination sockets, Defender & Firewall state, and USB insertion alerts.</td>
-              <td>180-Day Cryptographic Vault (AES-256-GCM)</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="vault-details" style="margin-top:14px;padding:10px 14px;background:var(--bg-glass);border-radius:10px;font-size:0.8rem;color:var(--text-secondary);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <span>Storage Jurisdiction: <b>India Sovereign Host Storage</b></span>
-        <span>Cryptographic Hash: <b>Merkle Chain Active</b></span>
-        <span>Clock Sync: <b>NTP Synchronized (IST UTC+5:30)</b></span>
-      </div>
-    </section>
+    </div>
 
-    <!-- SECTION 10: Device Overview & Collector Daemons -->
-    <section class="card rise" id="device-overview">
-      <div class="card-head">
-        <h3><span>🛡</span> Enrolled Device & Telemetry Collectors</h3>
-        <span class="pill info" id="device-id-pill">Loading Endpoint Identity…</span>
-      </div>
-      <span class="cap">Cryptographic endpoint identity, DPAPI credential status, and 16 Windows telemetry daemons</span>
+    <!-- PAGE 10: Privacy & Compliance -->
+    <div class="page-view" id="view-privacy">
+      <section class="card rise" id="privacy">
+        <div class="card-head">
+          <h3><span>🔒</span> Privacy &amp; Data Telemetry Matrix (CERT-In Compliance)</h3>
+          <span class="pill ok" id="vault-status-badge">180-Day Vault: COMPLIANT</span>
+        </div>
+        <span class="cap">KAVACH operates under statutory Indian data minimization principles (Section 70B IT Act). We never inspect, collect, or store personal files.</span>
+        <div style="overflow-x:auto">
+          <table class="privacy-table">
+            <thead>
+              <tr>
+                <th>Data Category</th>
+                <th>Collection Policy</th>
+                <th>KAVACH Guarantee</th>
+                <th>Statutory Retention</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b style="color:var(--text-primary)">Personal Documents &amp; Photos</b></td>
+                <td><span class="pill ok">❌ NEVER COLLECTED</span></td>
+                <td>Zero file body inspection. Word, PDF, photos, and personal folders are never scanned or uploaded.</td>
+                <td>None (Zero data kept)</td>
+              </tr>
+              <tr>
+                <td><b style="color:var(--text-primary)">Browsing History &amp; Cookies</b></td>
+                <td><span class="pill ok">❌ NEVER RECORDED</span></td>
+                <td>Zero website history, search queries, or session cookies collected. Only on-demand Link Scanner queries are analyzed.</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><b style="color:var(--text-primary)">Keystrokes &amp; Passwords</b></td>
+                <td><span class="pill ok">❌ NEVER LOGGED</span></td>
+                <td>Zero keylogging capability. Passwords and credentials never leave your host memory.</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><b style="color:var(--text-primary)">System Security Telemetry</b></td>
+                <td><span class="pill info">✔ MINIMAL TELEMETRY</span></td>
+                <td>Process execution names, network destination sockets, Defender &amp; Firewall state, and USB insertion alerts.</td>
+                <td>180-Day Cryptographic Vault (AES-256-GCM)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="vault-details" style="margin-top:14px;padding:10px 14px;background:var(--bg-glass);border-radius:10px;font-size:0.8rem;color:var(--text-secondary);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <span>Storage Jurisdiction: <b>India Sovereign Host Storage</b></span>
+          <span>Cryptographic Hash: <b>Merkle Chain Active</b></span>
+          <span>Clock Sync: <b>NTP Synchronized (IST UTC+5:30)</b></span>
+        </div>
+      </section>
+    </div>
 
-      <!-- Device Identity Card -->
-      <div id="device-identity-box" style="padding:16px;border-radius:14px;background:var(--bg-glass);border:1px solid var(--border-subtle);margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px">
-        <div><small style="color:var(--text-muted);display:block">HOSTNAME</small><b id="dev-hostname">—</b></div>
-        <div><small style="color:var(--text-muted);display:block">ENDPOINT IP</small><b id="dev-ip">—</b></div>
-        <div><small style="color:var(--text-muted);display:block">OS VERSION</small><b id="dev-os">—</b></div>
-        <div><small style="color:var(--text-muted);display:block">DPAPI CREDENTIAL</small><b id="dev-dpapi" style="color:#34d399">Active & Encrypted</b></div>
-        <div><small style="color:var(--text-muted);display:block">LAST SEEN HEARTBEAT</small><b id="dev-last-seen">—</b></div>
-      </div>
+    <!-- PAGE 11: Enrolled Devices & 16 Telemetry Collectors -->
+    <div class="page-view" id="view-device-overview">
+      <section class="card rise" id="device-overview">
+        <div class="card-head">
+          <h3><span>🛡</span> Enrolled Device &amp; Telemetry Collectors</h3>
+          <span class="pill info" id="device-id-pill">Loading Endpoint Identity…</span>
+        </div>
+        <span class="cap">Cryptographic endpoint identity, DPAPI credential status, and 16 Windows telemetry daemons</span>
 
-      <!-- 16 Collectors Grid -->
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-        <h4 style="font-size:0.92rem;color:var(--text-primary)">Windows Telemetry Collectors (16 Daemons)</h4>
-        <span class="pill ok" id="collectors-summary-pill">16/16 Healthy</span>
-      </div>
-      <div class="collectors-grid" id="collectors-grid">
-        <div class="empty">Loading daemon registry…</div>
-      </div>
-    </section>
+        <!-- Device Identity Card -->
+        <div id="device-identity-box" style="padding:16px;border-radius:14px;background:var(--bg-glass);border:1px solid var(--border-subtle);margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px">
+          <div><small style="color:var(--text-muted);display:block">HOSTNAME</small><b id="dev-hostname">—</b></div>
+          <div><small style="color:var(--text-muted);display:block">ENDPOINT IP</small><b id="dev-ip">—</b></div>
+          <div><small style="color:var(--text-muted);display:block">OS VERSION</small><b id="dev-os">—</b></div>
+          <div><small style="color:var(--text-muted);display:block">DPAPI CREDENTIAL</small><b id="dev-dpapi" style="color:#34d399">Active &amp; Encrypted</b></div>
+          <div><small style="color:var(--text-muted);display:block">LAST SEEN HEARTBEAT</small><b id="dev-last-seen">—</b></div>
+        </div>
 
-    <!-- SECTION 11: Weekly Security PDF Reports -->
-    <section class="card rise" id="weekly-reports">
-      <div class="card-head">
-        <h3><span>📑</span> Weekly Security PDF Digests &amp; Audit Reports</h3>
-        <span class="pill ok" id="user-reports-count-pill">● SYNCHRONIZED</span>
-      </div>
-      <span class="cap">Comprehensive weekly cyber protection reports generated and signed by your assigned SOC Analyst, detailing blocked threats, cross-device resource posture, and executive security score. Automatically emailed to your inbox.</span>
+        <!-- 16 Collectors Grid -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <h4 style="font-size:0.92rem;color:var(--text-primary)">Windows Telemetry Collectors (16 Daemons)</h4>
+          <span class="pill ok" id="collectors-summary-pill">16/16 Healthy</span>
+        </div>
+        <div class="collectors-grid" id="collectors-grid">
+          <div class="empty">Loading daemon registry…</div>
+        </div>
+      </section>
+    </div>
 
-      <div class="table-wrap" style="margin-top:14px">
-        <table class="data-table" id="user-weekly-reports-table">
-          <thead>
-            <tr>
-              <th>Report Title</th>
-              <th>Period</th>
-              <th>Generated At</th>
-              <th>Status</th>
-              <th style="text-align:right">Action</th>
-            </tr>
-          </thead>
-          <tbody id="user-weekly-reports-body">
-            <tr><td colspan="5" class="empty">Loading weekly security reports…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
+</main>
     </div><!-- /.main-content-wrap -->
   </div><!-- /.app-layout -->
 
