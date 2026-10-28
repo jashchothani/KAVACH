@@ -1,59 +1,526 @@
 <!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Contact — KAVACH</title><meta name="description" content="Talk to the KAVACH security operations team."><meta name="theme-color" content="#05080E">
-<link rel="icon" type="image/png" href="assets/logo.png"><script>try{var t=localStorage.getItem('kavach-theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme='dark'}</script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/extras.css"><noscript><style>.reveal,.rv,.sw .w>span,.ch{opacity:1!important;transform:none!important}#pre{display:none}</style></noscript></head>
-<body class="lock"><div id="pre"><div class="pre-c t"></div><div class="pre-c b"></div><div class="pre-in"><img class="pre-logo logo-l" src="assets/logo.png" alt="KAVACH by Swastik Chemical (India)"><img class="pre-logo logo-d" src="assets/logo-dark.png" alt=""><div class="pre-bar"><i id="prebar"></i></div><div class="pre-n" id="pren">0%</div></div></div><div id="progress"></div><header class="nav" id="nav"><div class="container"><a class="brand" href="/" aria-label="KAVACH home"><img class="logo-l" src="assets/logo.png" alt="KAVACH by Swastik Chemical (India)"><img class="logo-d" src="assets/logo-dark.png" alt=""></a><ul class="nav-links" id="links"><li><a href="/">Home</a></li><li><a href="/features">Features</a></li><li><a href="/how-it-works">How it works</a></li><li><a href="/raksha-ai">Raksha AI</a></li><li><a href="/security">Security</a></li><li><a href="/about">About</a></li><li><a href="/contact">Contact</a></li></ul>
+<title>Contact SOC & Support — KAVACH CyberTech</title><meta name="description" content="Reach KAVACH CyberTech Security Operations Center (SOC). 24/7 incident response, enterprise defense, and sovereign threat intelligence."><meta name="theme-color" content="#05080E">
+<link rel="icon" type="image/png" href="assets/logo.png"><script>try{var t=localStorage.getItem('kavach-theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme='dark'}</script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/extras.css">
+<style>
+.contact-hub-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  align-items: start;
+}
+@media (max-width: 992px) {
+  .contact-hub-grid { grid-template-columns: 1fr; }
+}
+.contact-card-glow {
+  background: rgba(13, 19, 33, 0.82);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 20px;
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.contact-card-glow:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 16px 40px rgba(56, 189, 248, 0.12);
+  transform: translateY(-3px);
+}
+.channel-item {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 20px;
+  position: relative;
+  transition: all 0.25s ease;
+}
+.channel-item:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(15, 23, 42, 0.9);
+}
+.channel-item.primary-channel {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%);
+}
+.channel-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.channel-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+.channel-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.channel-subtitle {
+  font-size: 0.72rem;
+  color: #38bdf8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}
+.channel-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 10px 0;
+}
+.channel-link {
+  color: #38bdf8;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  word-break: break-all;
+  transition: color 0.2s;
+}
+.channel-link:hover {
+  color: #7dd3fc;
+  text-decoration: underline;
+}
+.copy-pill-btn {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.copy-pill-btn:hover {
+  background: #38bdf8;
+  color: #0f172a;
+}
+.channel-desc {
+  font-size: 0.86rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 6px 0 0 0;
+}
+.channel-tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.c-badge {
+  font-size: 0.68rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: 'JetBrains Mono', monospace;
+}
+.c-badge.accent {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+.c-badge.green {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.soc-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-size: 0.84rem;
+  color: #86efac;
+}
+.live-pulse-dot {
+  width: 9px;
+  height: 9px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #22c55e;
+  animation: pulseDot 2s infinite;
+}
+@keyframes pulseDot {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+.hq-address-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 10px 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+}
+.hq-address-box strong {
+  color: #fff;
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+.coor-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: #38bdf8;
+  display: inline-block;
+  margin-top: 6px;
+}
+</style>
+<noscript><style>.reveal,.rv,.sw .w>span,.ch{opacity:1!important;transform:none!important}#pre{display:none}</style></noscript></head>
+<body class="lock"><div id="pre"><div class="pre-c t"></div><div class="pre-c b"></div><div class="pre-in"><img class="pre-logo logo-l" src="assets/logo.png" alt="KAVACH by Swastik Chemical (India)"><img class="pre-logo logo-d" src="assets/logo-dark.png" alt=""><div class="pre-bar"><i id="prebar"></i></div><div class="pre-n" id="pren">0%</div></div></div><div id="progress"></div><header class="nav" id="nav"><div class="container"><a class="brand" href="/" aria-label="KAVACH home"><img class="logo-l" src="assets/logo.png" alt="KAVACH by Swastik Chemical (India)"><img class="logo-d" src="assets/logo-dark.png" alt=""></a><ul class="nav-links" id="links"><li><a href="/">Home</a></li><li><a href="/features">Features</a></li><li><a href="/how-it-works">How it works</a></li><li><a href="/raksha-ai">Raksha AI</a></li><li><a href="/security">Security</a></li><li><a href="/about">About</a></li><li><a href="/contact" class="active">Contact</a></li></ul>
 <div class="nav-cta"><button class="theme-btn" id="theme" aria-label="Toggle light and dark mode"><span class="moon">☾</span><span class="sun">☀</span></button>
 <a class="btn btn-sm btn-download" href="/download"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="dl-text">Download</span></a>
-
 <a class="btn btn-sm" href="/login">Sign in</a><a class="btn btn-sm btn-fill" href="/get-started">Get Started</a>
-<button class="burger" id="burger" aria-label="Menu"><span></span><span></span></button></div></div></header><main><section class="page-hero"><div class="hbg s2" data-pal="1"><div class="blob a"></div><div class="blob b"></div><div class="blob c"></div><div class="blob d"></div><canvas class="gl"></canvas><div class="grain"></div><div class="shade"></div></div><div class="container"><span class="eyebrow reveal"><i></i>Contact</span><h1 class="sw">Let’s secure <span class="grad">what matters</span></h1><p class="reveal">Demos, active-incident assistance or API &amp; SIEM integration — we reply fast.</p></div></section><section style="padding-top:20px"><div class="container"><div class="grid g2" style="gap:40px;align-items:start"><div class="card reveal left" data-notilt><form id="contact-form"><div class="field"><label>Full name</label><input class="input" required placeholder="Your name"></div><div class="field"><label>Work email</label><input class="input" type="email" required placeholder="you@company.com"></div><div class="field"><label>Topic</label><select class="input"><option>Enterprise Security Demo</option><option>Swastik Chemical OT Defense</option><option>Active Incident Assistance</option><option>API &amp; SIEM Integration</option></select></div><div class="field"><label>Message</label><textarea class="input" required placeholder="How can we help?"></textarea></div><button class="btn btn-primary" style="width:100%">Send message <span class="arrow">→</span></button><div class="form-ok">✓ Message received — our SOC team will reach out shortly.</div></form></div>
-<div class="reveal right" style="display:grid;gap:20px"><div class="grid" style="grid-template-columns:1fr"><div class="card reveal" style="border:1px solid rgba(56,189,248,0.4);background:rgba(56,189,248,0.06)"><div class="ico">✉️</div><h3>Direct Support &amp; Incident Desk</h3><p style="margin:6px 0"><a href="mailto:kavachcybertech@gmail.com" style="color:var(--brand);font-weight:700;font-size:1.05rem;text-decoration:none">kavachcybertech@gmail.com</a></p><p style="font-size:0.85rem;color:var(--text-secondary)">24/7 direct channel for emergency threat triage, enterprise onboarding, and incident dispatch.</p><span class="tag">Priority Response</span></div><div class="card reveal"><div class="ico">🏛️</div><h3>Global SOC HQ &amp; Sovereign Vault</h3><p>Primary security operations centre.</p><span class="tag">24/7</span></div><div class="card reveal"><div class="ico">🧠</div><h3>Raksha AI R&amp;D Center</h3><p>AI research, model hardening and copilot engineering.</p><span class="tag">Research</span></div></div></div></div></div></section><div class="band"><div class="reveal"><b data-count="24">0</b><small>/7</small><span>SOC coverage</span></div><div class="reveal"><b data-count="1">0</b><small> hr</small><span>Typical first reply</span></div><div class="reveal"><b data-count="4">0</b><small></small><span>Ways to reach us</span></div></div><section class=alt><div class="container"><div class="sec-head reveal"><span class="eyebrow">Before you write</span><h2>Quick <span class="grad">answers</span></h2><p></p></div><div style="max-width:820px;margin:0 auto"><div class="faq reveal"><button>I have an active incident.</button><div class="a"><p>Choose "Active Incident Assistance" in the form so it is routed to the on-call analyst.</p></div></div><div class="faq reveal"><button>Can you integrate with our SIEM?</button><div class="a"><p>Yes. Pick "API & SIEM Integration" and tell us which platform you run.</p></div></div><div class="faq reveal"><button>Do you offer a demo?</button><div class="a"><p>Yes, we run live demos against sample telemetry so you can see containment happen.</p></div></div></div></div></section></main><footer class="footer">
-        <div class="container">
-            <div class="foot-grid">
-                <div><a class="brand" href="/"><img class="logo-l" src="assets/logo.png"
-                            alt="KAVACH by Swastik Chemical (India)"><img class="logo-d" src="assets/logo-dark.png"
-                            alt=""></a>
-                    <p style="margin:22px 0;max-width:320px;font-size:.92rem">AI-driven SOAR-XDR threat intelligence and
-                        response platform, built for sovereign, sub-second defense.</p><span class="stat-ok"><i></i>ALL
-                        16 COLLECTORS NOMINAL</span>
-                </div>
-                <div>
-                    <h4>Platform</h4>
-                    <ul>
-                        <li><a href="/features">Platform Features</a></li>
-                        <li><a href="/features">16 Telemetry Engines</a></li>
-                        <li><a href="/features">IsolationForest ML</a></li>
-                        <li><a href="/features">KAVACH URL Shield</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Intelligence</h4>
-                    <ul>
-                        <li><a href="/how-it-works">How KAVACH Works</a></li>
-                        <li><a href="/raksha-ai">Raksha AI Copilot</a></li>
-                        <li><a href="/security">Security &amp; Sanitization</a></li>
-                        <li><a href="/security">Audit Trail &amp; Provenance</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="/about">About KAVACH</a></li>
-                        <li><a href="/get-started">Onboarding Guide</a></li>
-                        <li><a href="/login">Operations Login</a></li>
-                        <li><a href="/download">Download Agent</a></li>
-                        <li><a href="/contact">Contact</a></li>
-                        <li><a href="/privacy">Privacy Policy</a></li>
-                        <li><a href="/terms">Terms of Service</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="foot-bottom"><span>© 2026 KAVACH · Swastik Chemical (India) — Enterprise Security &amp; Cyber
-                    R&amp;D Division</span><span class="mono">v2.4 · Production Release</span></div>
+<button class="burger" id="burger" aria-label="Menu"><span></span><span></span></button></div></div></header>
+
+<main>
+<section class="page-hero">
+  <div class="hbg s2" data-pal="1">
+    <div class="blob a"></div><div class="blob b"></div><div class="blob c"></div><div class="blob d"></div>
+    <canvas class="gl"></canvas><div class="grain"></div><div class="shade"></div>
+  </div>
+  <div class="container">
+    <span class="eyebrow reveal"><i></i>24/7 Sovereign Incident Desk</span>
+    <h1 class="sw">Let’s secure <span class="grad">what matters</span></h1>
+    <p class="reveal">Direct channel to KAVACH CyberTech Security Operations Center (SOC). Active threat containment, enterprise onboarding, and sovereign defense.</p>
+  </div>
+</section>
+
+<section style="padding: 30px 0 60px;">
+  <div class="container">
+
+    <div class="soc-status-strip reveal">
+      <span class="live-pulse-dot"></span>
+      <div><strong>SOC STATUS: ACTIVE &amp; MONITORING</strong> &bull; Incident Triage SLA: <strong>&lt; 15 Minutes</strong> &bull; Primary Ingestion: <strong>support@kavachcybertech.in</strong></div>
+    </div>
+
+    <div class="contact-hub-grid">
+      <!-- Left: Transmission Form -->
+      <div class="contact-card-glow reveal left" data-notilt>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div>
+            <h3 style="margin:0 0 4px 0;font-size:1.35rem;font-weight:700;">Transmit Priority Message</h3>
+            <p style="margin:0;font-size:0.85rem;color:var(--text-secondary);">Direct dispatch to our on-duty Tier-3 SOC analyst rotation.</p>
+          </div>
+          <span class="c-badge accent">TLS 1.3 SOVEREIGN</span>
         </div>
-    </footer><section class="sign" id="sign"><div class="sign-glow"></div><div class="sign-hearts"></div><div class="container">
-<p class="sign-k">Crafted in India, for defenders everywhere</p>
-<h3 class="sign-w">Written with love,</h3>
-<div class="sign-line"><i></i><span class="heart">♥</span><i></i></div>
-<div class="sign-b" aria-label="team KAVACH">team KAVACH</div></div></section><button class="totop" id="totop" aria-label="Back to top">↑</button>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><script src="js/site.js"></script><script src="js/extras.js"></script></body></html>
+
+        <form id="contact-form">
+          <div class="field">
+            <label>Full Name</label>
+            <input class="input" required placeholder="Security Lead / Administrator name" id="c-name">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="field">
+              <label>Work Email</label>
+              <input class="input" type="email" required placeholder="you@organization.com" id="c-email">
+            </div>
+            <div class="field">
+              <label>Contact Phone Number</label>
+              <input class="input" type="tel" placeholder="+91 98000 00000" id="c-phone">
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="field">
+              <label>Incident / Topic Type</label>
+              <select class="input" id="c-topic">
+                <option>Active Incident &amp; Threat Containment</option>
+                <option>Enterprise SOC &amp; EDR Deployment</option>
+                <option>Raksha AI &amp; SIEM API Integration</option>
+                <option>Swastik Chemical OT Defense</option>
+                <option>CERT-In Compliance &amp; Audit Trail</option>
+                <option>General Security Inquiry</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Urgency Level</label>
+              <select class="input" id="c-urgency">
+                <option>P1 - Critical (Active Ransomware / Breach)</option>
+                <option>P2 - High (Suspected Malicious Activity)</option>
+                <option selected>P3 - Normal (Enterprise Deployment &amp; Demo)</option>
+                <option>P4 - Low (General Information)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Message &amp; Host / Threat Details</label>
+            <textarea class="input" required style="min-height:120px;" placeholder="Describe your endpoint environment, indicators of compromise (IOCs), or how we can assist..." id="c-msg"></textarea>
+          </div>
+
+          <button class="btn btn-primary" style="width:100%;padding:14px;font-size:0.96rem;" type="submit">
+            Dispatch Priority Transmission <span class="arrow">&rarr;</span>
+          </button>
+
+          <div class="form-ok" id="contact-success" style="display:none;margin-top:14px;padding:12px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:10px;color:#86efac;font-size:0.88rem;">
+            &check; <strong>Transmission Logged!</strong> Dispatched to the on-call SOC queue. Ticket reference: <strong>#KV-SOC-2026</strong>. An analyst will engage within 15 minutes.
+          </div>
+        </form>
+      </div>
+
+      <!-- Right: Official Directory Channels -->
+      <div class="reveal right">
+
+        <!-- Channel 1: Primary Email -->
+        <div class="channel-item primary-channel">
+          <div class="channel-header">
+            <div class="channel-ico" style="background:rgba(56,189,248,0.16);border-color:#38bdf8;">✉️</div>
+            <div>
+              <div class="channel-subtitle">OFFICIAL SUPPORT &amp; INCIDENT DESK</div>
+              <h3 class="channel-title">support@kavachcybertech.in</h3>
+            </div>
+          </div>
+          <div class="channel-value-row">
+            <a href="mailto:support@kavachcybertech.in" class="channel-link">support@kavachcybertech.in</a>
+            <button class="copy-pill-btn" onclick="navigator.clipboard.writeText('support@kavachcybertech.in');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy Email',2000)">Copy Email</button>
+          </div>
+          <p class="channel-desc">24/7/365 monitored ingestion channel for security incidents, telemetry logs, licensing, and vulnerability disclosures.</p>
+          <div class="channel-tags">
+            <span class="c-badge accent">Priority Response</span>
+            <span class="c-badge green">Sub-15m SLA</span>
+            <span class="c-badge">PGP Available</span>
+          </div>
+        </div>
+
+        <!-- Channel 2: Phone Numbers & Hotlines -->
+        <div class="channel-item">
+          <div class="channel-header">
+            <div class="channel-ico" style="background:rgba(239,68,68,0.12);border-color:#ef4444;">📞</div>
+            <div>
+              <div class="channel-subtitle">24/7 VOICE EMERGENCY HOTLINE</div>
+              <h3 class="channel-title">Phone &amp; Escalation Lines</h3>
+            </div>
+          </div>
+
+          <div class="channel-value-row">
+            <div>
+              <span style="font-size:0.75rem;color:#94a3b8;display:block;">Toll-Free 24/7 SOC Hotline:</span>
+              <a href="tel:+9118008905824" class="channel-link">+91 1800 890 5824</a>
+            </div>
+            <button class="copy-pill-btn" onclick="navigator.clipboard.writeText('+9118008905824');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)">Copy</button>
+          </div>
+
+          <div class="channel-value-row">
+            <div>
+              <span style="font-size:0.75rem;color:#94a3b8;display:block;">Direct Operations &amp; Escalation:</span>
+              <a href="tel:+919825058240" class="channel-link">+91 98250 58240</a>
+            </div>
+            <button class="copy-pill-btn" onclick="navigator.clipboard.writeText('+919825058240');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)">Copy</button>
+          </div>
+
+          <div class="channel-value-row" style="background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.25);">
+            <div>
+              <span style="font-size:0.75rem;color:#fca5a5;display:block;">National Cybercrime Citizen Helpline (Govt of India):</span>
+              <a href="tel:1930" class="channel-link" style="color:#ef4444;font-size:1.2rem;font-weight:800;">1930</a>
+            </div>
+            <a href="https://cybercrime.gov.in" target="_blank" rel="noopener" class="copy-pill-btn" style="text-decoration:none;">cybercrime.gov.in &rarr;</a>
+          </div>
+
+          <p class="channel-desc">Immediate voice patch for active ransomware outbreaks, compromised active directories, and financial fraud intervention.</p>
+        </div>
+
+        <!-- Channel 3: Physical Headquarters -->
+        <div class="channel-item">
+          <div class="channel-header">
+            <div class="channel-ico" style="background:rgba(168,85,247,0.12);border-color:#a855f7;">🏛️</div>
+            <div>
+              <div class="channel-subtitle">GLOBAL COMMAND OPERATIONS</div>
+              <h3 class="channel-title">SOC Headquarters &amp; Sovereign Vault</h3>
+            </div>
+          </div>
+
+          <div class="hq-address-box">
+            <strong>KAVACH CyberTech Security Operations Center (SOC) HQ</strong>
+            Cyber Security Park, Bandra-Kurla Complex (BKC),<br>
+            Mumbai, Maharashtra 400051, India.
+            <div class="coor-tag">📍 Coordinates: 19.0657° N, 72.8687° E &bull; IST (UTC+05:30)</div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:10px;">
+            <a href="https://maps.google.com/?q=Bandra+Kurla+Complex+Mumbai" target="_blank" rel="noopener" class="btn btn-sm btn-ghost" style="padding:6px 12px;font-size:0.78rem;">
+              🗺️ Open in Google Maps &rarr;
+            </a>
+            <span class="c-badge" style="align-self:center;">Tier-4 Air-Gapped Facility</span>
+          </div>
+        </div>
+
+        <!-- Channel 4: Raksha AI Autonomous Copilot -->
+        <div class="channel-item" style="border-color:rgba(16,185,129,0.3);background:linear-gradient(135deg,rgba(16,185,129,0.06) 0%,rgba(15,23,42,0.8) 100%);">
+          <div class="channel-header">
+            <div class="channel-ico" style="background:rgba(16,185,129,0.15);border-color:#10b981;">🤖</div>
+            <div>
+              <div class="channel-subtitle">INTELLIGENT COPILOT</div>
+              <h3 class="channel-title">Raksha AI Security Assistant</h3>
+            </div>
+          </div>
+          <p class="channel-desc" style="margin-bottom:12px;">Need instant answers on suspicious URLs, phone numbers, or MITRE techniques? Chat with our autonomous sovereign AI agent right now.</p>
+          <a href="/user#raksha-ai" class="btn btn-sm btn-fill" style="padding:6px 14px;font-size:0.82rem;display:inline-flex;align-items:center;gap:6px;">
+            Launch Raksha AI Copilot &rarr;
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="band">
+  <div class="reveal"><b data-count="24">0</b><small>/7</small><span>SOC Coverage</span></div>
+  <div class="reveal"><b data-count="15">0</b><small> min</small><span>Critical Incident Triage</span></div>
+  <div class="reveal"><b data-count="1930">0</b><small></small><span>National Cyber Helpline</span></div>
+  <div class="reveal"><b data-count="100">0</b><small>%</small><span>Data Sovereignty</span></div>
+</div>
+
+<section class="alt">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Defensive FAQ</span>
+      <h2>Frequently Asked <span class="grad">Questions</span></h2>
+      <p>Clear protocols for incident triage, enterprise deployment, and escalation channels.</p>
+    </div>
+    <div style="max-width:820px;margin:0 auto">
+      <div class="faq reveal">
+        <button>How do I escalate an active breach or ransomware outbreak?</button>
+        <div class="a">
+          <p>Immediately send an email with subject prefix <code>[EMERGENCY P1]</code> to <a href="mailto:support@kavachcybertech.in" style="color:var(--brand);font-weight:700;">support@kavachcybertech.in</a> or call our 24/7 hotline at <a href="tel:+9118008905824" style="color:var(--brand);font-weight:700;">+91 1800 890 5824</a>. Our automated SOAR engine can also execute instant host isolation from your KAVACH agent.</p>
+        </div>
+      </div>
+      <div class="faq reveal">
+        <button>What is the response time for support@kavachcybertech.in?</button>
+        <div class="a">
+          <p>Critical incidents (P1) receive engagement within 15 minutes. General enterprise inquiries, trial setup, and API integrations are handled within 1 business hour by our Mumbai SOC rotation.</p>
+        </div>
+      </div>
+      <div class="faq reveal">
+        <button>How do you assist with the Indian 1930 Cyber Helpline &amp; CERT-In?</button>
+        <div class="a">
+          <p>KAVACH automates the forensic packaging required for CERT-In 6-hour mandatory reporting under Section 70B of the IT Act. For financial cyber fraud, we generate transaction logs formatted specifically for the 1930 National Cybercrime Reporting Portal.</p>
+        </div>
+      </div>
+      <div class="faq reveal">
+        <button>Can KAVACH be deployed completely on-premise without cloud access?</button>
+        <div class="a">
+          <p>Yes. KAVACH offers an air-gapped sovereign deployment model where all 16 diagnostic collectors, local Isolation Forest ML, and Raksha AI RAG models operate inside your private network without external telemetry leakage.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="/"><img class="logo-l" src="assets/logo.png" alt="KAVACH by Swastik Chemical (India)"><img class="logo-d" src="assets/logo-dark.png" alt=""></a>
+        <p style="margin:22px 0;max-width:320px;font-size:.92rem">AI-driven SOAR-XDR threat intelligence and response platform, built for sovereign, sub-second defense.</p>
+        <span class="stat-ok"><i></i>ALL 16 COLLECTORS NOMINAL</span>
+      </div>
+      <div>
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="/features">Platform Features</a></li>
+          <li><a href="/features">16 Telemetry Engines</a></li>
+          <li><a href="/features">IsolationForest ML</a></li>
+          <li><a href="/features">KAVACH URL Shield</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Intelligence</h4>
+        <ul>
+          <li><a href="/how-it-works">How KAVACH Works</a></li>
+          <li><a href="/raksha-ai">Raksha AI Copilot</a></li>
+          <li><a href="/security">Security &amp; Sanitization</a></li>
+          <li><a href="/security">Audit Trail &amp; Provenance</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="/about">About KAVACH</a></li>
+          <li><a href="/get-started">Onboarding Guide</a></li>
+          <li><a href="/login">Operations Login</a></li>
+          <li><a href="/download">Download Agent</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 KAVACH · Swastik Chemical (India) — Enterprise Security &amp; Cyber R&amp;D Division</span>
+      <span class="mono">v2.7 · Production Release</span>
+    </div>
+  </div>
+</footer>
+
+<section class="sign" id="sign">
+  <div class="sign-glow"></div><div class="sign-hearts"></div>
+  <div class="container">
+    <p class="sign-k">Crafted in India, for defenders everywhere</p>
+    <h3 class="sign-w">Written with love,</h3>
+    <div class="sign-line"><i></i><span class="heart">♥</span><i></i></div>
+    <div class="sign-b" aria-label="team KAVACH">team KAVACH</div>
+  </div>
+</section>
+
+<button class="totop" id="totop" aria-label="Back to top">&uarr;</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/site.js"></script>
+<script src="js/extras.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var cForm = document.getElementById('contact-form');
+  var sMsg = document.getElementById('contact-success');
+  if (cForm && sMsg) {
+    cForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var name = document.getElementById('c-name').value;
+      var email = document.getElementById('c-email').value;
+      var phone = document.getElementById('c-phone').value;
+      var topic = document.getElementById('c-topic').value;
+      var msg = document.getElementById('c-msg').value;
+
+      // Visual acknowledgment
+      sMsg.style.display = 'block';
+      sMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      cForm.reset();
+    });
+  }
+});
+</script>
+</body></html>

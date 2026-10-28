@@ -472,7 +472,7 @@ async def login_init(req: LoginRequest) -> dict[str, Any]:
             if is_jash_admin or clean_user in ("analyst",) or req.password in ("KavachSecurePass2026!", "Kavach@2026!Secure"):
                 user = await repo.create(
                     username="jashthakkar77" if is_jash_admin and "jashthakkar" in clean_user else clean_user,
-                    email="jashthakkar77@gmail.com" if is_jash_admin and ("jashthakkar" in identifier or "jashthakkar" in clean_user) else ("kavachcybertech@gmail.com" if clean_user in ("jash", "admin") else clean_email),
+                    email="jashthakkar77@gmail.com" if is_jash_admin and ("jashthakkar" in identifier or "jashthakkar" in clean_user) else ("support@kavachcybertech.in" if clean_user in ("jash", "admin") else clean_email),
                     password_hash=hash_password(req.password or "KavachSecurePass2026!"),
                     role="admin" if is_jash_admin else "analyst",
                 )
@@ -624,7 +624,7 @@ async def login(req: LoginRequest) -> TokenResponse:
             if clean_user in ("admin", "jash", "analyst") or req.password in ("KavachSecurePass2026!", "Kavach@2026!Secure"):
                 user = await repo.create(
                     username=clean_user,
-                    email="kavachcybertech@gmail.com" if clean_user in ("jash", "admin") else clean_email,
+                    email="support@kavachcybertech.in" if clean_user in ("jash", "admin") else clean_email,
                     password_hash=hash_password(req.password or "KavachSecurePass2026!"),
                     role="admin" if clean_user in ("admin", "jash") else "analyst",
                 )
@@ -1096,7 +1096,7 @@ async def forgot_password(req: ForgotPasswordRequest) -> dict[str, Any]:
         target_email = (user.email if user and user.email else clean_email)
         target_username = (user.username if user and user.username else clean_email.split("@")[0])
         if target_email.endswith(".soc") or "@" not in target_email or "localhost" in target_email:
-            target_email = "kavachcybertech@gmail.com"
+            target_email = "support@kavachcybertech.in"
 
         if user:
             if hasattr(user, "password_reset_token"):

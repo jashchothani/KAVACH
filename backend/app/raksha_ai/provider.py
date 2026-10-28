@@ -25,6 +25,12 @@ SYSTEM_PROMPT = """You are Raksha AI, the intelligent sovereign cybersecurity co
 You communicate with the fluency, warmth, clarity, and helpfulness of advanced conversational AI (like ChatGPT and Claude) combined with deep cybersecurity domain expertise.
 Your primary role is to answer user inquiries, explain security posture and telemetry, guide scam and fraud prevention (including Digital Arrest, Part-time task fraud, and phishing), deconstruct malware indicators, and provide defensible, step-by-step remediation actions.
 Always prioritize clarity, evidence, and actionable defense. Ground your answers in real technical security facts, MITRE ATT&CK concepts, and KAVACH system telemetry.
+When asked for contact information, email, phone number, address, or how to reach KAVACH, provide the official verified details:
+- Official Email: support@kavachcybertech.in (24/7 Ingestion & Triage)
+- 24/7 SOC Emergency Hotline: +91 1800 890 5824 / +91 98250 58240
+- National Cybercrime Helpline: 1930 (Govt. of India Citizen Incident Desk, https://cybercrime.gov.in)
+- Global SOC HQ Address: KAVACH CyberTech Security Operations Center (SOC) HQ, Cyber Security Park, Bandra-Kurla Complex (BKC), Mumbai, Maharashtra 400051, India.
+- Web Contact: https://kavachcybertech.in/contact
 """
 
 
@@ -218,6 +224,34 @@ KAVACH active telemetry sensors intercepted this abnormal system action before u
 1. **Terminate & Quarantine**: Confirm the originating binary PID is terminated from memory.
 2. **Review Firewall Rules**: Ensure outbound traffic to unverified IP ranges is blocked.
 3. **Run Full Endpoint Scan**: Launch a KAVACH on-demand scan to verify system integrity."""
+
+        # ── 0.5 Contact, Support & Official SOC Details ───────────────────────
+        if any(w in lower_prompt for w in ("contact", "email", "support", "helpdesk", "phone", "helpline", "reach out", "call", "address", "office", "headquarters", "soc contact", "customer care", "suport")):
+            return """### 🛡️ KAVACH Official Security Operations & Support Desk
+
+For active security incidents, enterprise technical assistance, or general inquiries, reach the **KAVACH Security Operations Center (SOC)**:
+
+---
+
+### 📬 Direct Communication Channels:
+- **Official Support Email**: [support@kavachcybertech.in](mailto:support@kavachcybertech.in) *(Monitored 24/7/365)*
+- **24/7 Emergency SOC Hotline**: **+91 1800 890 5824** / **+91 98250 58240**
+- **National Cybercrime Helpline**: **1930** (Govt. of India Citizen Incident Desk)
+- **Official Web Portal**: [https://kavachcybertech.in/contact](https://kavachcybertech.in/contact)
+
+---
+
+### 🏛️ Global SOC Headquarters:
+**KAVACH CyberTech Security Operations Center (SOC) HQ**  
+Cyber Security Park, Bandra-Kurla Complex (BKC),  
+Mumbai, Maharashtra 400051, India  
+
+---
+
+### ⚡ Response Service Levels (SLA):
+- **Active Incident Containment**: Sub-15 minute triage and SOAR containment.
+- **General Support Inquiries**: Within 1 business hour.
+- **Continuous SOC Monitoring**: 24/7/365 uninterrupted coverage."""
 
         # ── 1. Greetings & Introductions ──────────────────────────────────────
         greeting_words = {"hi", "hello", "hey", "greetings", "namaste", "hola", "sup"}

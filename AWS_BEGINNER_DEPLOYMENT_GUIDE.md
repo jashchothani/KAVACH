@@ -222,7 +222,7 @@ Once DNS is pointing to your AWS Elastic IP, open your EC2 browser terminal and 
 
 ```bash
 cd /opt/kavach
-sudo bash infra/aws/setup_ssl_certbot.sh kavachcybertech.in kavachcybertech@gmail.com
+sudo bash infra/aws/setup_ssl_certbot.sh kavachcybertech.in support@kavachcybertech.in
 ```
 
 This automated script will:
@@ -253,7 +253,7 @@ AWS Simple Notification Service (SNS) allows KAVACH to broadcast security incide
 
 ### Method A: Setup Automatically via CloudFormation (Recommended)
 1. When creating your stack in **CloudFormation**, the parameter **`NotificationEmail`** defaults to:
-   - **NotificationEmail:** `kavachcybertech@gmail.com` (or your preferred security inbox).
+   - **NotificationEmail:** `support@kavachcybertech.in` (or your preferred security inbox).
 2. CloudFormation will automatically:
    - Create the SNS Topic (`kavach-security-alerts`).
    - Create the IAM Role giving your EC2 instance zero-trust permission to publish alerts (`sns:Publish`).
@@ -286,7 +286,7 @@ If you launched your EC2 instance manually without CloudFormation:
 1. Inside your newly created Topic page, scroll down to the **Subscriptions** tab.
 2. Click the orange button **"Create subscription"**.
 3. **Protocol:** Select **Email**.
-4. **Endpoint:** Enter `kavachcybertech@gmail.com` (or your SOC team email).
+4. **Endpoint:** Enter `support@kavachcybertech.in` (or your SOC team email).
 5. Click **"Create subscription"**.
 6. **Open your email inbox** and click the link: **"Confirm subscription"**. The status in AWS will change from `PendingConfirmation` to `Confirmed`!
 
@@ -322,7 +322,7 @@ from email_notifications.service import get_email_service
 async def test_alert():
     svc = get_email_service()
     success = await svc.send_email(
-        to='kavachcybertech@gmail.com',
+        to='support@kavachcybertech.in',
         template_name='security_alert.html',
         subject='🚨 [TEST] KAVACH Ransomware Activity Blocked',
         context={

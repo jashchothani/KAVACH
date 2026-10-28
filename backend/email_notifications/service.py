@@ -60,7 +60,7 @@ class EmailService:
         # Route mock domains (.soc, localhost, etc.) to genuine SOC email for reliable inbox delivery
         to_clean = str(to).strip()
         if to_clean.endswith(".soc") or "@" not in to_clean or "localhost" in to_clean:
-            to_clean = getattr(smtp, "soc_email", None) or "kavachcybertech@gmail.com"
+            to_clean = getattr(smtp, "soc_email", None) or "support@kavachcybertech.in"
         to = to_clean
 
         # Inject standard global context values if missing
@@ -70,7 +70,7 @@ class EmailService:
         if "soc_phone" not in context:
             context["soc_phone"] = smtp.soc_phone or "9004976777"
         if "soc_email" not in context:
-            context["soc_email"] = getattr(smtp, "soc_email", None) or "kavachcybertech@gmail.com"
+            context["soc_email"] = getattr(smtp, "soc_email", None) or "support@kavachcybertech.in"
         
         # Render template
         try:
@@ -360,7 +360,7 @@ class EmailService:
             "",
             "--------------------------------------------------",
             f"Operations Portal: {dash_url}",
-            "SOC Contact Email: kavachcybertech@gmail.com",
+            "SOC Contact Email: support@kavachcybertech.in",
             f"SOC Hotline: {soc_phone}",
             "© 2026 KAVACH · Swastik Chemical (India) Sovereign Cyber Defense",
             "=================================================="

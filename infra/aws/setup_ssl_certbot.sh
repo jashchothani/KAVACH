@@ -2,7 +2,7 @@
 # ==============================================================================
 # KAVACH Sovereign SOAR-XDR — Automated Free Let's Encrypt SSL/TLS Setup
 # Default Domain: kavachcybertech.in (including www and api subdomains)
-# Default Email:  kavachcybertech@gmail.com
+# Default Email:  support@kavachcybertech.in
 # ==============================================================================
 
 set -euo pipefail
@@ -17,7 +17,7 @@ APP_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${APP_DIR}"
 
 DOMAIN="${1:-api.kavachcybertech.in}"
-EMAIL="${2:-kavachcybertech@gmail.com}"
+EMAIL="${2:-support@kavachcybertech.in}"
 
 echo "======================================================================"
 echo "  🔒 Setting up Let's Encrypt SSL for: ${DOMAIN}"

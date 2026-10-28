@@ -20,7 +20,7 @@ Parameters:
 
   NotificationEmail:
     Type: String
-    Default: "kavachcybertech@gmail.com"
+    Default: "support@kavachcybertech.in"
     Description: >
       Email address to subscribe to KAVACH AWS SNS Security Alerts & OTP Notifications.
       You will receive an email confirmation link from AWS to approve the subscription.

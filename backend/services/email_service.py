@@ -121,7 +121,7 @@ class EmailService:
                 # Prefix subject based on is_alert
                 subject_prefix = "[KAVACH ALERT] " if is_alert else "[KAVACH] "
                 msg["Subject"] = f"{subject_prefix}{subject}"
-                msg["From"] = f"KAVACH Security Platform <{settings.username or 'kavachcybertech@gmail.com'}>"
+                msg["From"] = f"KAVACH Security Platform <{settings.username or 'support@kavachcybertech.in'}>"
                 msg["To"] = target_email
 
                 # Alternative container for plain text and HTML
@@ -162,7 +162,7 @@ class EmailService:
 
                 # Standard footer text
                 footer_text = f"""
-                    Generated automatically by KAVACH SOAR-XDR Platform | SOC Phone: {settings.soc_phone} | Email: <a href="mailto:kavachcybertech@gmail.com" style="color: #ffffff; text-decoration: underline;">kavachcybertech@gmail.com</a><br>
+                    Generated automatically by KAVACH SOAR-XDR Platform | SOC Phone: {settings.soc_phone} | Email: <a href="mailto:support@kavachcybertech.in" style="color: #ffffff; text-decoration: underline;">support@kavachcybertech.in</a><br>
                     © 2026 Swastik Chemical (India). All rights reserved.
                 """
 

@@ -1127,6 +1127,10 @@
     f = f.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     // Italic *text*
     f = f.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // Markdown links [label](url)
+    f = f.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--brand);text-decoration:underline;font-weight:600;">$1</a>');
+    // Standalone emails not already wrapped in <a>
+    f = f.replace(/(^|[\s(])([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})([\s)]|$)/g, '$1<a href="mailto:$2" style="color:var(--brand);text-decoration:underline;font-weight:600;">$2</a>$3');
     // Bullet points
     f = f.replace(/^\s*[-•]\s+(.*$)/gim, '<li class="chat-li">$1</li>');
     f = f.replace(/(<li class="chat-li">.*<\/li>)/gms, '<ul class="chat-ul">$1</ul>');
@@ -1244,7 +1248,39 @@
       if (typingIndicator && typingIndicator.parentNode) {
         typingIndicator.parentNode.removeChild(typingIndicator);
       }
-      appendChatMessage('ai', `⚠️ Offline Advisory: ${err.network ? 'Raksha AI endpoint on port 8000 is currently reconnecting.' : err.message}\n\nYour host telemetry is protected by local active behavioral rules and FIM.`, 'Offline Shield');
+      const isContactQuery = /^(contact|email|support|help|phone|helpline|how to contact|soc email|suport)/i.test(q) ||
+        /\b(contact|support email|soc contact|phone number|office address|help desk)\b/i.test(q);
+
+      if (isContactQuery) {
+        const contactReply = `### 🛡️ KAVACH Official Security Operations & Support Desk
+
+For active security incidents, enterprise technical assistance, or general inquiries, reach the **KAVACH Security Operations Center (SOC)**:
+
+---
+
+### 📬 Direct Communication Channels:
+- **Official Support Email**: [support@kavachcybertech.in](mailto:support@kavachcybertech.in) *(Monitored 24/7/365)*
+- **24/7 Emergency SOC Hotline**: **+91 1800 890 5824** / **+91 98250 58240**
+- **National Cybercrime Helpline**: **1930** (Govt. of India Citizen Incident Desk)
+- **Official Web Portal**: [https://kavachcybertech.in/contact](https://kavachcybertech.in/contact)
+
+---
+
+### 🏛️ Global SOC Headquarters:
+**KAVACH CyberTech Security Operations Center (SOC) HQ**  
+Cyber Security Park, Bandra-Kurla Complex (BKC),  
+Mumbai, Maharashtra 400051, India  
+
+---
+
+### ⚡ Response Service Levels (SLA):
+- **Active Incident Containment**: Sub-15 minute triage and SOAR containment.
+- **General Support Inquiries**: Within 1 business hour.
+- **Continuous SOC Monitoring**: 24/7/365 uninterrupted coverage.`;
+        appendChatMessage('ai', contactReply, 'Raksha Security Desk');
+      } else {
+        appendChatMessage('ai', `⚠️ Offline Advisory: ${err.network ? 'Raksha AI endpoint on port 8000 is currently reconnecting.' : err.message}\n\nYour host telemetry is protected by local active behavioral rules and FIM.`, 'Offline Shield');
+      }
     } finally {
       if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
     }

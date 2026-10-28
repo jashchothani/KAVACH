@@ -14,6 +14,21 @@ from typing import Any
 # ── Curated Sovereign Cybersecurity Knowledge Base ───────────────────────────
 RAG_KNOWLEDGE_BASE: list[dict[str, Any]] = [
     {
+        "id": "kb_contact_support",
+        "category": "Official Support & Incident Response Desk",
+        "keywords": ["contact", "support", "email", "phone", "help", "address", "office", "reach", "soc email", "hotline", "customer care", "helpline", "escalate", "number", "call", "inquiry", "headquarters"],
+        "title": "Official KAVACH Security Operations Contact & Escalation Channels",
+        "content": (
+            "KAVACH Security Operations Center (SOC) Official Contact Directory:\n"
+            "- Official Support & Incident Email: support@kavachcybertech.in (Monitored 24/7/365 for threats & enterprise support)\n"
+            "- 24/7 SOC Emergency Hotline: +91 1800 890 5824 / +91 98250 58240\n"
+            "- National Cyber Crime Reporting Helpline: 1930 (Govt. of India Citizen Desk, https://cybercrime.gov.in)\n"
+            "- Global SOC HQ Address: KAVACH CyberTech Security Operations Center (SOC) HQ, Cyber Security Park, Bandra-Kurla Complex (BKC), Mumbai, Maharashtra 400051, India\n"
+            "- Online Help Center & Portal: https://kavachcybertech.in/contact\n"
+            "- Response SLAs: Under 15 minutes for critical incidents; under 1 hour for general inquiries."
+        ),
+    },
+    {
         "id": "kb_endpoint_sensors",
         "category": "Endpoint Telemetry & Sensors",
         "keywords": ["sensor", "telemetry", "edr", "score", "posture", "antivirus", "defender", "firewall", "fim", "usb", "safe", "protected"],

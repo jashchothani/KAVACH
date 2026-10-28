@@ -296,7 +296,7 @@ class AwsSesNotificationProvider(NotificationProvider):
         from_email: str | None = None,
         region_name: str | None = None,
     ) -> None:
-        self.from_email = from_email or os.environ.get("AWS_SES_FROM_EMAIL", "kavachcybertech@gmail.com")
+        self.from_email = from_email or os.environ.get("AWS_SES_FROM_EMAIL", "support@kavachcybertech.in")
         self.region_name = region_name or os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
         self._client = None
 
