@@ -717,14 +717,41 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
       final res = await _api.chatRaksha(query);
       final reply =
           res['response']?.toString() ??
+          res['reply']?.toString() ??
           res['message']?.toString() ??
           'Analysis completed. Sovereign defense perimeter nominal.';
       if (!mounted) return;
+
+      final msgIdx = _chatMessages.length;
       setState(() {
-        _chatMessages.add({'sender': 'raksha', 'text': reply});
+        _chatMessages.add({'sender': 'raksha', 'text': '', 'isStreaming': 'true'});
         _isSendingChat = false;
       });
-      _saveRakshaChatForUser();
+
+      // ChatGPT Typewriter Streaming Effect
+      int charIdx = 0;
+      Timer.periodic(const Duration(milliseconds: 14), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        if (charIdx < reply.length) {
+          final nextLen = (charIdx + 4 <= reply.length) ? charIdx + 4 : reply.length;
+          charIdx = nextLen;
+          setState(() {
+            _chatMessages[msgIdx]['text'] = reply.substring(0, nextLen);
+          });
+          _scrollChatToBottom();
+        } else {
+          timer.cancel();
+          setState(() {
+            _chatMessages[msgIdx]['text'] = reply;
+            _chatMessages[msgIdx]['isStreaming'] = 'false';
+          });
+          _saveRakshaChatForUser();
+          _scrollChatToBottom();
+        }
+      });
     } catch (_) {
       if (!mounted) return;
       String fallback;
@@ -752,11 +779,35 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
             '### 🛡️ KAVACH Sovereign Security Assessment\n\nYour mobile device telemetry is being actively monitored against known enterprise threat indicators.\n\n- Real-time link scanner is active.\n- Telecom spoofing interceptor is active.\n- Keep your OS updated and avoid granting accessibility permissions to untrusted APKs.';
       }
 
+      final msgIdx = _chatMessages.length;
       setState(() {
-        _chatMessages.add({'sender': 'raksha', 'text': fallback});
+        _chatMessages.add({'sender': 'raksha', 'text': '', 'isStreaming': 'true'});
         _isSendingChat = false;
       });
-      _saveRakshaChatForUser();
+
+      int charIdx = 0;
+      Timer.periodic(const Duration(milliseconds: 14), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        if (charIdx < fallback.length) {
+          final nextLen = (charIdx + 4 <= fallback.length) ? charIdx + 4 : fallback.length;
+          charIdx = nextLen;
+          setState(() {
+            _chatMessages[msgIdx]['text'] = fallback.substring(0, nextLen);
+          });
+          _scrollChatToBottom();
+        } else {
+          timer.cancel();
+          setState(() {
+            _chatMessages[msgIdx]['text'] = fallback;
+            _chatMessages[msgIdx]['isStreaming'] = 'false';
+          });
+          _saveRakshaChatForUser();
+          _scrollChatToBottom();
+        }
+      });
     }
 
     _scrollChatToBottom();
@@ -5311,7 +5362,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                             color: Colors.black.withValues(alpha: 0.06),
                           ),
                   ),
-                  child: _buildFormattedChatMessage(msg['text']!, isUser),
+                  child: _buildFormattedChatMessage(msg['text']!, isUser, msg['isStreaming'] == 'true'),
                 ),
               );
             },
@@ -5391,7 +5442,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     );
   }
 
-  Widget _buildFormattedChatMessage(String text, bool isUser) {
+  Widget _buildFormattedChatMessage(String text, bool isUser, [bool isStreaming = false]) {
     if (isUser) {
       return Text(
         text,
@@ -5481,6 +5532,21 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
       }
     }
 
+    if (isStreaming) {
+      widgets.add(
+        const Padding(
+          padding: EdgeInsets.only(top: 4),
+          child: Text(
+            '▊',
+            style: TextStyle(
+              color: Color(0xFF0284C7),
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: widgets,

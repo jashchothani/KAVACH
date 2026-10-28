@@ -2529,6 +2529,44 @@ class _SocDashboardScreenState extends State<SocDashboardScreen>
             const SizedBox(height: 12),
             Row(
               children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0284C7),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: const Color(0xFF1E293B),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        title: Row(
+                          children: [
+                            const Icon(Icons.auto_awesome_rounded, color: Color(0xFF38BDF8), size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text('Raksha AI • $id', style: const TextStyle(color: Colors.white, fontSize: 16))),
+                          ],
+                        ),
+                        content: SizedBox(
+                          width: 520,
+                          height: 380,
+                          child: RakshaLivingAssistantWidget(
+                            height: 380,
+                            showChatInterface: true,
+                          ),
+                        ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close', style: TextStyle(color: Colors.white70))),
+                        ],
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 14),
+                  label: const Text('Explain with Raksha AI', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 8),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),

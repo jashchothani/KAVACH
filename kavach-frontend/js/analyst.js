@@ -71,8 +71,19 @@
   function drawAlerts() {
     const q = $('#aq').value.toLowerCase(), st = $('#as').value, sv = $('#av').value;
     const f = ALERTS.filter(a => (!st || a.status === st) && (!sv || a.severity === sv) && (!q || JSON.stringify(a).toLowerCase().includes(q)));
-    rows('#atb', f.map((a, i) => `<tr style="animation-delay:${i * .04}s"><td class="mono">${esc(a.id)}</td><td><b>${esc(a.title)}</b><div class="mono">${esc(a.source || '')}</div></td><td>${pill(a.severity)}</td><td class="mono">${esc(a.mitre || '—')}</td><td>${pill(a.status)}</td><td class="mono">${K.ago(a.created_at)}</td><td style="white-space:nowrap"><button class="row-btn" data-e="${esc(a.id)}">Explain</button> <button class="row-btn" data-r="${esc(a.id)}">Resolve</button></td></tr>`).join(''), 7, 'No alerts match');
-    $$('[data-e]').forEach(b => b.onclick = async () => { b.textContent = '…'; try { const r = await api.alerts.explain(b.dataset.e); modal('Raksha • ' + b.dataset.e, `<p>${esc(r.explanation)}</p>${r.confidence ? `<p class="mono" style="font-size:.8rem">Confidence ${(r.confidence * 100).toFixed(0)}%</p>` : ''}${r.recommended_action ? `<p><b>Recommended:</b> ${esc(r.recommended_action)}</p>` : ''}`); } catch (e) { toast(e.message); } b.textContent = 'Explain'; });
+    rows('#atb', f.map((a, i) => `<tr style="animation-delay:${i * .04}s"><td class="mono">${esc(a.id)}</td><td><b>${esc(a.title)}</b><div class="mono">${esc(a.source || '')}</div></td><td>${pill(a.severity)}</td><td class="mono">${esc(a.mitre || '—')}</td><td>${pill(a.status)}</td><td class="mono">${K.ago(a.created_at)}</td><td style="white-space:nowrap"><button class="btn-explain-raksha" data-e="${esc(a.id)}">✨ Explain with Raksha AI</button> <button class="row-btn" data-r="${esc(a.id)}">Resolve</button></td></tr>`).join(''), 7, 'No alerts match');
+    $$('[data-e]').forEach(b => b.onclick = async () => {
+      const orig = b.innerHTML;
+      b.innerHTML = '✨ Analyzing…';
+      try {
+        const r = await api.alerts.explain(b.dataset.e);
+        const expl = r.explanation || r.reply || r.response || 'No explanation available.';
+        modal('✨ Raksha AI • ' + b.dataset.e, `<div class="raksha-stream-modal" style="font-size:13px;line-height:1.6;color:var(--t1)"></div>${r.confidence ? `<p class="mono" style="font-size:.8rem;margin-top:12px;color:#059669"><b>AI Confidence:</b> ${(r.confidence * 100).toFixed(0)}%</p>` : ''}${r.recommended_action ? `<p style="margin-top:8px;font-size:.85rem;color:var(--t2)"><b>Recommended:</b> ${esc(r.recommended_action)}</p>` : ''}`);
+        const streamEl = document.querySelector('.raksha-stream-modal');
+        if (streamEl) K.typeWriter(streamEl, expl);
+      } catch (e) { toast(e.message); }
+      b.innerHTML = orig;
+    });
     $$('[data-r]').forEach(b => b.onclick = async () => { try { await api.alerts.update(b.dataset.r, { status: 'resolved' }); const a = ALERTS.find(x => x.id === b.dataset.r); if (a) a.status = 'resolved'; drawAlerts(); toast('Alert ' + b.dataset.r + ' resolved'); } catch (e) { toast(e.message); } });
   }
   ['aq', 'as', 'av'].forEach(i => $('#' + i).addEventListener('input', drawAlerts));
@@ -332,7 +343,14 @@
   $('#rf').onsubmit = async e => {
     e.preventDefault(); const m = $('#rm').value.trim(); if (!m) return; $('#rm').value = ''; const c = $('#rc');
     c.insertAdjacentHTML('beforeend', `<div class="bub u">${esc(m)}</div>`); const b = document.createElement('div'); b.className = 'bub a'; b.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>'; c.appendChild(b); c.scrollTop = c.scrollHeight;
-    try { b.textContent = (await api.raksha.chat(m)).reply; } catch (err) { b.textContent = 'Raksha unavailable: ' + err.message; } c.scrollTop = c.scrollHeight;
+    try {
+      const res = await api.raksha.chat(m);
+      const text = res.reply || res.response || res.message || 'Analysis completed.';
+      K.typeWriter(b, text, c);
+    } catch (err) {
+      b.textContent = 'Raksha unavailable: ' + err.message;
+    }
+    c.scrollTop = c.scrollHeight;
   };
 
   overview().catch(e => toast(e.message));

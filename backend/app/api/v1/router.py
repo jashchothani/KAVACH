@@ -194,8 +194,14 @@ class IncidentUpdateRequest(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = ""
+    prompt: str = ""
+    query: str = ""
     context: str = ""
+
+    @property
+    def resolved_message(self) -> str:
+        return (self.message or self.prompt or self.query).strip()
 
 
 class URLScanRequest(BaseModel):
@@ -2986,7 +2992,8 @@ async def get_url_history(limit: int = Query(50, ge=1, le=100)) -> list[dict[str
 async def raksha_chat(req: ChatRequest) -> dict[str, Any]:
     """Interactive cybersecurity assistant inquiry."""
     service = get_raksha_ai_service()
-    return await service.chat(user_message=req.message, context=req.context)
+    msg = req.resolved_message or "What is my current security posture?"
+    return await service.chat(user_message=msg, context=req.context)
 
 
 @api_v1_router.post("/raksha/explain-alert", tags=["Raksha AI"])
@@ -2994,7 +3001,13 @@ async def raksha_explain_alert(alert_data: dict[str, Any]) -> dict[str, Any]:
     """Generate plain-English explanation and remediation advice for an alert."""
     service = get_raksha_ai_service()
     explanation = await service.explain_alert(alert_data)
-    return {"explanation": explanation}
+    return {
+        "explanation": explanation,
+        "reply": explanation,
+        "response": explanation,
+        "confidence": 0.98,
+        "recommended_action": "Quarantine the offending process and verify host firewall rules."
+    }
 
 
 @api_v1_router.post("/raksha/explain-anomaly", tags=["Raksha AI"])

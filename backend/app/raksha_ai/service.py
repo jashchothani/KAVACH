@@ -57,6 +57,9 @@ class RakshaAIService:
 
         return {
             "response": content,
+            "reply": content,
+            "message": content,
+            "text": content,
             "provider": provider_used or self._provider.provider_name,
             "is_ai_generated": True,
         }

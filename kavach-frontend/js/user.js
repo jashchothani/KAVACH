@@ -1058,7 +1058,7 @@
       `;
     } else {
       row.className = 'chat-row ai-row';
-      const cleanProv = provider || 'NVIDIA NIM';
+      const cleanProv = provider || 'Raksha Sovereign AI';
       row.innerHTML = `
         <div class="ai-avatar-badge">
           <img src="assets/raksha_avatar.jpg" alt="Raksha AI" class="chat-avatar-mini" onerror="this.src='assets/logo.png'">
@@ -1071,9 +1071,16 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
             </button>
           </div>
-          <div class="ai-text-body">${formatMarkdown(text)}</div>
+          <div class="ai-text-body"></div>
         </div>
       `;
+      chatContainer.appendChild(row);
+      const bodyEl = row.querySelector('.ai-text-body');
+      if (window.KAVACH && window.KAVACH.typeWriter) {
+        window.KAVACH.typeWriter(bodyEl, text, chatContainer);
+      } else {
+        bodyEl.innerHTML = formatMarkdown(text);
+      }
       const copyBtn = row.querySelector('.copy-bubble-btn');
       if (copyBtn) {
         copyBtn.onclick = () => {
@@ -1084,7 +1091,9 @@
       }
     }
 
-    chatContainer.appendChild(row);
+    if (sender === 'user') {
+      chatContainer.appendChild(row);
+    }
     chatContainer.scrollTop = chatContainer.scrollHeight;
     return row;
   }
@@ -1104,7 +1113,9 @@
         </div>
       </div>
     `;
-    chatContainer.appendChild(row);
+    if (sender === 'user') {
+      chatContainer.appendChild(row);
+    }
     chatContainer.scrollTop = chatContainer.scrollHeight;
     return row;
   }

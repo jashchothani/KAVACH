@@ -144,7 +144,37 @@
       downloadUrl: filename => `${C.apiBase}/reports/download/${encodeURIComponent(filename)}`
     }
   };
-  window.KAVACH = { api, session, isAnalystRole, isAdminRole, roleName, normalizeRole, isOffline: () => offline,
+
+  const typeWriter = (el, text, scrollEl, onDone) => {
+    if (!el) return;
+    el.innerHTML = '';
+    const cursor = document.createElement('span');
+    cursor.className = 'chatgpt-cursor';
+    cursor.textContent = '▋';
+    el.appendChild(cursor);
+    let i = 0;
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        const chunk = text.substr(i, 4);
+        i += 4;
+        const node = document.createTextNode(chunk);
+        el.insertBefore(node, cursor);
+        if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+      } else {
+        clearInterval(timer);
+        if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
+        el.innerHTML = text.replace(/### (.*?)\n/g, '<h3 style="font-size:13.5px;color:#0284c7;margin:10px 0 4px;font-weight:800">$1</h3>')
+                           .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                           .replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,0.06);padding:2px 5px;border-radius:4px;font-size:11px;font-family:monospace">$1</code>')
+                           .replace(/\n\n/g, '<br><br>')
+                           .replace(/\n/g, '<br>');
+        if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+        if (onDone) onDone();
+      }
+    }, 12);
+  };
+
+  window.KAVACH = { api, session, isAnalystRole, isAdminRole, roleName, normalizeRole, isOffline: () => offline, typeWriter, typeWriterEffect: typeWriter,
     esc: s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
     ago: iso => { const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000)); return isNaN(m) ? '—' : m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; } };
 })();

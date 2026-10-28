@@ -57,6 +57,7 @@ backend/reports/*.pdf
 *.sqlite
 *.sqlite3
 data/database/*.db*
+data/nim_broken.ts
 
 # Logs & Runtime
 logs/

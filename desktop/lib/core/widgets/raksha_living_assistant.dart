@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -73,17 +74,41 @@ class _RakshaLivingAssistantWidgetState
           res['message']?.toString() ??
           'Telemetry scan complete. Host security parameters are intact.';
 
+      final msgIdx = _messages.length;
       setState(() {
         _messages.add({
           'sender': 'raksha',
-          'text': reply,
+          'text': '',
           'time': 'Just now',
-          'provider': res['provider']?.toString() ?? 'NVIDIA NIM',
+          'provider': res['provider']?.toString() ?? 'Raksha Sovereign AI',
+          'isTyping': 'true',
         });
         _isSending = false;
       });
 
-      _scrollToBottom();
+      // ChatGPT Typewriter Streaming Effect
+      int charIdx = 0;
+      Timer.periodic(const Duration(milliseconds: 14), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        if (charIdx < reply.length) {
+          final nextLen = (charIdx + 4 <= reply.length) ? charIdx + 4 : reply.length;
+          charIdx = nextLen;
+          setState(() {
+            _messages[msgIdx]['text'] = reply.substring(0, nextLen);
+          });
+          _scrollToBottom();
+        } else {
+          timer.cancel();
+          setState(() {
+            _messages[msgIdx]['text'] = reply;
+            _messages[msgIdx]['isTyping'] = 'false';
+          });
+          _scrollToBottom();
+        }
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -450,12 +475,24 @@ class _RakshaLivingAssistantWidgetState
                   const SizedBox(height: 8),
 
                   // Message text
-                  SelectableText(
-                    text,
-                    style: const TextStyle(
-                      color: Color(0xFFE2E8F0),
-                      fontSize: 13.5,
-                      height: 1.55,
+                  RichText(
+                    text: TextSpan(
+                      text: text,
+                      style: const TextStyle(
+                        color: Color(0xFFE2E8F0),
+                        fontSize: 13.5,
+                        height: 1.55,
+                      ),
+                      children: [
+                        if (msg['isTyping'] == 'true')
+                          const TextSpan(
+                            text: ' ▊',
+                            style: TextStyle(
+                              color: Color(0xFF38BDF8),
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ],

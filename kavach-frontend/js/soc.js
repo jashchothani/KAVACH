@@ -293,7 +293,7 @@
         <td>${pill(a.status)}</td>
         <td class="mono" style="font-size:.8rem">${K.ago(a.created_at)}</td>
         <td style="white-space:nowrap">
-          <button class="row-btn" data-exp="${esc(a.id)}">Explain</button>
+          <button class="btn-explain-raksha" data-exp="${esc(a.id)}">✨ Explain with Raksha AI</button>
           <button class="row-btn" data-res="${esc(a.id)}">${a.status === 'resolved' ? 'Reopen' : 'Resolve'}</button>
           <button class="row-btn" data-esc="${esc(a.id)}" style="color:var(--ember)">Escalate</button>
         </td>
@@ -892,7 +892,8 @@
 
           try {
             const res = await api.raksha.chat(msg);
-            bub.textContent = res.reply || 'Analysis completed with nominal risk score.';
+            const ans = res.reply || res.response || res.message || 'Analysis completed with nominal risk score.';
+            K.typeWriter(bub, ans, c);
           } catch (err) {
             bub.textContent = 'Raksha response: ' + err.message;
           }

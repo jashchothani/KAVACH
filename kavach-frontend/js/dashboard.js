@@ -488,11 +488,11 @@
       } else {
         const hostCtx = `Computer: Hanuman, OS: Windows 11 Build 26200, Score: 96/100, Defender: Active, Firewall: Active, Wi-Fi: Shri Ram`;
         const r = await api.raksha.chat(msg, hostCtx);
-        replyText = r.reply;
+        replyText = r.reply || r.response || r.message || 'Analysis completed.';
       }
-      b.textContent = replyText;
+      K.typeWriter(b, replyText, c);
     } catch (err) {
-      b.textContent = 'Raksha is operating in local diagnostic mode. Your computer (Hanuman) is verified safe and protected.';
+      K.typeWriter(b, 'Raksha is operating in local diagnostic mode. Your computer (Hanuman) is verified safe and protected.', c);
     }
     c.scrollTop = c.scrollHeight;
   };
@@ -535,18 +535,24 @@
                 <td>${sev(x.severity)}</td>
                 <td>${sev(x.status)}</td>
                 <td class="mono">${K.ago(x.created_at)}</td>
-                <td><button class="row-btn" data-id="${esc(x.id)}">Explain</button></td>
+                <td><button class="btn-explain-raksha" data-id="${esc(x.id)}">✨ Explain with Raksha AI</button></td>
               </tr>
             `).join('');
-            $$('#atb .row-btn').forEach(b => b.onclick = async () => {
-              b.textContent = '…';
+            $$('#atb .btn-explain-raksha').forEach(b => b.onclick = async () => {
+              const origHtml = b.innerHTML;
+              b.innerHTML = '✨ Analyzing…';
               try {
                 const r = await api.alerts.explain(b.dataset.id);
-                $('#mt').textContent = 'Raksha explains ' + b.dataset.id;
-                $('#mbody').innerHTML = `<p>${esc(r.explanation)}</p>${r.recommended_action ? `<p><b>Recommended action:</b> ${esc(r.recommended_action)}</p>` : ''}`;
+                const expl = r.explanation || r.reply || r.response || 'No explanation available.';
+                $('#mt').textContent = '🛡️ Raksha AI Threat Analysis: ' + b.dataset.id;
+                $('#mbody').innerHTML = `<div id="raksha-stream-body"></div>${r.recommended_action ? `<p style="margin-top:14px;padding:10px 14px;background:#EFF6FF;border-radius:10px;border:1px solid #BFDBFE;color:#1E40AF"><b>Recommended Action:</b> ${esc(r.recommended_action)}</p>` : ''}`;
                 $('#mb').classList.add('show');
+                const streamEl = document.getElementById('raksha-stream-body');
+                if (streamEl) {
+                  K.typeWriter(streamEl, expl);
+                }
               } catch (e) { toast(e.message); }
-              b.textContent = 'Explain';
+              b.innerHTML = origHtml;
             });
           }
         }
