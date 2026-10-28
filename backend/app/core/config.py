@@ -49,16 +49,50 @@ if (_ROOT_DIR / ".env").is_file():
     dotenv.load_dotenv(_ROOT_DIR / ".env")
 
 
+def _resolve_data_dir() -> Path:
+    """Resolve data directory, safely falling back to user data if Program Files is read-only."""
+    import os
+    import tempfile
+
+    # If installed in Program Files, use PROGRAMDATA or LOCALAPPDATA
+    if "program files" in str(_ROOT_DIR).lower():
+        p_data = os.environ.get("PROGRAMDATA") or os.environ.get("LOCALAPPDATA")
+        if p_data:
+            candidate = Path(p_data) / "KAVACH" / "data"
+            try:
+                candidate.mkdir(parents=True, exist_ok=True)
+                return candidate
+            except Exception:
+                pass
+
+    default_dir = _ROOT_DIR / "data"
+    try:
+        default_dir.mkdir(parents=True, exist_ok=True)
+        test_file = default_dir / ".write_test"
+        test_file.touch(exist_ok=True)
+        test_file.unlink(missing_ok=True)
+        return default_dir
+    except (PermissionError, OSError):
+        user_data = Path(os.environ.get("LOCALAPPDATA") or os.environ.get("PROGRAMDATA") or tempfile.gettempdir()) / "KAVACH" / "data"
+        try:
+            user_data.mkdir(parents=True, exist_ok=True)
+            return user_data
+        except Exception:
+            return default_dir
+
+_DATA_DIR = _resolve_data_dir()
+
+
 class PathSettings(BaseSettings):
     """File and directory paths."""
     root_dir: Path = _ROOT_DIR
     backend_dir: Path = _BACKEND_DIR
-    data_dir: Path = _ROOT_DIR / "data"
-    db_dir: Path = _ROOT_DIR / "data" / "database"
-    log_dir: Path = _ROOT_DIR / "data" / "logs"
-    model_dir: Path = _ROOT_DIR / "data" / "models"
-    export_dir: Path = _ROOT_DIR / "data" / "exports"
-    demo_dir: Path = _ROOT_DIR / "data" / "demo"
+    data_dir: Path = _DATA_DIR
+    db_dir: Path = _DATA_DIR / "database"
+    log_dir: Path = _DATA_DIR / "logs"
+    model_dir: Path = _DATA_DIR / "models"
+    export_dir: Path = _DATA_DIR / "exports"
+    demo_dir: Path = _DATA_DIR / "demo"
     json_log_dir: Path = _BACKEND_DIR / "logs" / "json_logs"
     reports_dir: Path = _BACKEND_DIR / "reports"
 

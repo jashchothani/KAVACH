@@ -3,7 +3,8 @@
   const isFile = location.protocol === 'file:';
   // Authoritative production backend hosted on AWS EC2
   const directBackend = 'https://api.kavachcybertech.in/api/v1';
-  const defaultBase = isFile ? directBackend : (location.hostname.endsWith('kavachcybertech.in') ? '/api/v1' : directBackend);
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const defaultBase = isLocal ? 'http://127.0.0.1:8000/api/v1' : (isFile ? directBackend : (location.hostname.endsWith('kavachcybertech.in') ? '/api/v1' : directBackend));
 
   window.KAVACH_CONFIG = Object.assign({
     apiBase: defaultBase,

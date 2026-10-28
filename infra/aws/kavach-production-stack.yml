@@ -338,6 +338,16 @@ Resources:
           AWS_SNS_TOPIC_ARN=${KavachSnsTopic}
           AWS_DEFAULT_REGION=${AWS::Region}
           AWS_SNS_AUTO_SUBSCRIBE=true
+          SMTP_SERVER=smtppro.zoho.in
+          SMTP_PORT=465
+          SMTP_USERNAME=no-reply@kavachcybertech.in
+          SMTP_PASSWORD=HQrTsqrNmu7f
+          SMTP_USE_TLS=true
+          NOTIFICATION_SERVER=smtppro.zoho.in
+          NOTIFICATION_PORT=465
+          NOTIFICATION_USERNAME=no-reply@kavachcybertech.in
+          NOTIFICATION_PASSWORD=HQrTsqrNmu7f
+          NOTIFICATION_FROM=KAVACH Security Platform <no-reply@kavachcybertech.in>
           ENV_EOF
 
           echo "KAVACH Environment and Free-Tier optimizations successfully applied."

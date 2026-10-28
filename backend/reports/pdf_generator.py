@@ -8,11 +8,12 @@ pie/bar chart visualizations of security data and threat severity distributions.
 import os
 import time
 from pathlib import Path
-import importlib
 try:
-    matplotlib = importlib.import_module("matplotlib")
+    # pyrefly: ignore[missing-import]
+    import matplotlib.pyplot
     matplotlib.use('Agg')  # Thread-safe headless backend for matplotlib
-    plt = importlib.import_module("matplotlib.pyplot")
+    # pyrefly: ignore[missing-import]
+    import matplotlib.pyplot as plt
     HAS_MATPLOTLIB = True
 except (ImportError, Exception):
     matplotlib = None

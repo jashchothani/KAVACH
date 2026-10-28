@@ -56,12 +56,12 @@ services:
       - NVIDIA_NIM_BASE_URL=${NVIDIA_NIM_BASE_URL:-https://integrate.api.nvidia.com/v1}
       - NVIDIA_NIM_MODEL=${NVIDIA_NIM_MODEL:-google/diffusiongemma-26b-a4b-it}
       - SMTP_SERVER=${SMTP_SERVER:-smtppro.zoho.in}
-      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_PORT=${SMTP_PORT:-465}
       - SMTP_USERNAME=${SMTP_USERNAME:-no-reply@kavachcybertech.in}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-HQrTsqrNmu7f}
       - SMTP_USE_TLS=true
       - NOTIFICATION_SERVER=${SMTP_SERVER:-smtppro.zoho.in}
-      - NOTIFICATION_PORT=${SMTP_PORT:-587}
+      - NOTIFICATION_PORT=${SMTP_PORT:-465}
       - NOTIFICATION_USERNAME=${SMTP_USERNAME:-no-reply@kavachcybertech.in}
       - NOTIFICATION_PASSWORD=${SMTP_PASSWORD:-HQrTsqrNmu7f}
       - NOTIFICATION_FROM=${NOTIFICATION_FROM:-KAVACH Security Platform <no-reply@kavachcybertech.in>}

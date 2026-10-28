@@ -300,7 +300,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
                     constraints: const BoxConstraints(maxWidth: 440),
                     child: _showSuccess
                         ? _buildSuccessView()
-                        : _buildOtpView(displayEmail),
+                        : _buildOtpView(displayEmail, args?['otp_code']?.toString()),
                   ),
                 ),
               ),
@@ -311,7 +311,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     );
   }
 
-  Widget _buildOtpView(String displayEmail) {
+  Widget _buildOtpView(String displayEmail, [String? devOtp]) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -411,6 +411,45 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
             ],
           ),
         ),
+        if (devOtp != null && devOtp.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          InkWell(
+            onTap: () {
+              final digits = devOtp.replaceAll(RegExp(r'\D'), '');
+              for (int i = 0; i < _pinLength && i < digits.length; i++) {
+                _controllers[i].text = digits[i];
+              }
+              if (_focusNodes.isNotEmpty) {
+                _focusNodes.last.unfocus();
+              }
+              _handleVerifyOtp();
+            },
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF93C5FD)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.flash_on_rounded, size: 14, color: Color(0xFF2563EB)),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Autofill Code ($devOtp)',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2563EB),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
 
         const SizedBox(height: 28),
 

@@ -89,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen>
           'email': res['full_email'] ?? _emailController.text.trim(),
           'username': res['username'] ?? _emailController.text.trim(),
           'masked_email': res['email'] ?? _emailController.text.trim(),
+          'otp_code': res['otp_code'],
         },
       );
     } catch (e) {

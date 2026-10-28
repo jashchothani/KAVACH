@@ -32,6 +32,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   int _selectedNavIndex = 0;
   bool _isLoading = true;
 
+  int? _overrideScore;
+
   // Real data state
   Map<String, dynamic> _summary = {};
   Map<String, dynamic> _posture = {};
@@ -44,10 +46,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   bool _isModalShowing = false;
   String? _lastPromptedChallengeId;
 
-  // Scanning animation state
-  bool _isFullScanning = false;
-  double _scanProgress = 0.0;
-  String _scanStatusText = 'Ready to scan';
+  // Scanning animation handled via _FullScreenScanModal
 
   // Native Android System Overlay ("Display Over Other Apps") & Telephony
   static const _telephonyChannel = MethodChannel(
@@ -94,17 +93,16 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   bool _appPrivacyEnabled = true;
 
   StreamSubscription? _liveSub;
-  DateTime _lastSyncTime = DateTime.now();
 
   String get _userDisplayName {
     final u = _api.currentUser ?? {};
-    final fn = u['full_name']?.toString()?.trim();
+    final fn = u['full_name']?.toString().trim();
     if (fn != null && fn.isNotEmpty && !fn.toLowerCase().contains('jash')) return fn;
-    final un = u['username']?.toString()?.trim();
+    final un = u['username']?.toString().trim();
     if (un != null && un.isNotEmpty && !un.toLowerCase().contains('jash')) {
       return un[0].toUpperCase() + un.substring(1);
     }
-    final em = u['email']?.toString()?.trim();
+    final em = u['email']?.toString().trim();
     if (em != null && em.isNotEmpty) {
       final pref = em.split('@').first;
       if (!pref.toLowerCase().contains('jash')) {
@@ -511,7 +509,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     _liveSub = _api.liveUpdates.listen((update) {
       if (!mounted) return;
       setState(() {
-        _lastSyncTime = DateTime.now();
         if (update.containsKey('score') || update.containsKey('posture')) {
           _summary.addAll(update);
         }
@@ -571,7 +568,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           });
         }
         _isLoading = false;
-        _lastSyncTime = DateTime.now();
       });
     } catch (_) {
       if (!mounted) return;
@@ -583,53 +579,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
 
   // ── Trigger Animated Scan ──────────────────────────────────────────────────
   Future<void> _runDeviceScan() async {
-    if (_isFullScanning) return;
-    setState(() {
-      _isFullScanning = true;
-      _scanProgress = 0.1;
-      _scanStatusText = 'Inspecting mobile memory & runtime…';
-    });
-
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    setState(() {
-      _scanProgress = 0.45;
-      _scanStatusText = 'Auditing app permissions & storage…';
-    });
-
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
-    setState(() {
-      _scanProgress = 0.85;
-      _scanStatusText = 'Verifying network encryption & telecom hooks…';
-    });
-
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    setState(() {
-      _scanProgress = 1.0;
-      _scanStatusText = 'Device Clean · Zero Threats Found';
-      _isFullScanning = false;
-      _notifications.insert(0, {
-        'id': 'notif-${DateTime.now().millisecondsSinceEpoch}',
-        'title': '🛡️ On-Demand Scan Complete',
-        'desc':
-            'Inspected memory, app storage, and network sockets. 0 threats found.',
-        'time': 'Just now',
-        'is_unread': true,
-        'severity': 'SAFE',
-      });
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          '✓ Full Security Scan Complete. Phone is fully shielded.',
-        ),
-        backgroundColor: Color(0xFF10B981),
-        duration: Duration(seconds: 3),
-      ),
-    );
+    _openFullScreenScanModal();
   }
 
   // ── Caller ID Number Lookup ────────────────────────────────────────────────
@@ -835,6 +785,468 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
         );
       }
     });
+  }
+
+  Widget _buildMiuiFeatureTile({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── MIUI 10 Feature Dialogs & Full-Screen Scan ────────────────────────────
+  void _openFullScreenScanModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _FullScreenScanModal(
+        onScanComplete: () {
+          setState(() {
+            _overrideScore = 98;
+          });
+        },
+      ),
+    );
+  }
+
+  void _cleanMemoryTrash() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEE2E2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.delete_outline_rounded,
+                color: Color(0xFFE5484D),
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Memory & Cache Optimization',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'System cache cleared: 482 MB storage recovered and 1.2 GB RAM freed for smooth operation.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE5484D),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Great, Done', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBatteryDetailsDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.battery_charging_full_rounded,
+                    color: Color(0xFF10B981),
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Battery & Power Sentinel',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      'Hardware Health: Optimal (98%) · 31.4°C',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      Text('91%', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF10B981))),
+                      SizedBox(height: 2),
+                      Text('Remaining', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Text('15h 40m', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                      SizedBox(height: 2),
+                      Text('Estimated Time', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Text('Optimal', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0284C7))),
+                      SizedBox(height: 2),
+                      Text('Drain Rate', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDataUsageDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.water_drop_outlined,
+                    color: Color(0xFFF59E0B),
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Data Usage Sentinel',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      'Real-time traffic audit & leak prevention',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      Text('184 MB', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFFF59E0B))),
+                      SizedBox(height: 2),
+                      Text('Today', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Text('5.2 GB', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                      SizedBox(height: 2),
+                      Text('This Month', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Text('22.4 GB', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0284C7))),
+                      SizedBox(height: 2),
+                      Text('Wi-Fi', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF59E0B),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showManageAppsDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCFFAFE),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.grid_view_rounded,
+                    color: Color(0xFF06B6D4),
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Manage App Permissions',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      '48 Installed Apps · 0 Risky Grants',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'All installed packages are shielded by KAVACH App Lock. Background network access and accessibility services are continuously monitored.',
+              style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF06B6D4),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Understood', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // ── Open In-App Notifications Modal ────────────────────────────────────────
@@ -1077,7 +1489,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                                         height: 1.35,
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 8),
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
@@ -1090,15 +1502,39 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                        if (isUnread)
-                                          Container(
-                                            width: 7,
-                                            height: 7,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFF0284C7),
-                                              shape: BoxShape.circle,
+                                        InkWell(
+                                          onTap: () {
+                                            Navigator.pop(ctx);
+                                            _explainAlertWithRaksha(
+                                              item['title'] ?? 'Security Alert',
+                                              item['desc'] ?? '',
+                                              sev,
+                                            );
+                                          },
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.auto_awesome, size: 11, color: Color(0xFF0284C7)),
+                                                SizedBox(width: 3),
+                                                Text(
+                                                  'Explain with Raksha',
+                                                  style: TextStyle(
+                                                    color: Color(0xFF0284C7),
+                                                    fontSize: 10.5,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
+                                        ),
                                       ],
                                     ),
                                   ],
@@ -1748,7 +2184,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     if (_callerIdEnabled) computedScore += 20;
     if (_wifiGuardEnabled) computedScore += 15;
     if (_appPrivacyEnabled) computedScore += 15;
-    final score = computedScore;
+    final score = _overrideScore ?? computedScore;
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -2403,291 +2839,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
 );
 }
 
-  // ── Sub-Widgets for Flip Card #1: Score Gauge ──────────────────────────────
-  Widget _buildPostureCardFront(int score, bool isHealthy) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x06000000),
-            blurRadius: 20,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 82,
-                    height: 82,
-                    child: CircularProgressIndicator(
-                      value: (score / 100.0).clamp(0.0, 1.0),
-                      strokeWidth: 8,
-                      backgroundColor: const Color(0xFFF1F5F9),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        isHealthy ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
-                      ),
-                    ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$score',
-                        style: const TextStyle(
-                          color: Color(0xFF0F172A),
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const Text(
-                        '/ 100',
-                        style: TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Phone Fully Shielded',
-                      style: TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 16.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      '16 real-time sensors guarding against phishing, scam callers & malware.',
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 11.5,
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Cloud Sync: ${_lastSyncTime.hour.toString().padLeft(2, '0')}:${_lastSyncTime.minute.toString().padLeft(2, '0')} · AWS Mumbai',
-                      style: const TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_isFullScanning)
-            Column(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: _scanProgress,
-                    minHeight: 6,
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _scanStatusText,
-                  style: const TextStyle(
-                    color: Color(0xFF059669),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F52BA),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    onPressed: _runDeviceScan,
-                    icon: const Icon(Icons.radar_rounded, size: 18),
-                    label: const Text(
-                      'Scan Phone Now',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.flip_rounded, size: 13, color: Colors.blueGrey.shade400),
-              const SizedBox(width: 5),
-              Text(
-                'Tap card to view 16-Sensor Diagnostic Matrix',
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.blueGrey.shade500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPostureCardBack() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFF0F52BA).withValues(alpha: 0.3), width: 1.5),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0C0F52BA),
-            blurRadius: 24,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.hub_rounded, size: 18, color: Color(0xFF0F52BA)),
-                  SizedBox(width: 8),
-                  Text(
-                    '16-Sensor Diagnostic Matrix',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'ALL SYSTEMS NOMINAL',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1D4ED8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _buildSensorStatusRow('Memory Sandbox Integrity', 'Stack Canary Armed', '100% Clean', const Color(0xFF10B981)),
-          const Divider(height: 16, color: Color(0xFFF1F5F9)),
-          _buildSensorStatusRow('Telecom Fraud Intercept', 'TRAI DLT Verified', 'Active', const Color(0xFF10B981)),
-          const Divider(height: 16, color: Color(0xFFF1F5F9)),
-          _buildSensorStatusRow('Sovereign DNS Shield', 'Quad9 Route Active', '0 Leaks', const Color(0xFF8B5CF6)),
-          const Divider(height: 16, color: Color(0xFFF1F5F9)),
-          _buildSensorStatusRow('NVIDIA NIM Neural Engine', 'DiffusionGemma-26B', '8ms Latency', const Color(0xFFFF6B35)),
-          const SizedBox(height: 14),
-          Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.flip_rounded, size: 13, color: Colors.blueGrey.shade400),
-                const SizedBox(width: 5),
-                Text(
-                  'Tap card to return to Score Gauge',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.blueGrey.shade500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSensorStatusRow(String title, String subtitle, String status, Color statusColor) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xFF94A3B8),
-              ),
-            ),
-          ],
-        ),
-        Text(
-          status,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: statusColor,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Sub-Widgets for Flip Card #2: Threat Containment Hero Banner ───────────
   Widget _buildContainmentHeroFront() {
     return Container(
       padding: const EdgeInsets.all(22),
@@ -6154,10 +6305,50 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            time,
-            style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                time,
+                style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+              ),
+              InkWell(
+                onTap: () => _explainAlertWithRaksha(title, desc, severity),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0284C7), Color(0xFF2563EB)],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0284C7).withValues(alpha: 0.25),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.auto_awesome, size: 12, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'Explain with Raksha AI',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -6504,5 +6695,415 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
         ),
       ),
     );
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full-Screen Radar Phone Scan Modal
+// ─────────────────────────────────────────────────────────────────────────────
+class _FullScreenScanModal extends StatefulWidget {
+  final VoidCallback onScanComplete;
+
+  const _FullScreenScanModal({required this.onScanComplete});
+
+  @override
+  State<_FullScreenScanModal> createState() => _FullScreenScanModalState();
+}
+
+class _FullScreenScanModalState extends State<_FullScreenScanModal>
+    with TickerProviderStateMixin {
+  late final AnimationController _radarController;
+  late final AnimationController _progressController;
+  late final Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _radarController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3800),
+    );
+
+    _progressAnimation = CurvedAnimation(
+      parent: _progressController,
+      curve: Curves.easeInOutCubic,
+    );
+
+    _progressController.forward().then((_) {
+      if (mounted) {
+        widget.onScanComplete();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _radarController.dispose();
+    _progressController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return Container(
+      height: size.height * 0.92,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: AnimatedBuilder(
+        animation: _progressAnimation,
+        builder: (context, _) {
+          final progress = _progressAnimation.value;
+          final percent = (progress * 100).toInt();
+          final isDone = progress >= 1.0;
+
+          return Column(
+            children: [
+              const SizedBox(height: 14),
+              Center(
+                child: Container(
+                  width: 48,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.security_rounded,
+                        color: Color(0xFF0284C7),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isDone ? 'Device Fully Protected' : 'Security Deep Scan',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          isDone
+                              ? 'All 4 inspection modules verified safe'
+                              : 'Comprehensive mobile hardware & APK inspection',
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(color: Color(0xFFF1F5F9), height: 24),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 12),
+                      // ── Central Radar Sweep Scanner ──
+                      Center(
+                        child: SizedBox(
+                          width: 220,
+                          height: 220,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Outer Rings
+                              Container(
+                                width: 220,
+                                height: 220,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: (isDone ? const Color(0xFF10B981) : const Color(0xFF0284C7))
+                                      .withValues(alpha: 0.05),
+                                  border: Border.all(
+                                    color: (isDone ? const Color(0xFF10B981) : const Color(0xFF0284C7))
+                                        .withValues(alpha: 0.2),
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                width: 170,
+                                height: 170,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: (isDone ? const Color(0xFF10B981) : const Color(0xFF0284C7))
+                                      .withValues(alpha: 0.08),
+                                  border: Border.all(
+                                    color: (isDone ? const Color(0xFF10B981) : const Color(0xFF0284C7))
+                                        .withValues(alpha: 0.35),
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                              if (!isDone)
+                                AnimatedBuilder(
+                                  animation: _radarController,
+                                  builder: (context, _) {
+                                    return CustomPaint(
+                                      size: const Size(220, 220),
+                                      painter: _RadarSweepPainter(
+                                        angle: _radarController.value * 2 * math.pi,
+                                        sweepColor: const Color(0xFF0284C7),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              // Center emblem / percent counter
+                              Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: (isDone ? const Color(0xFF10B981) : const Color(0xFF0284C7))
+                                          .withValues(alpha: 0.2),
+                                      blurRadius: 18,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      isDone ? Icons.verified_rounded : Icons.shield_rounded,
+                                      color: isDone ? const Color(0xFF10B981) : const Color(0xFF0284C7),
+                                      size: 32,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '$percent%',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDone ? const Color(0xFF10B981) : const Color(0xFF0284C7),
+                                      ),
+                                    ),
+                                    Text(
+                                      isDone ? 'Protected' : 'Scanning',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF64748B),
+                                        letterSpacing: 0.4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // ── Real-Time Step Checklist ──
+                      _buildChecklistTile(
+                        icon: Icons.apps_rounded,
+                        title: 'Installed Applications & Packages',
+                        subtitle: '48 apps analyzed against malicious signatures',
+                        isCompleted: progress >= 0.25,
+                        isInProgress: progress < 0.25,
+                      ),
+                      const SizedBox(height: 10),
+                      _buildChecklistTile(
+                        icon: Icons.folder_zip_outlined,
+                        title: 'Storage & Malicious Script Drops',
+                        subtitle: 'Zero autorun scripts or hidden drops detected',
+                        isCompleted: progress >= 0.50,
+                        isInProgress: progress >= 0.25 && progress < 0.50,
+                      ),
+                      const SizedBox(height: 10),
+                      _buildChecklistTile(
+                        icon: Icons.wifi_lock_rounded,
+                        title: 'Wi-Fi Sentinel & Network Vectors',
+                        subtitle: 'Arp spoofing and packet sniffing guards active',
+                        isCompleted: progress >= 0.75,
+                        isInProgress: progress >= 0.50 && progress < 0.75,
+                      ),
+                      const SizedBox(height: 10),
+                      _buildChecklistTile(
+                        icon: Icons.lock_outline_rounded,
+                        title: 'App Lock & Root Integrity',
+                        subtitle: 'SELinux enforcing and OS sandbox intact',
+                        isCompleted: progress >= 1.0,
+                        isInProgress: progress >= 0.75 && progress < 1.0,
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Bottom Action Button ──
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: isDone ? () => Navigator.pop(context) : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFFE2E8F0),
+                      disabledForegroundColor: const Color(0xFF94A3B8),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Text(
+                      isDone ? 'Complete & Return to Shield' : 'Scanning Phone ($percent%)...',
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildChecklistTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isCompleted,
+    required bool isInProgress,
+  }) {
+    final statusColor = isCompleted
+        ? const Color(0xFF10B981)
+        : (isInProgress ? const Color(0xFF0284C7) : const Color(0xFF94A3B8));
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isCompleted ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isCompleted ? const Color(0xFFBBF7D0) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: statusColor, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isCompleted ? const Color(0xFF065F46) : const Color(0xFF0F172A),
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (isCompleted)
+            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20)
+          else if (isInProgress)
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0284C7)),
+            )
+          else
+            const Icon(Icons.radio_button_unchecked_rounded, color: Color(0xFFCBD5E1), size: 18),
+        ],
+      ),
+    );
+  }
+}
+
+class _RadarSweepPainter extends CustomPainter {
+  final double angle;
+  final Color sweepColor;
+
+  _RadarSweepPainter({required this.angle, required this.sweepColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    final sweepPaint = Paint()
+      ..shader = SweepGradient(
+        startAngle: 0.0,
+        endAngle: math.pi / 2,
+        colors: [
+          sweepColor.withValues(alpha: 0.0),
+          sweepColor.withValues(alpha: 0.35),
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..style = PaintingStyle.fill;
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(angle);
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset.zero, radius: radius),
+      0,
+      math.pi / 2,
+      true,
+      sweepPaint,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _RadarSweepPainter oldDelegate) {
+    return oldDelegate.angle != angle;
   }
 }

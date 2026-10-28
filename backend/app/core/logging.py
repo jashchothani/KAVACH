@@ -179,28 +179,51 @@ def setup_logging() -> None:
     root.addHandler(console)
 
     # 2. Text log file (kavach.log) with ANSI stripped
-    app_log = log_dir / "kavach.log"
-    file_handler = logging.handlers.RotatingFileHandler(
-        str(app_log),
-        maxBytes=20 * 1024 * 1024,  # 20 MB
-        backupCount=5,
-        encoding="utf-8",
-    )
-    file_handler.setLevel(log_level)
-    file_handler.setFormatter(KavachConsoleFormatter(strip_ansi=True))
-    root.addHandler(file_handler)
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        app_log = log_dir / "kavach.log"
+        file_handler = logging.handlers.RotatingFileHandler(
+            str(app_log),
+            maxBytes=20 * 1024 * 1024,  # 20 MB
+            backupCount=5,
+            encoding="utf-8",
+        )
+        file_handler.setLevel(log_level)
+        file_handler.setFormatter(KavachConsoleFormatter(strip_ansi=True))
+        root.addHandler(file_handler)
+    except (PermissionError, OSError):
+        try:
+            import tempfile
+            fallback_dir = Path(os.environ.get("LOCALAPPDATA") or os.environ.get("PROGRAMDATA") or tempfile.gettempdir()) / "KAVACH" / "logs"
+            fallback_dir.mkdir(parents=True, exist_ok=True)
+            app_log = fallback_dir / "kavach.log"
+            file_handler = logging.handlers.RotatingFileHandler(
+                str(app_log),
+                maxBytes=20 * 1024 * 1024,
+                backupCount=5,
+                encoding="utf-8",
+            )
+            file_handler.setLevel(log_level)
+            file_handler.setFormatter(KavachConsoleFormatter(strip_ansi=True))
+            root.addHandler(file_handler)
+            log_dir = fallback_dir
+        except Exception:
+            pass
 
     # 3. Machine-readable JSONLines log file (kavach.jsonl)
-    json_log = log_dir / "kavach.jsonl"
-    json_handler = logging.handlers.RotatingFileHandler(
-        str(json_log),
-        maxBytes=20 * 1024 * 1024,  # 20 MB
-        backupCount=5,
-        encoding="utf-8",
-    )
-    json_handler.setLevel(log_level)
-    json_handler.setFormatter(KavachJsonLinesFormatter())
-    root.addHandler(json_handler)
+    try:
+        json_log = log_dir / "kavach.jsonl"
+        json_handler = logging.handlers.RotatingFileHandler(
+            str(json_log),
+            maxBytes=20 * 1024 * 1024,  # 20 MB
+            backupCount=5,
+            encoding="utf-8",
+        )
+        json_handler.setLevel(log_level)
+        json_handler.setFormatter(KavachJsonLinesFormatter())
+        root.addHandler(json_handler)
+    except Exception:
+        pass
 
     # 4. In-memory dashboard ring buffer handler
     buf_handler = BufferLogHandler()

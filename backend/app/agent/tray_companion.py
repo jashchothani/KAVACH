@@ -37,6 +37,7 @@ if str(_BACKEND_ROOT) not in sys.path:
 
 from app.agent.service import _DEFAULT_CMD_FILE, _DEFAULT_STATUS_FILE
 from app.core.logging import get_logger
+from app.core.windows_notifications import show_windows_toast, USBGuardianWatcher, scan_removable_drive
 
 logger = get_logger("kavach_tray")
 
@@ -68,6 +69,7 @@ class KavachSystemTray:
         self._gui_process: subprocess.Popen | None = None
         self._app_process: subprocess.Popen | None = None
         self._last_shield_state = False
+        self._usb_watcher: USBGuardianWatcher | None = None
 
     def start(self) -> None:
         """Create hidden window and register tray notification icon with single-instance mutex."""
@@ -155,15 +157,60 @@ class KavachSystemTray:
 
         logger.info("kavach_system_tray_registered")
 
+        # Start USB Guardian watcher for hardware storage events
+        self._usb_watcher = USBGuardianWatcher(on_event=self._on_usb_event)
+        self._usb_watcher.start()
+
+        # Initial active notification
+        show_windows_toast(
+            title="🛡️ KAVACH System Tray Guardian",
+            message="Active defense is running. Real-time endpoint, USB, and memory sentinel enabled.",
+            attribution="KAVACH Cyber Defense",
+        )
+
         # Start background monitor thread for balloon tips and dynamic tooltip
         threading.Thread(target=self._monitor_agent_status, daemon=True).start()
 
         # Run Windows message loop
         win32gui.PumpMessages()
 
+    def _on_usb_event(self, event_type: str, details: dict[str, Any]) -> None:
+        logger.info("tray_usb_event", event_type=event_type, details=details)
+
+    def _check_usb_now(self) -> None:
+        try:
+            import psutil
+            for part in psutil.disk_partitions(all=False):
+                if "removable" in part.opts.lower() or (part.fstype.lower() in ("fat32", "fat", "exfat") and part.mountpoint.upper() != "C:\\"):
+                    scan = scan_removable_drive(part.mountpoint)
+                    if scan["clean"]:
+                        show_windows_toast(
+                            title="🔌 KAVACH USB Guard: Drive Connected",
+                            message=f"Removable drive {part.mountpoint} verified safe. 0 autorun threats detected.",
+                            attribution="KAVACH Hardware Sentinel",
+                        )
+                    else:
+                        show_windows_toast(
+                            title="🚨 KAVACH Alert: Suspicious USB Content",
+                            message=f"Removable drive {part.mountpoint} contains suspicious files: {', '.join(scan['threats'][:3])}",
+                            attribution="KAVACH Active Defense",
+                        )
+                    break
+        except Exception:
+            pass
+
     def _wnd_proc(self, hwnd: int, msg: int, wparam: int, lparam: int) -> int:
         import win32con
         import win32gui
+
+        # Hardware device change event (USB insertion / removal)
+        WM_DEVICECHANGE = 0x0219
+        DBT_DEVICEARRIVAL = 0x8000
+        DBT_DEVICEREMOVECOMPLETE = 0x8004
+        if msg == WM_DEVICECHANGE:
+            if wparam in (DBT_DEVICEARRIVAL, 0x0007):
+                threading.Thread(target=self._check_usb_now, daemon=True).start()
+            return win32gui.DefWindowProc(hwnd, msg, wparam, lparam)
 
         if msg == WM_TRAY_CALLBACK:
             if lparam == WM_LBUTTONUP:
@@ -286,15 +333,8 @@ class KavachSystemTray:
             self._notify_balloon("KAVACH Health Posture", "Agent is not currently running.")
 
     def _notify_balloon(self, title: str, text: str) -> None:
-        """Display Windows Shell Balloon notification."""
-        try:
-            import win32gui
-
-            flags = win32gui.NIF_INFO
-            nid = (self.hwnd, 0, flags, 0, 0, "", text, 200, title, win32gui.NIIF_INFO)
-            win32gui.Shell_NotifyIcon(win32gui.NIM_MODIFY, nid)
-        except Exception:
-            pass
+        """Display Windows Action Center toast notification."""
+        show_windows_toast(title, text, attribution="KAVACH Cyber Defense")
 
     def _monitor_agent_status(self) -> None:
         """Poll status file and track changes to update tray tooltips and state."""
@@ -319,6 +359,8 @@ class KavachSystemTray:
         import win32gui
 
         self.running = False
+        if self._usb_watcher:
+            self._usb_watcher.stop()
         if self.hwnd:
             win32gui.DestroyWindow(self.hwnd)
 

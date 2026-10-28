@@ -57,6 +57,12 @@ class EmailService:
         """
         smtp = self.settings.notification
         
+        # Route mock domains (.soc, localhost, etc.) to genuine SOC email for reliable inbox delivery
+        to_clean = str(to).strip()
+        if to_clean.endswith(".soc") or "@" not in to_clean or "localhost" in to_clean:
+            to_clean = getattr(smtp, "soc_email", None) or "kavachcybertech@gmail.com"
+        to = to_clean
+
         # Inject standard global context values if missing
         if "dashboard_url" not in context:
             base_url = getattr(self.settings, "api_base_url", "http://localhost:8000")
@@ -165,11 +171,24 @@ class EmailService:
                             except Exception as att_err:
                                 logger.warning("email_attachment_attach_failed", error=str(att_err))
 
-                        with smtplib.SMTP(smtp_server, smtp_port, timeout=12) as server:
-                            if smtp_use_tls:
-                                server.starttls()
-                            server.login(smtp_username, smtp_password)
-                            server.sendmail(smtp_username, to, msg.as_string())
+                        # Support both STARTTLS (port 587) and Direct SSL/TLS (port 465)
+                        if smtp_port == 465:
+                            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=12) as server:
+                                server.login(smtp_username, smtp_password)
+                                server.sendmail(smtp_username, to, msg.as_string())
+                        else:
+                            try:
+                                with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
+                                    if smtp_use_tls:
+                                        server.starttls()
+                                    server.login(smtp_username, smtp_password)
+                                    server.sendmail(smtp_username, to, msg.as_string())
+                            except Exception as port_err:
+                                # On cloud EC2 instances where 587 might be throttled or blocked, auto-fallback to 465 (SSL)
+                                logger.warning("smtp_port_587_failed_attempting_465_ssl_fallback", error=str(port_err))
+                                with smtplib.SMTP_SSL(smtp_server, 465, timeout=12) as server:
+                                    server.login(smtp_username, smtp_password)
+                                    server.sendmail(smtp_username, to, msg.as_string())
 
                     await asyncio.to_thread(_send_sync)
                     logger.info("email_sent_successfully_via_smtp", recipient=to, subject=subject, attempt=attempt)

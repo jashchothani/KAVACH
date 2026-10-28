@@ -1,7 +1,8 @@
 """
-KAVACH Lightweight Native Notification System Tray Listener.
+KAVACH Lightweight Native Notification System Tray Listener & USB Guardian.
 
-Listens to real-time events over the KAVACH live WebSocket and dispatches native Windows notifications.
+Listens to real-time events over the KAVACH live WebSocket and dispatches native Windows
+10/11 Action Center notifications with sound, plus monitors hardware USB storage arrivals.
 """
 
 from __future__ import annotations
@@ -14,6 +15,14 @@ import sys
 import tkinter as tk
 from tkinter import messagebox
 from threading import Thread
+from pathlib import Path
+
+# Ensure backend root is on sys.path
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+if str(_BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_ROOT))
+
+from app.core.windows_notifications import show_windows_toast, USBGuardianWatcher
 
 # Ensure websockets library is imported
 try:
@@ -24,44 +33,9 @@ except ImportError:
 
 
 def show_native_notification(title: str, message: str, severity: str = "info") -> None:
-    """Dispatches a native Windows notification balloon/toast via PowerShell."""
+    """Dispatches a native Windows Action Center toast notification with sound."""
     print(f"[*] Dispatching Notification: [{severity.upper()}] {title} - {message}")
-    
-    # Escape single quotes in message and title for PowerShell compatibility
-    safe_title = title.replace("'", "''")
-    safe_message = message.replace("'", "''")
-    
-    # Map severity to system icons
-    icon_map = {
-        "critical": "Error",
-        "high": "Warning",
-        "medium": "Warning",
-        "info": "Info",
-        "low": "Info"
-    }
-    system_icon = icon_map.get(severity.lower(), "Info")
-    
-    # PowerShell command to show a notify icon balloon tip
-    powershell_code = f"""
-    [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms");
-    $objNotification = New-Object System.Windows.Forms.NotifyIcon;
-    $objNotification.Icon = [System.Drawing.SystemIcons]::Information;
-    $objNotification.BalloonTipIcon = "{system_icon}";
-    $objNotification.BalloonTipText = "{safe_message}";
-    $objNotification.BalloonTipTitle = "{safe_title}";
-    $objNotification.Visible = $True;
-    $objNotification.ShowBalloonTip(10000);
-    """
-    
-    try:
-        subprocess.run(
-            ["powershell", "-Command", powershell_code],
-            capture_output=True,
-            text=True,
-            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-        )
-    except Exception as exc:
-        print(f"[!] Failed to show native notification: {exc}")
+    show_windows_toast(title, message, attribution="KAVACH System Guardian", with_sound=True)
 
 
 async def ws_listener_loop() -> None:
@@ -111,22 +85,26 @@ def start_listener_thread() -> None:
 
 def run_tray_ui() -> None:
     """Builds a simple Tkinter window serving as the System Tray Controller."""
+    # Start USB Guardian hardware watcher
+    usb_watcher = USBGuardianWatcher()
+    usb_watcher.start()
+
     root = tk.Tk()
     root.title("KAVACH System Tray Guardian")
-    root.geometry("300x120")
+    root.geometry("320x130")
     root.resizable(False, False)
     
     # Hide window on minimize
     def on_closing():
         root.withdraw()
-        show_native_notification("KAVACH Guardian Status", "KAVACH is still running actively in the background.", "info")
+        show_native_notification("KAVACH Guardian Active", "KAVACH is actively protecting your system in the background.", "info")
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     
-    label = tk.Label(root, text="KAVACH Protection Active", font=("Helvetica", 12, "bold"), fg="#10b981")
-    label.pack(pady=15)
+    label = tk.Label(root, text="🛡️ KAVACH Protection Active", font=("Helvetica", 12, "bold"), fg="#10b981")
+    label.pack(pady=10)
     
-    sub = tk.Label(root, text="Listening for USB, File, and Endpoint threats...", font=("Helvetica", 9))
+    sub = tk.Label(root, text="USB Guard, FIM Sentinel & Real-Time Defense Active", font=("Helvetica", 9))
     sub.pack()
     
     btn_close = tk.Button(root, text="Hide to Background", command=on_closing, bg="#30363d", fg="#ffffff", relief="flat", padx=10, pady=5)
@@ -141,6 +119,10 @@ def run_tray_ui() -> None:
 
 
 if __name__ == "__main__":
+    # Start USB watcher
+    watcher = USBGuardianWatcher()
+    watcher.start()
+
     # If run with --headless argument, bypass Tkinter UI
     if "--headless" in sys.argv:
         asyncio.run(ws_listener_loop())
