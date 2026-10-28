@@ -72,7 +72,10 @@
   // Check SOC Analyst Technical Activation Status (Locks all features until confirmed)
   async function checkSocActivation() {
     try {
-      const res = await fetch('/api/v1/account/activation-status');
+      const endpoint = (window.KAVACH_CONFIG && window.KAVACH_CONFIG.apiBase ? window.KAVACH_CONFIG.apiBase : '/api/v1') + '/account/activation-status';
+      const token = localStorage.getItem('kavach_token');
+      const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+      const res = await fetch(endpoint, { headers });
       if (res.ok) {
         const d = await res.json();
         const pill = $('#u-soc-certified-pill');
