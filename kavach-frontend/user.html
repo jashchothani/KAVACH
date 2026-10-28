@@ -295,8 +295,15 @@
         <div class="ring-wrapper">
           <div class="ring" id="ring">
             <svg viewBox="0 0 36 36" aria-hidden="true">
+              <defs>
+                <linearGradient id="scoreRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8"/>
+                  <stop offset="50%" stop-color="#34d399"/>
+                  <stop offset="100%" stop-color="#10b981"/>
+                </linearGradient>
+              </defs>
               <circle class="bg" cx="18" cy="18" r="15.9"/>
-              <circle class="fg" id="fg" cx="18" cy="18" r="15.9"/>
+              <circle class="fg" id="fg" cx="18" cy="18" r="15.9" stroke="url(#scoreRingGrad)"/>
             </svg>
             <div>
               <b id="score">—</b>
@@ -357,6 +364,38 @@
           <b>Collectors Health</b>
           <div class="tile-desc" id="desc-coll">16 daemons active</div>
           <div class="tile-footer"><span id="events-coll">Zero drops · Spooler OK</span></div>
+        </div>
+      </section>
+
+      <!-- Real-Time Telemetry & Trust Badges Strip -->
+      <section class="card rise" style="margin-top:16px;padding:18px 24px;display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;background:linear-gradient(135deg, rgba(15,23,42,0.65), rgba(9,14,26,0.85));border:1px solid rgba(56,189,248,0.15)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(56,189,248,0.12);display:grid;place-items:center;font-size:1.1rem;color:#38bdf8">🛡️</div>
+          <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;letter-spacing:0.5px">ENDPOINT AGENT</div>
+            <div style="font-size:0.88rem;color:var(--text-primary);font-weight:600">EDR Behavioral Kernel</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(16,185,129,0.12);display:grid;place-items:center;font-size:1.1rem;color:#10b981">⚡</div>
+          <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;letter-spacing:0.5px">SPOOL BUFFER</div>
+            <div style="font-size:0.88rem;color:var(--text-primary);font-weight:600">Zero-Loss Local SQLite</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(139,92,246,0.12);display:grid;place-items:center;font-size:1.1rem;color:#a78bfa">🔒</div>
+          <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;letter-spacing:0.5px">DATA PRIVACY</div>
+            <div style="font-size:0.88rem;color:var(--text-primary);font-weight:600">Statutory Minimization</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(245,158,11,0.12);display:grid;place-items:center;font-size:1.1rem;color:#f59e0b">⚖️</div>
+          <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;letter-spacing:0.5px">COMPLIANCE</div>
+            <div style="font-size:0.88rem;color:var(--text-primary);font-weight:600">CERT-In 180-Day Vault</div>
+          </div>
         </div>
       </section>
     </div>

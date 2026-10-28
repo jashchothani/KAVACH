@@ -2271,3 +2271,159 @@ main {
   border-color: rgba(56, 189, 248, 0.4);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
+
+
+/* ==========================================================================
+   ULTRA-PREMIUM CYBERSECURITY VISUAL DESIGN SYSTEM (v2.7.0)
+   ========================================================================== */
+
+/* Enhanced Deep Glassmorphic Cards */
+.card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.78) 0%, rgba(9, 14, 26, 0.92) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.55), 0 0 1px 1px rgba(255, 255, 255, 0.04) !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.card:hover {
+  border-color: rgba(56, 189, 248, 0.32) !important;
+  box-shadow: 0 18px 40px -10px rgba(0, 0, 0, 0.65), 0 0 20px rgba(56, 189, 248, 0.12) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Hero Score Card Elevation */
+.hero {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 16, 30, 0.96) 100%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  box-shadow: 0 16px 48px -12px rgba(0, 0, 0, 0.6), 0 0 24px rgba(56, 189, 248, 0.1) !important;
+}
+
+.ring .fg {
+  filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.5)) !important;
+}
+
+/* Glowing Pulsing Status Dots */
+.status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.85); }
+}
+
+/* Feature Launch Tiles */
+.tile {
+  background: linear-gradient(140deg, rgba(17, 24, 39, 0.7) 0%, rgba(10, 15, 28, 0.85) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 18px !important;
+  padding: 22px !important;
+}
+
+.tile:hover {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.5), 0 0 18px rgba(56, 189, 248, 0.15) !important;
+  transform: translateY(-3px) !important;
+}
+
+.tile .ic {
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.18) !important;
+}
+
+/* Threat Incident Cards */
+.threat-card {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-left: 4px solid #ef4444 !important;
+  border-radius: 14px !important;
+  padding: 16px 20px !important;
+  margin-bottom: 12px !important;
+  transition: all 0.2s ease !important;
+}
+
+.threat-card:hover {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  border-left-color: #ef4444 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 14px rgba(239, 68, 68, 0.15) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Gradient Pill for Explain with Raksha AI */
+.btn-explain-raksha {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  border-radius: 999px !important;
+  padding: 7px 16px !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-explain-raksha:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%) !important;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5), 0 0 12px rgba(56, 189, 248, 0.3) !important;
+  transform: translateY(-1px) scale(1.02) !important;
+}
+
+/* Raksha AI Copilot Clean ChatGPT Chat Interface */
+.chat-row.user-row .chat-bubble {
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  border-radius: 18px 18px 4px 18px !important;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.chat-row.ai-row .ai-bubble-content {
+  background: rgba(17, 24, 39, 0.88) !important;
+  border: 1px solid rgba(56, 189, 248, 0.2) !important;
+  border-radius: 18px 18px 18px 4px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Prompt chips */
+.chatgpt-chip {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 8px 14px !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary) !important;
+  transition: all 0.2s ease !important;
+}
+
+.chatgpt-chip:hover {
+  background: rgba(2, 132, 199, 0.14) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  color: #38bdf8 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15) !important;
+}
+
+/* Typing cursor animation */
+.chatgpt-cursor {
+  display: inline-block;
+  color: #38bdf8;
+  font-weight: bold;
+  animation: blinkCursor 0.7s infinite;
+  margin-left: 2px;
+}
+
+@keyframes blinkCursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
