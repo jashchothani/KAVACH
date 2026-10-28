@@ -6,9 +6,10 @@ import '../../../core/routes/app_routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/widgets/app_logo.dart';
 
-/// Clean white, Jio-style animated splash screen for KAVACH.
-/// Bright white canvas, soft sapphire radar grid, counter-rotating orbital
-/// rings, floating shield emblem, shimmer brand title and a light boot HUD.
+/// Clean, high-tech, Jio-style animated splash screen for KAVACH.
+/// Ref Image 1: Centered circular brand emblem flanked by dual animated
+/// dot-matrix breathing grids (sapphire blue & coral magenta dots)
+/// with "With love, KAVACH ❤️" footer branding.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -21,16 +22,15 @@ class _SplashScreenState extends State<SplashScreen>
   // Brand palette
   static const Color _blue = Color(0xFF0F52BA); // electric sapphire
   static const Color _sky = Color(0xFF38BDF8);
-  static const Color _red = Color(0xFFE5484D);
+  static const Color _coral = Color(0xFFE5484D); // Jio magenta/coral
   static const Color _navy = Color(0xFF0B1F4B);
   static const Color _slate = Color(0xFF64748B);
   static const Color _green = Color(0xFF10B981);
 
   late final AnimationController _mainController;
-  late final AnimationController _radarController;
+  late final AnimationController _dotMatrixController;
   late final AnimationController _pulseController;
   late final AnimationController _shimmerController;
-  late final AnimationController _orbitalController;
 
   late final Animation<double> _logoScale;
   late final Animation<double> _logoFade;
@@ -59,21 +59,17 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2800),
     );
-    _radarController = AnimationController(
+    _dotMatrixController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 4500),
+      duration: const Duration(milliseconds: 2200),
     )..repeat();
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
     _shimmerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2400),
-    )..repeat();
-    _orbitalController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 12000),
     )..repeat();
 
     _logoScale = Tween<double>(begin: 0.6, end: 1.0).animate(
@@ -88,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen>
         curve: const Interval(0.0, 0.35, curve: Curves.easeIn),
       ),
     );
-    _glowPulse = Tween<double>(begin: 0.35, end: 1.0).animate(
+    _glowPulse = Tween<double>(begin: 0.4, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
     _contentFade = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -141,10 +137,9 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _mainController.dispose();
-    _radarController.dispose();
+    _dotMatrixController.dispose();
     _pulseController.dispose();
     _shimmerController.dispose();
-    _orbitalController.dispose();
     super.dispose();
   }
 
@@ -162,152 +157,142 @@ class _SplashScreenState extends State<SplashScreen>
         backgroundColor: Colors.white,
         body: Stack(
           children: [
-            // ── Layer 1: Pure white → soft sky-blue wash ──
+            // ── Background: Light airy gradient canvas ──
             Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: const [
-                        Color(0xFFFFFFFF),
-                        Color(0xFFF7FAFF),
-                        Color(0xFFEAF2FF),
-                      ],
-                      stops: const [0.0, 0.55, 1.0],
-                    ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: const [
+                      Color(0xFFFFFFFF),
+                      Color(0xFFF8FAFC),
+                      Color(0xFFEFF6FF),
+                    ],
+                    stops: const [0.0, 0.6, 1.0],
                   ),
                 ),
               ),
             ),
 
-            // ── Layer 2: Soft radar grid with sensor blips ──
-            Positioned.fill(
-              child: IgnorePointer(
-                child: RepaintBoundary(
-                  child: AnimatedBuilder(
-                    animation: _radarController,
-                    builder: (context, child) {
-                      return CustomPaint(
-                        size: Size.infinite,
-                        painter: _CyberRadarBackgroundPainter(
-                          angle: _radarController.value * 2 * math.pi,
-                          blue: _blue,
-                          red: _red,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-
-            // ── Layer 3: Emblem, brand & boot HUD ──
+            // ── Main Content: Jio-style Center Emblem with Flanking Dot Grids ──
             Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // ── Jio Reference (Image 1): Centered Emblem + Flanking Dot Matrix ──
                     AnimatedBuilder(
                       animation: Listenable.merge([
                         _mainController,
+                        _dotMatrixController,
                         _pulseController,
-                        _orbitalController,
                       ]),
                       builder: (context, child) {
                         return FadeTransition(
                           opacity: _logoFade,
                           child: ScaleTransition(
                             scale: _logoScale,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // Outer clockwise reticle
-                                Transform.rotate(
-                                  angle: _orbitalController.value * 2 * math.pi,
-                                  child: CustomPaint(
-                                    size: const Size(190, 190),
-                                    painter: _CyberReticlePainter(
-                                      color: _blue.withValues(alpha: 0.32),
-                                      tickCount: 24,
-                                    ),
-                                  ),
-                                ),
-                                // Counter-clockwise hex ring (red accent)
-                                Transform.rotate(
-                                  angle:
-                                      -_orbitalController.value * 3 * math.pi,
-                                  child: CustomPaint(
-                                    size: const Size(156, 156),
-                                    painter: _HexOrbitalPainter(
-                                      color: _red.withValues(alpha: 0.45),
-                                    ),
-                                  ),
-                                ),
-                                // Breathing soft glow
-                                Container(
-                                  width: 128,
-                                  height: 128,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: _sky.withValues(
-                                          alpha: 0.35 * _glowPulse.value,
+                            child: SizedBox(
+                              height: 140,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  // Left Animated Dot Matrix Grid
+                                  Expanded(
+                                    child: Align(
+                                      alignment: Alignment.centerRight,
+                                      child: CustomPaint(
+                                        size: const Size(110, 80),
+                                        painter: _JioDotMatrixGridPainter(
+                                          progress: _dotMatrixController.value,
+                                          isLeft: true,
                                         ),
-                                        blurRadius: 50,
-                                        spreadRadius: 10,
                                       ),
-                                      BoxShadow(
-                                        color: _blue.withValues(
-                                          alpha: 0.14 * _glowPulse.value,
-                                        ),
-                                        blurRadius: 30,
-                                        spreadRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // White emblem disc
-                                Container(
-                                  width: 126,
-                                  height: 126,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.white,
-                                    border: Border.all(
-                                      color: _blue.withValues(alpha: 0.18),
-                                      width: 2,
                                     ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: _blue.withValues(alpha: 0.16),
-                                        blurRadius: 24,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
                                   ),
-                                  child: const AppLogo(size: 86),
-                                ),
-                              ],
+
+                                  const SizedBox(width: 14),
+
+                                  // Central Circular Brand Emblem Pill
+                                  Container(
+                                    width: 104,
+                                    height: 104,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: const Color(0xFF0F52BA),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFF0F52BA)
+                                              .withValues(
+                                                alpha: 0.35 * _glowPulse.value,
+                                              ),
+                                          blurRadius: 36,
+                                          spreadRadius: 6,
+                                          offset: const Offset(0, 6),
+                                        ),
+                                        BoxShadow(
+                                          color: const Color(0xFF38BDF8)
+                                              .withValues(
+                                                alpha: 0.25 * _glowPulse.value,
+                                              ),
+                                          blurRadius: 20,
+                                        ),
+                                      ],
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 3.5,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Container(
+                                        width: 86,
+                                        height: 86,
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Color(0xFF0F52BA),
+                                        ),
+                                        child: const AppLogo(size: 62),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 14),
+
+                                  // Right Animated Dot Matrix Grid
+                                  Expanded(
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: CustomPaint(
+                                        size: const Size(110, 80),
+                                        painter: _JioDotMatrixGridPainter(
+                                          progress: _dotMatrixController.value,
+                                          isLeft: false,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
                       },
                     ),
 
-                    const SizedBox(height: 38),
+                    const SizedBox(height: 36),
 
+                    // ── Brand Title, Badges & Boot Sequence ──
                     SlideTransition(
                       position: _contentSlide,
                       child: FadeTransition(
                         opacity: _contentFade,
                         child: Column(
                           children: [
-                            // Shimmer brand title (navy → blue → red glint)
+                            // Shimmer brand title
                             AnimatedBuilder(
                               animation: _shimmerController,
                               builder: (context, child) {
@@ -317,7 +302,7 @@ class _SplashScreenState extends State<SplashScreen>
                                     colors: const [
                                       _navy,
                                       _blue,
-                                      _red,
+                                      _coral,
                                       _blue,
                                       _navy,
                                     ],
@@ -334,74 +319,74 @@ class _SplashScreenState extends State<SplashScreen>
                                   child: const Text(
                                     'KAVACH',
                                     style: TextStyle(
-                                      fontSize: 40,
+                                      fontSize: 38,
                                       fontWeight: FontWeight.w900,
-                                      letterSpacing: 9.0,
+                                      letterSpacing: 8.0,
                                       color: Colors.white,
-                                      fontFamily: 'Poppins',
                                     ),
                                   ),
                                 );
                               },
                             ),
 
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 8),
 
-                            // Tagline pill
+                            // Subtitle pill
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: _blue.withValues(alpha: 0.06),
+                                color: const Color(0xFF0F52BA).withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: _blue.withValues(alpha: 0.18),
+                                  color: const Color(0xFF0F52BA).withValues(alpha: 0.2),
                                 ),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    Icons.shield_outlined,
-                                    size: 14,
+                                    Icons.shield_rounded,
+                                    size: 13,
                                     color: _blue,
                                   ),
-                                  SizedBox(width: 7),
+                                  SizedBox(width: 6),
                                   Text(
-                                    'SOVEREIGN SOAR-XDR · ZERO-TRUST DEFENSE',
+                                    'SOVEREIGN AI MOBILE PROTECTION',
                                     style: TextStyle(
                                       color: _navy,
                                       fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.4,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.2,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
 
-                            const SizedBox(height: 44),
+                            const SizedBox(height: 38),
 
-                            // Boot console card (light)
+                            // Boot console card
                             Container(
-                              constraints: const BoxConstraints(maxWidth: 420),
+                              constraints: const BoxConstraints(maxWidth: 390),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 18,
                                 vertical: 14,
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
-                                  color: _blue.withValues(alpha: 0.10),
+                                  color: const Color(0xFFE2E8F0),
+                                  width: 1.2,
                                 ),
-                                boxShadow: [
+                                boxShadow: const [
                                   BoxShadow(
-                                    color: _blue.withValues(alpha: 0.10),
-                                    blurRadius: 24,
-                                    offset: const Offset(0, 8),
+                                    color: Color(0x0A000000),
+                                    blurRadius: 20,
+                                    offset: Offset(0, 6),
                                   ),
                                 ],
                               ),
@@ -416,16 +401,15 @@ class _SplashScreenState extends State<SplashScreen>
                                           final ready = _bootStage == 3;
                                           final c = ready ? _green : _blue;
                                           return Container(
-                                            width: 9,
-                                            height: 9,
+                                            width: 8,
+                                            height: 8,
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
                                               color: c,
                                               boxShadow: [
                                                 BoxShadow(
                                                   color: c.withValues(
-                                                    alpha:
-                                                        0.5 * _glowPulse.value,
+                                                    alpha: 0.6 * _glowPulse.value,
                                                   ),
                                                   blurRadius: 8,
                                                   spreadRadius: 2,
@@ -442,7 +426,7 @@ class _SplashScreenState extends State<SplashScreen>
                                           color: _slate,
                                           fontSize: 10.5,
                                           fontWeight: FontWeight.bold,
-                                          letterSpacing: 1.1,
+                                          letterSpacing: 1.0,
                                         ),
                                       ),
                                       const Spacer(),
@@ -453,16 +437,14 @@ class _SplashScreenState extends State<SplashScreen>
                                         ),
                                         decoration: BoxDecoration(
                                           color: _blue.withValues(alpha: 0.08),
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
+                                          borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
                                           'STAGE ${_bootStage + 1}/4',
                                           style: const TextStyle(
                                             color: _blue,
                                             fontFamily: 'monospace',
-                                            fontSize: 10,
+                                            fontSize: 9.5,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -477,7 +459,6 @@ class _SplashScreenState extends State<SplashScreen>
                                       key: ValueKey<int>(_bootStage),
                                       style: const TextStyle(
                                         color: _navy,
-                                        fontFamily: 'monospace',
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w600,
                                         height: 1.3,
@@ -485,7 +466,7 @@ class _SplashScreenState extends State<SplashScreen>
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  // Gradient progress bar (blue → sky → red tip)
+                                  // Progress bar
                                   AnimatedBuilder(
                                     animation: _progressAnim,
                                     builder: (context, child) {
@@ -501,7 +482,7 @@ class _SplashScreenState extends State<SplashScreen>
                                             child: const DecoratedBox(
                                               decoration: BoxDecoration(
                                                 gradient: LinearGradient(
-                                                  colors: [_blue, _sky, _red],
+                                                  colors: [_blue, _sky, _coral],
                                                   stops: [0.0, 0.7, 1.0],
                                                 ),
                                               ),
@@ -524,7 +505,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
 
-            // ── Layer 4: Footer ──
+            // ── Footer: "With love, KAVACH ❤️" ──
             Positioned(
               bottom: 24,
               left: 0,
@@ -534,19 +515,34 @@ class _SplashScreenState extends State<SplashScreen>
                 child: FadeTransition(
                   opacity: _contentFade,
                   child: const Center(
-                    child: Row(
+                    child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'With love, KAVACH ',
+                              style: TextStyle(
+                                color: _navy,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            Text('❤️', style: TextStyle(fontSize: 14)),
+                          ],
+                        ),
+                        SizedBox(height: 4),
                         Text(
-                          'Made in India · Crafted with love, Kavach ',
+                          'Sovereign Cyber Defense · India',
                           style: TextStyle(
-                            color: _navy,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
+                            color: Color(0xFF94A3B8),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.6,
                           ),
                         ),
-                        Text('❤️', style: TextStyle(fontSize: 13)),
                       ],
                     ),
                   ),
@@ -560,208 +556,68 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-/// Soft radar sweep, grid and pulsing sensor blips for a light background.
-class _CyberRadarBackgroundPainter extends CustomPainter {
-  final double angle;
-  final Color blue;
-  final Color red;
+/// Jio-style animated dot-matrix grid painter (Ref Image 1).
+/// Renders 5 rows x 7 cols of pulsating electric sapphire and magenta/coral dots.
+class _JioDotMatrixGridPainter extends CustomPainter {
+  final double progress;
+  final bool isLeft;
 
-  _CyberRadarBackgroundPainter({
-    required this.angle,
-    required this.blue,
-    required this.red,
+  static const Color _sapphire = Color(0xFF0F52BA);
+  static const Color _coral = Color(0xFFE5484D);
+
+  _JioDotMatrixGridPainter({
+    required this.progress,
+    required this.isLeft,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height * 0.40);
-    final maxRadius = math.max(size.width, size.height) * 0.68;
+    const int rows = 5;
+    const int cols = 7;
 
-    final gridPaint = Paint()
-      ..color = blue.withValues(alpha: 0.045)
-      ..strokeWidth = 1.0;
-    const step = 42.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
+    final double colSpacing = size.width / (cols - 1);
+    final double rowSpacing = size.height / (rows - 1);
 
-    final circlePaint = Paint()
-      ..color = blue.withValues(alpha: 0.09)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    for (double r = 60; r <= maxRadius; r += 70) {
-      canvas.drawCircle(center, r, circlePaint);
-    }
+    for (int r = 0; r < rows; r++) {
+      for (int c = 0; c < cols; c++) {
+        final double x = c * colSpacing;
+        final double y = r * rowSpacing;
 
-    final axisPaint = Paint()
-      ..color = blue.withValues(alpha: 0.10)
-      ..strokeWidth = 1.0;
-    canvas.drawLine(
-      Offset(center.dx - maxRadius, center.dy),
-      Offset(center.dx + maxRadius, center.dy),
-      axisPaint,
-    );
-    canvas.drawLine(
-      Offset(center.dx, center.dy - maxRadius),
-      Offset(center.dx, center.dy + maxRadius),
-      axisPaint,
-    );
+        // Wave phase offset based on distance from center
+        final double colOffset = isLeft ? (cols - 1 - c).toDouble() : c.toDouble();
+        final double phase = (progress * 2 * math.pi) + (colOffset * 0.45) + (r * 0.3);
+        final double wave = (math.sin(phase) + 1.0) / 2.0; // 0.0 to 1.0
 
-    final sweepPaint = Paint()
-      ..shader = SweepGradient(
-        center: Alignment.center,
-        startAngle: 0.0,
-        endAngle: math.pi / 2,
-        colors: [blue.withValues(alpha: 0.14), Colors.transparent],
-      ).createShader(Rect.fromCircle(center: center, radius: maxRadius))
-      ..style = PaintingStyle.fill;
+        // Alternating dot color pattern matching Reference Image 1:
+        // Rows 0, 2, 4 are predominantly sapphire blue.
+        // Rows 1 and 3 feature alternating coral/magenta dots.
+        final bool isCoral = (r == 1 && (c == 2 || c == 5)) ||
+            (r == 2 && (c == 1 || c == 4)) ||
+            (r == 3 && (c == 3 || c == 6));
 
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(angle);
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset.zero, radius: maxRadius),
-      0,
-      math.pi / 2,
-      true,
-      sweepPaint,
-    );
-    canvas.restore();
+        final Color baseColor = isCoral ? _coral : _sapphire;
+        final double radius = 2.4 + (wave * 1.6);
+        final double opacity = 0.35 + (wave * 0.65);
 
-    final blipOffsets = [
-      Offset(center.dx + 85, center.dy - 75),
-      Offset(center.dx - 110, center.dy - 60),
-      Offset(center.dx - 90, center.dy + 120),
-      Offset(center.dx + 120, center.dy + 80),
-    ];
+        final paint = Paint()
+          ..color = baseColor.withValues(alpha: opacity.clamp(0.1, 1.0))
+          ..style = PaintingStyle.fill;
 
-    for (int i = 0; i < blipOffsets.length; i++) {
-      final p = blipOffsets[i];
-      final blipAngle = math.atan2(p.dy - center.dy, p.dx - center.dx);
-      final normalized = blipAngle < 0 ? blipAngle + 2 * math.pi : blipAngle;
-      final diff = (angle - normalized).abs();
-      final lit = diff < 0.6 || (2 * math.pi - diff) < 0.6;
-      final intensity = lit ? 0.9 : 0.25;
-      final c = lit && i.isOdd ? red : blue;
+        canvas.drawCircle(Offset(x, y), radius, paint);
 
-      canvas.drawCircle(
-        p,
-        3.5,
-        Paint()
-          ..style = PaintingStyle.fill
-          ..color = c.withValues(alpha: intensity),
-      );
-      canvas.drawCircle(
-        p,
-        7.0,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5
-          ..color = c.withValues(alpha: intensity * 0.4),
-      );
+        // Subtle glow for active dots
+        if (wave > 0.75) {
+          final glowPaint = Paint()
+            ..color = baseColor.withValues(alpha: 0.25 * wave)
+            ..style = PaintingStyle.fill;
+          canvas.drawCircle(Offset(x, y), radius + 2.5, glowPaint);
+        }
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _CyberRadarBackgroundPainter old) =>
-      old.angle != angle;
-}
-
-/// Outer reticle ring with tick marks.
-class _CyberReticlePainter extends CustomPainter {
-  final Color color;
-  final int tickCount;
-
-  _CyberReticlePainter({required this.color, required this.tickCount});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2,
-    );
-
-    final tickPaint = Paint()
-      ..color = color.withValues(alpha: 0.85)
-      ..strokeWidth = 1.5;
-
-    for (int i = 0; i < tickCount; i++) {
-      final theta = (i * 2 * math.pi) / tickCount;
-      final isMajor = i % 6 == 0;
-      final innerR = radius - (isMajor ? 9.0 : 4.0);
-      canvas.drawLine(
-        Offset(
-          center.dx + innerR * math.cos(theta),
-          center.dy + innerR * math.sin(theta),
-        ),
-        Offset(
-          center.dx + radius * math.cos(theta),
-          center.dy + radius * math.sin(theta),
-        ),
-        tickPaint,
-      );
-    }
+  bool shouldRepaint(covariant _JioDotMatrixGridPainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
-
-  @override
-  bool shouldRepaint(covariant _CyberReticlePainter old) =>
-      old.color != color || old.tickCount != tickCount;
-}
-
-/// Hexagonal ring with vertex nodes.
-class _HexOrbitalPainter extends CustomPainter {
-  final Color color;
-
-  _HexOrbitalPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    final path = Path();
-    for (int i = 0; i < 6; i++) {
-      final theta = (i * 2 * math.pi) / 6;
-      final x = center.dx + radius * math.cos(theta);
-      final y = center.dy + radius * math.sin(theta);
-      i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
-    }
-    path.close();
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.4,
-    );
-
-    final nodePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    for (int i = 0; i < 6; i++) {
-      final theta = (i * 2 * math.pi) / 6;
-      canvas.drawCircle(
-        Offset(
-          center.dx + radius * math.cos(theta),
-          center.dy + radius * math.sin(theta),
-        ),
-        2.5,
-        nodePaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _HexOrbitalPainter old) => old.color != color;
 }

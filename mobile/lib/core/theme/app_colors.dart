@@ -65,4 +65,29 @@ class AppColors {
 
   // ── Glow (for splash animation) ─────────────────────────────────────────
   static const Color glowPrimary = Color(0x338B1A1A);
+
+  // ── Vibrant Accent (Warm Orange/Coral for light-theme highlights) ──────
+  static const Color accent = Color(0xFFFF6B35);
+  static const Color accentLight = Color(0xFFFF7A45);
+  static const Color accentSurface = Color(0xFFFFF4EE);
+  static const Color accentGlow = Color(0x26FF6B35);
+
+  // ── Light-Theme OTP / PIN Box ──────────────────────────────────────────
+  static const Color otpBoxIdle = Color(0xFFF1F5F9);
+  static const Color otpBoxActive = Color(0xFFFFEDE6);
+  static const Color otpBoxBorderIdle = Color(0xFFE2E8F0);
+  static const Color otpBoxBorderActive = Color(0xFFFF6B35);
+
+  // ── Hero Gradient (Orange/Coral for banner cards) ──────────────────────
+  static const Color heroGradientStart = Color(0xFFFF6B35);
+  static const Color heroGradientEnd = Color(0xFFFFA033);
+
+  // ── Navy Slate (active gauge arcs, strong emphasis) ────────────────────
+  static const Color navySlate = Color(0xFF1E293B);
+
+  // ── Light Badge Colors ────────────────────────────────────────────────
+  static const Color badgePurple = Color(0xFF7C3AED);
+  static const Color badgePurpleBg = Color(0xFFF5F3FF);
+  static const Color badgeBlue = Color(0xFF0284C7);
+  static const Color badgeBlueBg = Color(0xFFF0F9FF);
 }

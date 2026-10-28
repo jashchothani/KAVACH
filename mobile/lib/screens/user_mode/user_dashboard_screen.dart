@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +11,7 @@ import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/google_prompt_modal.dart';
 import '../../core/widgets/shimmer_loading.dart';
+import '../../core/widgets/flip_card.dart';
 import '../security/app_lock_pin_screen.dart';
 
 /// KAVACH Mobile User Dashboard.
@@ -92,9 +96,87 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   StreamSubscription? _liveSub;
   DateTime _lastSyncTime = DateTime.now();
 
+  String get _userDisplayName {
+    final u = _api.currentUser ?? {};
+    final fn = u['full_name']?.toString()?.trim();
+    if (fn != null && fn.isNotEmpty && !fn.toLowerCase().contains('jash')) return fn;
+    final un = u['username']?.toString()?.trim();
+    if (un != null && un.isNotEmpty && !un.toLowerCase().contains('jash')) {
+      return un[0].toUpperCase() + un.substring(1);
+    }
+    final em = u['email']?.toString()?.trim();
+    if (em != null && em.isNotEmpty) {
+      final pref = em.split('@').first;
+      if (!pref.toLowerCase().contains('jash')) {
+        return pref[0].toUpperCase() + pref.substring(1);
+      }
+    }
+    if (un != null && un.toLowerCase().contains('jash')) return 'Jash Thakkar';
+    return 'Protected User';
+  }
+
+  String get _userEmail {
+    final u = _api.currentUser ?? {};
+    return u['email']?.toString() ?? 'personal@kavach.local';
+  }
+
+  File _getRakshaChatFile() {
+    final baseDir = Platform.environment['LOCALAPPDATA'] ??
+        Platform.environment['HOME'] ??
+        Directory.systemTemp.path;
+    final dir = Directory('$baseDir/KAVACH/raksha_chats');
+    if (!dir.existsSync()) {
+      try {
+        dir.createSync(recursive: true);
+      } catch (_) {}
+    }
+    final u = _api.currentUser ?? {};
+    final key = (u['email'] ?? u['username'] ?? 'guest')
+        .toString()
+        .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+    return File('${dir.path}/chat_$key.json');
+  }
+
+  void _loadRakshaChatForUser() {
+    try {
+      final f = _getRakshaChatFile();
+      if (f.existsSync()) {
+        final list = jsonDecode(f.readAsStringSync());
+        if (list is List && list.isNotEmpty) {
+          _chatMessages.clear();
+          for (final item in list) {
+            if (item is Map) {
+              _chatMessages.add({
+                'sender': item['sender']?.toString() ?? 'raksha',
+                'text': item['text']?.toString() ?? '',
+              });
+            }
+          }
+          if (mounted) setState(() {});
+          return;
+        }
+      }
+    } catch (_) {}
+    _chatMessages.clear();
+    _chatMessages.add({
+      'sender': 'raksha',
+      'text':
+          'Hello $_userDisplayName! I am **Raksha AI**, your sovereign cybersecurity assistant powered by NVIDIA NIM.\n\nAll real-time mobile protection shields are armed. How can I assist you with your security or privacy today?',
+    });
+    if (mounted) setState(() {});
+  }
+
+  void _saveRakshaChatForUser() {
+    try {
+      final f = _getRakshaChatFile();
+      f.writeAsStringSync(jsonEncode(_chatMessages));
+    } catch (_) {}
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadRakshaChatForUser();
     _loadDashboardData();
     _loadEnrolledDevices();
     _subscribeLiveUpdates();
@@ -122,9 +204,35 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
 
   Future<void> _checkPendingLoginChallenge() async {
     try {
-      final res = await _api.getPendingMobileChallenge();
+      // Only check challenges for the currently logged-in user's account
+      final currentUser = _api.currentUser;
+      if (currentUser == null) return; // Not logged in, skip
+
+      final userIdent = currentUser['username']?.toString() ??
+          currentUser['email']?.toString() ??
+          currentUser['user']?['username']?.toString() ??
+          currentUser['user']?['email']?.toString();
+
+      if (userIdent == null || userIdent.isEmpty) return;
+
+      final res = await _api.getPendingMobileChallenge(usernameOrEmail: userIdent);
       if (!mounted) return;
+
       if (res['has_pending'] == true) {
+        // Verify this challenge is actually for the logged-in user
+        final challengeUser = res['username']?.toString() ??
+            res['email']?.toString() ?? '';
+        final isForCurrentUser = challengeUser.isEmpty ||
+            challengeUser.toLowerCase() == userIdent.toLowerCase();
+
+        if (!isForCurrentUser) {
+          // Challenge is for a different account, ignore it
+          if (_pendingMobileChallenge != null) {
+            setState(() => _pendingMobileChallenge = null);
+          }
+          return;
+        }
+
         setState(() => _pendingMobileChallenge = res);
         final chId = res['challenge_id']?.toString() ?? '';
         if (!_isModalShowing &&
@@ -417,6 +525,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     });
 
     try {
+      await _api.fetchCurrentUser();
+      _loadRakshaChatForUser();
       final results = await Future.wait([
         _api.getDashboardSummary().catchError((_) => <String, dynamic>{}),
         _api.getLivePosture().catchError((_) => <String, dynamic>{}),
@@ -572,60 +682,19 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           });
         }
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      final clean = phone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-      final isHighRisk =
-          clean.startsWith('+92') ||
-          clean.startsWith('+234') ||
-          clean.startsWith('+855');
       setState(() {
-        _phoneScanResult = {
-          'is_threat': isHighRisk,
-          'risk_level': isHighRisk ? 'CRITICAL' : 'VERIFIED SAFE',
-          'risk_score': isHighRisk ? 96.0 : 8.0,
-          'recommended_action': isHighRisk ? 'BLOCK' : 'ALLOW',
-          'raksha_summary': isHighRisk
-              ? 'Transnational telecom fraud pattern detected. Associated with Digital Arrest & task extortion syndicates.'
-              : 'Verified carrier number pattern. No negative reports in national cyber fraud registry.',
-          'indicators': isHighRisk
-              ? [
-                  'Origin matches known cyber fraud syndicate gateway (+92).',
-                  'Multiple extortion complaints registered.',
-                ]
-              : ['Standard domestic carrier format verified safe.'],
-        };
         _isScanningPhone = false;
-        _simulatedIncomingCaller = phone;
-        _simulatedCallerName = isHighRisk
-            ? '🚨 Digital Arrest / Task Extortion'
-            : '✅ Domestic Telecom Subscriber';
-        _simulatedCarrier = isHighRisk
-            ? 'Mobilink Jazz Pakistan · International'
-            : 'Reliance Jio / Airtel · Domestic Circle';
-        _simulatedIsThreat = isHighRisk;
-        _blockedCallers.removeWhere((c) => c['number'] == phone);
-        _blockedCallers.insert(0, {
-          'number': phone,
-          'label': isHighRisk
-              ? 'Flagged Telecom Threat'
-              : 'Carrier Verified Clean',
-          'risk': isHighRisk ? 'CRITICAL (96%)' : 'CLEAN (8%)',
-          'time': 'Just now',
-          'type': isHighRisk ? 'Flagged / Blocked' : 'Clean & Verified',
-          'is_threat': isHighRisk,
-        });
-        if (isHighRisk) {
-          _notifications.insert(0, {
-            'id': 'notif-${DateTime.now().millisecondsSinceEpoch}',
-            'title': '🚨 Fraud Call Flagged',
-            'desc': 'Blocked $phone (Transnational spoofing pattern).',
-            'time': 'Just now',
-            'is_unread': true,
-            'severity': 'CRITICAL',
-          });
-        }
+        _phoneScanResult = null;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to verify number with KAVACH Cloud: $e'),
+          backgroundColor: const Color(0xFFEF4444),
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -664,43 +733,19 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           });
         }
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      final lower = text.toLowerCase();
-      final isScam =
-          lower.contains('task') ||
-          lower.contains('earn') ||
-          lower.contains('electric') ||
-          lower.contains('apk') ||
-          lower.contains('otp');
       setState(() {
-        _smsScanResult = {
-          'is_threat': isScam,
-          'risk_level': isScam ? 'HIGH RISK' : 'CLEAN',
-          'risk_score': isScam ? 88.0 : 10.0,
-          'recommended_action': isScam ? 'BLOCK' : 'ALLOW',
-          'raksha_summary': isScam
-              ? 'Urgent coercion or task solicitation detected. Do not click links or share credentials.'
-              : 'Normal conversational message format. No phishing or dropper payloads detected.',
-          'indicators': isScam
-              ? [
-                  'Urgency or financial incentive keywords detected.',
-                  'Contains suspicious call-to-action.',
-                ]
-              : ['Clean message payload.'],
-        };
         _isScanningSms = false;
-        if (isScam) {
-          _notifications.insert(0, {
-            'id': 'notif-${DateTime.now().millisecondsSinceEpoch}',
-            'title': '⚠️ Smishing SMS Detected',
-            'desc': 'Urgency or task solicitation detected in scanned message.',
-            'time': 'Just now',
-            'is_unread': true,
-            'severity': 'CRITICAL',
-          });
-        }
+        _smsScanResult = null;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to analyze SMS with KAVACH Cloud: $e'),
+          backgroundColor: const Color(0xFFEF4444),
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -714,6 +759,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
       _chatMessages.add({'sender': 'user', 'text': query});
       _isSendingChat = true;
     });
+    _saveRakshaChatForUser();
 
     _scrollChatToBottom();
 
@@ -721,12 +767,14 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
       final res = await _api.chatRaksha(query);
       final reply =
           res['response']?.toString() ??
-          'Analysis completed. Defense perimeter nominal.';
+          res['message']?.toString() ??
+          'Analysis completed. Sovereign defense perimeter nominal.';
       if (!mounted) return;
       setState(() {
         _chatMessages.add({'sender': 'raksha', 'text': reply});
         _isSendingChat = false;
       });
+      _saveRakshaChatForUser();
     } catch (_) {
       if (!mounted) return;
       String fallback;
@@ -746,6 +794,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           q.contains('whatsapp')) {
         fallback =
             '### 📱 Smishing & Task Fraud Sentinel\n\nBeware of unsolicited Telegram "job" offers or SMS claiming your bank account or electricity is suspended. Never click shortened URLs (`bit.ly`, `.apk`).';
+      } else if (q.contains('alert') || q.contains('explain')) {
+        fallback =
+            '### 🛡️ Raksha AI Alert Analysis & Advisory\n\n- **Risk Evaluation**: The detected activity represents an unauthorized host event or untrusted network beacon.\n- **Recommended Action**: 1) Keep real-time Threat Shield and Wi-Fi Sentinel enabled.\n2) Do not accept unsolicited remote connections.\n3) Your sovereign endpoint firewall has actively isolated the event.';
       } else {
         fallback =
             '### 🛡️ KAVACH Sovereign Security Assessment\n\nYour mobile device telemetry is being actively monitored against known enterprise threat indicators.\n\n- Real-time link scanner is active.\n- Telecom spoofing interceptor is active.\n- Keep your OS updated and avoid granting accessibility permissions to untrusted APKs.';
@@ -755,9 +806,23 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
         _chatMessages.add({'sender': 'raksha', 'text': fallback});
         _isSendingChat = false;
       });
+      _saveRakshaChatForUser();
     }
 
     _scrollChatToBottom();
+  }
+
+  void _explainAlertWithRaksha(String title, String desc, String severity) {
+    setState(() {
+      _selectedNavIndex = 2; // Switch to Raksha AI tab
+    });
+    final prompt =
+        'Explain this security alert and provide step-by-step remediation:\n'
+        '- Alert: $title\n'
+        '- Severity: $severity\n'
+        '- Details: $desc\n'
+        'What does this mean for my phone and what action should I take?';
+    _handleSendChatMessage(prompt);
   }
 
   void _scrollChatToBottom() {
@@ -1057,8 +1122,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
         .where((n) => n['is_unread'] == true)
         .length;
     final user = _api.currentUser ?? {};
-    final username = user['username'] ?? 'User';
-    final role = user['role']?.toString().toUpperCase() ?? 'PROTECTED';
+    final username = _userDisplayName;
+    final userEmail = _userEmail;
+    final role = user['role']?.toString().toUpperCase() ?? 'MEMBER';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -1185,8 +1251,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                                 ),
                               ),
                               subtitle: Text(
-                                'Role: $role · Protected Sovereign Account',
-                                style: const TextStyle(fontSize: 11),
+                                '$userEmail · Role: $role',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                               ),
                             ),
                             const Divider(height: 1),
@@ -1672,14 +1738,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     }
   }
 
-  // ── TAB 0: SHIELD (Overview & Protection Toggles) ──────────────────────────
+  // ── TAB 0: SHIELD (Extended Long Animated Dashboard with Flipping Cards) ────
   Widget _buildShieldTab() {
-    final currentUser = _api.currentUser ?? {};
-    final userFullName = currentUser['full_name']?.toString() ??
-        currentUser['username']?.toString() ??
-        'User';
-    final userEmail =
-        currentUser['email']?.toString() ?? 'personal@kavach.local';
+    final userFullName = _userDisplayName;
+    final userEmail = _userEmail;
 
     int computedScore = 30;
     if (_webShieldEnabled) computedScore += 20;
@@ -1687,247 +1749,497 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     if (_wifiGuardEnabled) computedScore += 15;
     if (_appPrivacyEnabled) computedScore += 15;
     final score = computedScore;
-    final isHealthy = score >= 80;
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      children: [
-        // ── Clean, Airy User Welcome & Live Status Header ──────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 4, 14),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hello, $userFullName 👋',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -0.3,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Device Protected · Sovereign XDR Active',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFA7F3D0)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.shield_rounded, size: 13, color: Color(0xFF059669)),
-                    SizedBox(width: 4),
-                    Text(
-                      'ACTIVE',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF059669),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
 
-        // ── Hero Score Card (Spacious, Airy, Modern) ───────────────────
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x06000000),
-                blurRadius: 16,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  // Animated Circular Score Gauge
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox(
-                        width: 78,
-                        height: 78,
-                        child: CircularProgressIndicator(
-                          value: (score / 100.0).clamp(0.0, 1.0),
-                          strokeWidth: 7.5,
-                          backgroundColor: const Color(0xFFF1F5F9),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            isHealthy ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+          // ── CENTER TOP: Large MIUI 10 Style Circular Security Gauge (Ref Image 3) ──
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Outer subtle circular glow
+                    Container(
+                      width: 196,
+                      height: 196,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.12),
+                            blurRadius: 32,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Circular Progress Arc
+                    SizedBox(
+                      width: 178,
+                      height: 178,
+                      child: CircularProgressIndicator(
+                        value: (score / 100.0).clamp(0.0, 1.0),
+                        strokeWidth: 9,
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0284C7)),
+                      ),
+                    ),
+                    // Inner Numerical Score & Optimize Pill
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$score',
+                          style: const TextStyle(
+                            fontSize: 54,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -1.5,
+                            height: 1.0,
                           ),
                         ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '$score',
-                            style: const TextStyle(
-                              color: Color(0xFF0F172A),
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.5,
+                        const SizedBox(height: 5),
+                        Text(
+                          score >= 90
+                              ? 'Device Protected'
+                              : 'A few items can be optimized',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        // Centered Pill Button: Optimize
+                        ElevatedButton.icon(
+                          onPressed: _openFullScreenScanModal,
+                          icon: const Icon(Icons.bolt_rounded, size: 15),
+                          label: const Text(
+                            'Optimize',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.3,
                             ),
                           ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0284C7),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 7,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── BOTTOM FEATURES COVER SHEET (Ref Image 3: Swipe / Scroll Down Cover) ──
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x0E000000),
+                  blurRadius: 24,
+                  offset: Offset(0, -6),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top drag handle indicator
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 16),
+                    width: 44,
+                    height: 4.5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+
+                // Greeting & Active Shields Badge inside cover
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, $userFullName 👋',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
                           const Text(
-                            '/ 100',
+                            'Sovereign Security Suite Active',
                             style: TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 11.5,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFA7F3D0)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.shield_rounded, size: 13, color: Color(0xFF059669)),
+                            SizedBox(width: 4),
+                            Text(
+                              'SHIELDS ON',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF059669),
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                // ── 2x3 FEATURE TILES GRID (Matching Reference Image 3) ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildMiuiFeatureTile(
+                              icon: Icons.delete_outline_rounded,
+                              iconColor: const Color(0xFFE5484D),
+                              iconBg: const Color(0xFFFEE2E2),
+                              title: 'Cleaner',
+                              subtitle: 'No trash found',
+                              onTap: _cleanMemoryTrash,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildMiuiFeatureTile(
+                              icon: Icons.security_rounded,
+                              iconColor: const Color(0xFF0284C7),
+                              iconBg: const Color(0xFFE0F2FE),
+                              title: 'Security scan',
+                              subtitle: 'Scan device',
+                              onTap: _openFullScreenScanModal,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildMiuiFeatureTile(
+                              icon: Icons.battery_charging_full_rounded,
+                              iconColor: const Color(0xFF10B981),
+                              iconBg: const Color(0xFFECFDF5),
+                              title: 'Battery',
+                              subtitle: '91% · 15h left',
+                              onTap: _showBatteryDetailsDialog,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildMiuiFeatureTile(
+                              icon: Icons.water_drop_outlined,
+                              iconColor: const Color(0xFFF59E0B),
+                              iconBg: const Color(0xFFFEF3C7),
+                              title: 'Data usage',
+                              subtitle: 'Manage data plan',
+                              onTap: _showDataUsageDialog,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildMiuiFeatureTile(
+                              icon: Icons.bolt_rounded,
+                              iconColor: const Color(0xFF8B5CF6),
+                              iconBg: const Color(0xFFF5F3FF),
+                              title: 'Threat Shield',
+                              subtitle: 'Firewall & WFP active',
+                              onTap: () => setState(() => _webShieldEnabled = !_webShieldEnabled),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildMiuiFeatureTile(
+                              icon: Icons.grid_view_rounded,
+                              iconColor: const Color(0xFF06B6D4),
+                              iconBg: const Color(0xFFCFFAFE),
+                              title: 'Manage apps',
+                              subtitle: 'App permissions',
+                              onTap: _showManageAppsDialog,
                             ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(width: 18),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+
+                const SizedBox(height: 16),
+
+                // ── APP LOCK CARD (Matching Reference Image 3 bottom card) ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
                       children: [
-                        const Text(
-                          'Phone Fully Shielded',
-                          style: TextStyle(
-                            color: Color(0xFF0F172A),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.shield_rounded,
+                            color: Color(0xFF10B981),
+                            size: 22,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          '16 real-time sensors guarding against phishing, scam callers & malware.',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 11.5,
-                            height: 1.35,
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'App lock',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Protect selected apps with a passcode.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Cloud Sync: ${_lastSyncTime.hour.toString().padLeft(2, '0')}:${_lastSyncTime.minute.toString().padLeft(2, '0')}',
-                          style: const TextStyle(
-                            color: Color(0xFF94A3B8),
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w500,
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => AppLockPinScreen(
+                                  mode: _isPinActive ? PinMode.change : PinMode.setup,
+                                  onPinConfigured: (p) => setState(() => _isPinActive = true),
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF0F172A),
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: Text(
+                            _isPinActive ? 'Manage' : 'Turn on',
+                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Scan button with progress
-              if (_isFullScanning)
-                Column(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: _scanProgress,
-                        minHeight: 6,
-                        backgroundColor: const Color(0xFFF1F5F9),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _scanStatusText,
-                      style: const TextStyle(
-                        color: Color(0xFF059669),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                )
-              else
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F52BA),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onPressed: _runDeviceScan,
-                    icon: const Icon(Icons.radar_rounded, size: 18),
-                    label: const Text(
-                      'Scan Phone Now',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // ── 3D FLIP TELEMETRY CARDS ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: FlipCard(
+                    flipOnTap: true,
+                    duration: const Duration(milliseconds: 650),
+                    front: _buildContainmentHeroFront(),
+                    back: _buildContainmentHeroBack(),
                   ),
                 ),
+
+        const SizedBox(height: 18),
+
+        // ── 4. Section Header: 2x2 Performance Metrics ──────────────────────
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Endpoint Metrics · Tap to Flip',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Text(
+                'Real-Time Telemetry',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF64748B),
+                ),
+              ),
             ],
           ),
         ),
+        const SizedBox(height: 10),
 
-        const SizedBox(height: 16),
-
-        // ── 3 Quick Telemetry Metric Chips ─────────────────────────────
+        // ── 5. FLIP CARD GRID: 2x2 Interactive Metric Cards ─────────────────
         Row(
           children: [
             Expanded(
-              child: _buildMetricTile(
-                icon: Icons.gpp_good_rounded,
-                color: const Color(0xFF10B981),
-                label: 'Threats Blocked',
-                value: '0 Active',
+              child: FlipCard(
+                flipOnTap: true,
+                front: _buildMetricFlipTile(
+                  icon: Icons.radar_rounded,
+                  iconColor: const Color(0xFF3B82F6),
+                  iconBg: const Color(0xFFEFF6FF),
+                  title: 'Endpoint Scans',
+                  value: '11,967',
+                  delta: '+15.2%',
+                  deltaPositive: true,
+                ),
+                back: _buildMetricFlipBack(
+                  title: 'Scan Audit',
+                  desc: 'Kernel & app sandbox clean. Zero rootkit payloads detected.',
+                  status: 'Nominal ✓',
+                  statusColor: const Color(0xFF10B981),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
-              child: _buildMetricTile(
-                icon: Icons.sensors_rounded,
-                color: const Color(0xFF3B82F6),
-                label: 'Telemetry',
-                value: '16 Sensors',
+              child: FlipCard(
+                flipOnTap: true,
+                front: _buildMetricFlipTile(
+                  icon: Icons.memory_rounded,
+                  iconColor: const Color(0xFF10B981),
+                  iconBg: const Color(0xFFECFDF5),
+                  title: 'Memory Health',
+                  value: '99.9%',
+                  delta: 'Optimal',
+                  deltaPositive: true,
+                ),
+                back: _buildMetricFlipBack(
+                  title: 'Stack Defense',
+                  desc: 'ASLR & stack canaries enforced across all running tasks.',
+                  status: 'Protected ✓',
+                  statusColor: const Color(0xFF10B981),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
             Expanded(
-              child: _buildMetricTile(
-                icon: Icons.lock_outline_rounded,
-                color: const Color(0xFF8B5CF6),
-                label: 'Perimeter',
-                value: 'Encrypted',
+              child: FlipCard(
+                flipOnTap: true,
+                front: _buildMetricFlipTile(
+                  icon: Icons.dns_rounded,
+                  iconColor: const Color(0xFF8B5CF6),
+                  iconBg: const Color(0xFFF5F3FF),
+                  title: 'DNS Filtered',
+                  value: '43,435',
+                  delta: '+2.7%',
+                  deltaPositive: true,
+                ),
+                back: _buildMetricFlipBack(
+                  title: 'DNS Sentinel',
+                  desc: 'Sovereign Quad9 resolver. 312 tracker domains sinkholed.',
+                  status: 'Zero Leaks ✓',
+                  statusColor: const Color(0xFF8B5CF6),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: FlipCard(
+                flipOnTap: true,
+                front: _buildMetricFlipTile(
+                  icon: Icons.phone_in_talk_rounded,
+                  iconColor: const Color(0xFFFF6B35),
+                  iconBg: const Color(0xFFFFF7ED),
+                  title: 'Calls Screened',
+                  value: '1,207',
+                  delta: 'TRAI DLT',
+                  deltaPositive: true,
+                ),
+                back: _buildMetricFlipBack(
+                  title: 'Telecom Filter',
+                  desc: 'Cross-border VoIP spoofing neutralized in real time.',
+                  status: 'Active 24/7 ✓',
+                  statusColor: const Color(0xFFFF6B35),
+                ),
               ),
             ),
           ],
@@ -1935,7 +2247,17 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
 
         const SizedBox(height: 18),
 
-        // ── Section Title: Active Defense Modules ──────────────────────
+        // ── 6. FLIP CARD #3: Weekly Activity & Cohort Chart ────────────────
+        FlipCard(
+          flipOnTap: true,
+          duration: const Duration(milliseconds: 650),
+          front: _buildActivityChartCardFront(),
+          back: _buildActivityChartCardBack(),
+        ),
+
+        const SizedBox(height: 18),
+
+        // ── 7. Active Defense Shields Switchboard ───────────────────────────
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 4),
           child: Row(
@@ -1947,6 +2269,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF0F172A),
+                  letterSpacing: -0.2,
                 ),
               ),
               Text(
@@ -1962,7 +2285,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
         ),
         const SizedBox(height: 10),
 
-        // ── 2x2 Spacious Modern Grid of Shields ────────────────────────
         Row(
           children: [
             Expanded(
@@ -2007,7 +2329,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                 title: 'App Privacy',
                 subtitle: 'Mic & camera guard',
                 icon: Icons.security_rounded,
-                color: const Color(0xFFF59E0B),
+                color: const Color(0xFFFF6B35),
                 isActive: _appPrivacyEnabled,
                 onChanged: (val) => setState(() => _appPrivacyEnabled = val),
               ),
@@ -2017,236 +2339,1255 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
 
         const SizedBox(height: 18),
 
-        // Section Title: Weekly Security PDF Reports
-        const Text(
-          'Weekly Security Reports',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-        const SizedBox(height: 10),
+        // ── 8. Recent Incidents & Threat Feed (Monday.com / Card Style) ────
+        _buildRecentIncidentsSection(),
 
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+        const SizedBox(height: 18),
+
+        // ── 9. FLIP CARD #4: Weekly Security PDF Reports ────────────────────
+        FlipCard(
+          flipOnTap: true,
+          duration: const Duration(milliseconds: 650),
+          front: _buildWeeklyReportsCardFront(userFullName, userEmail),
+          back: _buildWeeklyReportsCardBack(userFullName),
+        ),
+
+        const SizedBox(height: 18),
+
+        // ── 10. Sovereign Indian Cyber Architecture Assurance Footer ────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: _buildSovereignAssuranceFooter(),
+        ),
+
+        const SizedBox(height: 24),
+
+        // ── BRANDING FOOTER: "With love, KAVACH ❤️" ──
+        Center(
+          child: Column(
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text(
+                    'With love, KAVACH ',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  Text('❤️', style: TextStyle(fontSize: 15)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Sovereign AI Security · Kavach Cybertech',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+
+        const SizedBox(height: 36),
+      ],
+    ),
+  ),
+],
+),
+);
+}
+
+  // ── Sub-Widgets for Flip Card #1: Score Gauge ──────────────────────────────
+  Widget _buildPostureCardFront(int score, bool isHealthy) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 20,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
             children: [
-              Row(
+              Stack(
+                alignment: Alignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.picture_as_pdf_rounded,
-                      color: Color(0xFFEF4444),
-                      size: 20,
+                  SizedBox(
+                    width: 82,
+                    height: 82,
+                    child: CircularProgressIndicator(
+                      value: (score / 100.0).clamp(0.0, 1.0),
+                      strokeWidth: 8,
+                      backgroundColor: const Color(0xFFF1F5F9),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isHealthy ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Automated Weekly Security PDF Digest',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$score',
+                        style: const TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
                         ),
-                        Text(
-                          'Prepared for $userFullName · Dispatched to $userEmail',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF64748B),
-                          ),
+                      ),
+                      const Text(
+                        '/ 100',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Phone Fully Shielded',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '16 real-time sensors guarding against phishing, scam callers & malware.',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 11.5,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Cloud Sync: ${_lastSyncTime.hour.toString().padLeft(2, '0')}:${_lastSyncTime.minute.toString().padLeft(2, '0')} · AWS Mumbai',
+                      style: const TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (_isFullScanning)
+            Column(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: _scanProgress,
+                    minHeight: 6,
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _scanStatusText,
+                  style: const TextStyle(
+                    color: Color(0xFF059669),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F52BA),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: _runDeviceScan,
+                    icon: const Icon(Icons.radar_rounded, size: 18),
+                    label: const Text(
+                      'Scan Phone Now',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.flip_rounded, size: 13, color: Colors.blueGrey.shade400),
+              const SizedBox(width: 5),
+              Text(
+                'Tap card to view 16-Sensor Diagnostic Matrix',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blueGrey.shade500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostureCardBack() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFF0F52BA).withValues(alpha: 0.3), width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0C0F52BA),
+            blurRadius: 24,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.hub_rounded, size: 18, color: Color(0xFF0F52BA)),
+                  SizedBox(width: 8),
+                  Text(
+                    '16-Sensor Diagnostic Matrix',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              if (_userWeeklyReports.isEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    'No weekly reports generated yet. KAVACH will compile your personal weekly digest for $userFullName with protection telemetry.',
-                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                  ),
-                )
-              else
-                Column(
-                  children: _userWeeklyReports.map((rep) {
-                    final title = rep['title'] ?? 'Weekly Security Report';
-                    final repId = rep['id'] ?? 'REP-001';
-                    final date =
-                        rep['created_at']?.toString().split('T').first ??
-                        'Recent';
-                    return Container(
-                      margin: const EdgeInsets.only(top: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '$title',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '$repId · Date: $date · Email Delivered ✓',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Color(0xFF10B981),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          InkWell(
-                            borderRadius: BorderRadius.circular(8),
-                            onTap: () {
-                              final filename = rep['filename'] ?? 'Report.pdf';
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: const Color(0xFF0F172A),
-                                  content: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.check_circle_rounded,
-                                        color: Color(0xFF10B981),
-                                        size: 18,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          '$filename ($repId) verified and dispatched! ✓',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.download_rounded,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'PDF',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: const Text(
+                  'ALL SYSTEMS NOMINAL',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1D4ED8),
+                  ),
+                ),
+              ),
             ],
+          ),
+          const SizedBox(height: 14),
+          _buildSensorStatusRow('Memory Sandbox Integrity', 'Stack Canary Armed', '100% Clean', const Color(0xFF10B981)),
+          const Divider(height: 16, color: Color(0xFFF1F5F9)),
+          _buildSensorStatusRow('Telecom Fraud Intercept', 'TRAI DLT Verified', 'Active', const Color(0xFF10B981)),
+          const Divider(height: 16, color: Color(0xFFF1F5F9)),
+          _buildSensorStatusRow('Sovereign DNS Shield', 'Quad9 Route Active', '0 Leaks', const Color(0xFF8B5CF6)),
+          const Divider(height: 16, color: Color(0xFFF1F5F9)),
+          _buildSensorStatusRow('NVIDIA NIM Neural Engine', 'DiffusionGemma-26B', '8ms Latency', const Color(0xFFFF6B35)),
+          const SizedBox(height: 14),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.flip_rounded, size: 13, color: Colors.blueGrey.shade400),
+                const SizedBox(width: 5),
+                Text(
+                  'Tap card to return to Score Gauge',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueGrey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSensorStatusRow(String title, String subtitle, String status, Color statusColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 10,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ),
+        Text(
+          status,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: statusColor,
           ),
         ),
       ],
     );
   }
 
-
-
-  Widget _buildMetricTile({
-    required IconData icon,
-    required Color color,
-    required String label,
-    required String value,
-  }) {
+  // ── Sub-Widgets for Flip Card #2: Threat Containment Hero Banner ───────────
+  Widget _buildContainmentHeroFront() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFF6B35),
+            Color(0xFFFFA033),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x04000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
+            color: Color(0x33FF6B35),
+            blurRadius: 20,
+            offset: Offset(0, 8),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.offline_bolt_rounded, size: 18, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'LIVE THREAT CONTAINMENT',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.arrow_upward_rounded, size: 12, color: Colors.white),
+                    SizedBox(width: 2),
+                    Text(
+                      '+12.4%',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            '99.8%',
+            style: TextStyle(
+              fontSize: 38,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: -1.0,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Zero breaches recorded · 571 threats intercepted this week',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.92),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.flip_rounded, size: 13, color: Colors.white.withValues(alpha: 0.8)),
+              const SizedBox(width: 5),
+              Text(
+                'Tap card to inspect Attack Vector Breakdown',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContainmentHeroBack() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFFFF6B35).withValues(alpha: 0.4), width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14FF6B35),
+            blurRadius: 20,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Attack Vector Intercepts',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              Text(
+                'PAST 7 DAYS',
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFFFF6B35),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildThreatVectorRow('Phishing & Malicious URLs', '142 blocked', '100% neutralized', const Color(0xFF10B981)),
+          const Divider(height: 14, color: Color(0xFFF1F5F9)),
+          _buildThreatVectorRow('Scam & Digital Arrest Calls', '38 intercepted', 'TRAI Blocked', const Color(0xFF10B981)),
+          const Divider(height: 14, color: Color(0xFFF1F5F9)),
+          _buildThreatVectorRow('Malicious APK Droppers', '12 quarantined', 'Zero Execution', const Color(0xFF3B82F6)),
+          const Divider(height: 14, color: Color(0xFFF1F5F9)),
+          _buildThreatVectorRow('MITRE Techniques Disarmed', 'T1059, T1204', 'Automated SOAR', const Color(0xFF8B5CF6)),
+          const SizedBox(height: 10),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.flip_rounded, size: 13, color: Colors.blueGrey.shade400),
+                const SizedBox(width: 5),
+                Text(
+                  'Tap card to return to Containment Rate',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueGrey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThreatVectorRow(String title, String count, String outcome, Color outcomeColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            Text(
+              count,
+              style: const TextStyle(
+                fontSize: 10,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        Text(
+          outcome,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: outcomeColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Sub-Widgets for 2x2 Interactive Metric Cards ───────────────────────────
+  Widget _buildMetricFlipTile({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required String title,
+    required String value,
+    required String delta,
+    required bool deltaPositive,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 14,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 18, color: iconColor),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  delta,
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    color: deltaPositive ? const Color(0xFF059669) : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Text(
             value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricFlipBack({
+    required String title,
+    required String desc,
+    required String status,
+    required Color statusColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 14,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
               color: Color(0xFF0F172A),
             ),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
-            label,
+            desc,
             style: const TextStyle(
-              fontSize: 9.5,
+              fontSize: 10,
               color: Color(0xFF64748B),
-              fontWeight: FontWeight.w500,
+              height: 1.3,
             ),
-            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            status,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+              color: statusColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Sub-Widgets for Flip Card #3: Weekly Activity & Cohort Chart ───────────
+  Widget _buildActivityChartCardFront() {
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final heights = [0.45, 0.70, 0.55, 0.90, 0.65, 0.40, 0.85];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 20,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Weekly Protection Activity',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              Row(
+                children: [
+                  Icon(Icons.circle, size: 8, color: Color(0xFFFF6B35)),
+                  SizedBox(width: 4),
+                  Text('Telemetry', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                  SizedBox(width: 8),
+                  Icon(Icons.circle, size: 8, color: Color(0xFF10B981)),
+                  SizedBox(width: 4),
+                  Text('Mitigated', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(7, (i) {
+              return Column(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 100 * heights[i],
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: i == 3
+                            ? [const Color(0xFFFF6B35), const Color(0xFFFFA033)]
+                            : [const Color(0xFF0F52BA), const Color(0xFF3B82F6)],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    days[i],
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: i == 3 ? FontWeight.bold : FontWeight.w500,
+                      color: i == 3 ? const Color(0xFFFF6B35) : const Color(0xFF94A3B8),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+          const SizedBox(height: 14),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.flip_rounded, size: 13, color: Colors.blueGrey.shade400),
+                const SizedBox(width: 5),
+                Text(
+                  'Tap chart to view SOAR Automation Metrics',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueGrey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityChartCardBack() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1F000000),
+            blurRadius: 24,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'SOAR Playbook Automation',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                'ZERO HUMAN DELAY',
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF10B981),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _buildDarkStatRow('Mean Time to Remediate (MTTR)', '1.4 seconds', const Color(0xFF10B981)),
+          const Divider(height: 14, color: Color(0xFF1E293B)),
+          _buildDarkStatRow('Automated Playbook Dispatches', '247 runs (100% success)', Colors.white),
+          const Divider(height: 14, color: Color(0xFF1E293B)),
+          _buildDarkStatRow('False Positive Elimination Rate', '99.98% clean precision', const Color(0xFF38BDF8)),
+          const Divider(height: 14, color: Color(0xFF1E293B)),
+          _buildDarkStatRow('Sovereign Cloud Latency', '14ms AWS Mumbai Route', const Color(0xFFFF6B35)),
+          const SizedBox(height: 14),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.flip_rounded, size: 13, color: Colors.white.withValues(alpha: 0.6)),
+                const SizedBox(width: 5),
+                Text(
+                  'Tap to return to Weekly Activity Chart',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDarkStatRow(String label, String value, Color valueColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFF94A3B8),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w800,
+            color: valueColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Sub-Widget: Recent Threat Feed (Monday.com / Clean Card Style) ─────────
+  Widget _buildRecentIncidentsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent Security Telemetry',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Text(
+                'Live Audit',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F52BA),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        _buildIncidentCard(
+          icon: Icons.shield_rounded,
+          iconColor: const Color(0xFF10B981),
+          iconBg: const Color(0xFFECFDF5),
+          title: 'Perimeter Defense Synchronized',
+          subtitle: 'All 16 real-time sensors verified with AWS Cyberkavach cloud.',
+          time: 'Just now',
+          badgeText: 'SAFE',
+          badgeColor: const Color(0xFF10B981),
+        ),
+        const SizedBox(height: 8),
+        _buildIncidentCard(
+          icon: Icons.phone_locked_rounded,
+          iconColor: const Color(0xFF3B82F6),
+          iconBg: const Color(0xFFEFF6FF),
+          title: 'Caller Sentinel Route Verified',
+          subtitle: 'TRAI DLT gateway inspection enabled for incoming telecommunications.',
+          time: '12m ago',
+          badgeText: 'MONITORED',
+          badgeColor: const Color(0xFF3B82F6),
+        ),
+        const SizedBox(height: 8),
+        _buildIncidentCard(
+          icon: Icons.vpn_lock_rounded,
+          iconColor: const Color(0xFF8B5CF6),
+          iconBg: const Color(0xFFF5F3FF),
+          title: 'Encrypted Sovereign Channel Active',
+          subtitle: 'TLS 1.3 cryptographic tunnel secured to Indian Security Operations Center.',
+          time: '1h ago',
+          badgeText: 'SECURE',
+          badgeColor: const Color(0xFF8B5CF6),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIncidentCard({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required String title,
+    required String subtitle,
+    required String time,
+    required String badgeText,
+    required Color badgeColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x04000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, size: 20, color: iconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      badgeText,
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: badgeColor,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    Text(
+                      time,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF94A3B8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Sub-Widgets for Flip Card #4: Weekly Reports ───────────────────────────
+  Widget _buildWeeklyReportsCardFront(String userFullName, String userEmail) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.picture_as_pdf_rounded,
+                  color: Color(0xFFEF4444),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Automated Weekly PDF Digest',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      'Prepared for $userFullName · $userEmail',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _userWeeklyReports.isNotEmpty
+                ? 'Comprehensive SOC audit PDF summary generated weekly (${_userWeeklyReports.length} reports available on cloud).'
+                : 'Comprehensive SOC audit PDF summary generated weekly with complete telemetry timeline.',
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), height: 1.35),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.flip_rounded, size: 13, color: Colors.blueGrey.shade400),
+              const SizedBox(width: 5),
+              Text(
+                'Tap card to inspect Cryptographic Compliance Seal',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blueGrey.shade500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyReportsCardBack(String userFullName) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Cryptographic Compliance Seal',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              Icon(Icons.verified_user_rounded, size: 18, color: Color(0xFF10B981)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'SHA-256 Digest: e7f2b984...a18c\nSOC Analyst Signature: Sovereign SOC Engine\nCompliance Standard: CERT-In & ISO/IEC 27001',
+            style: TextStyle(fontSize: 11, color: Color(0xFF475569), height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.flip_rounded, size: 13, color: Colors.blueGrey.shade400),
+                const SizedBox(width: 5),
+                Text(
+                  'Tap to return to Weekly PDF Digest',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueGrey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Sub-Widget: Sovereign Indian Cyber Architecture Assurance Footer ───────
+  Widget _buildSovereignAssuranceFooter() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x04000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.flag_rounded,
+              color: Color(0xFFFF6B35),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Sovereign Indian Cyber Architecture',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  '100% On-Premise & AWS ap-south-1 (Mumbai) Hosted. AES-256 DPAPI Data Encryption.',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -2852,7 +4193,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                     onPressed: () {
                       setState(() {
                         _simulatedIncomingCaller = '+91 98200 12345';
-                        _simulatedCallerName = 'Jash Thakkar (Security Lead)';
+                        _simulatedCallerName = '$_userDisplayName (Verified Lead)';
                         _simulatedCarrier =
                             'Reliance Jio 5G · Mumbai Telecom Circle';
                         _simulatedIsThreat = false;
@@ -2860,7 +4201,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       });
                       _triggerNativeCallOverlay(
                         number: '+91 98200 12345',
-                        name: 'Jash Thakkar (Security Lead)',
+                        name: '$_userDisplayName (Verified Lead)',
                         carrier: 'Reliance Jio 5G · Mumbai Telecom Circle',
                         isThreat: false,
                         riskScore: 4.0,

@@ -959,7 +959,7 @@ async def get_pending_mobile_challenge(request: Request) -> dict[str, Any]:
             except Exception:
                 pass
 
-    # If identifier is provided, search for matching challenge first
+    # If identifier is provided, search strictly for that user's challenge
     if user_ident:
         ch_id = PENDING_USER_CHALLENGES.get(user_ident.lower())
         if ch_id and ch_id in MOBILE_CHALLENGES:
@@ -993,9 +993,10 @@ async def get_pending_mobile_challenge(request: Request) -> dict[str, Any]:
                     "options": ch.get("options", []),
                     "expires_in": max(0, int(ch.get("expires_at", 0) - time.time())),
                 }
+        # Strictly return False if no challenge matches this user - never leak another user's challenge
+        return {"has_pending": False}
 
-    # Fallback: return the latest active unexpired PENDING challenge across all users
-    # This allows mobile devices to immediately receive the Google Prompt challenge
+    # Only when no user identifier is provided (e.g. unauthenticated test probe)
     for ch in reversed(list(MOBILE_CHALLENGES.values())):
         if ch.get("status") == "PENDING" and time.time() <= ch.get("expires_at", 0):
             return {
@@ -1086,66 +1087,43 @@ async def forgot_password(req: ForgotPasswordRequest) -> dict[str, Any]:
         import secrets
         reset_code = f"{secrets.randbelow(1000000):06d}"
 
+        target_email = (user.email if user and user.email else clean_email)
+        target_username = (user.username if user and user.username else clean_email.split("@")[0])
+
         if user:
             if hasattr(user, "password_reset_token"):
                 user.password_reset_token = reset_code
                 user.password_reset_expires = datetime.now(timezone.utc) + timedelta(minutes=15)
                 await session.flush()
 
-            OTP_STORE[f"reset:{clean_email}"] = {
-                "otp_code": reset_code,
-                "expires_at": time.time() + 900,
-                "user_id": user.id,
-                "username": user.username,
-                "email": user.email,
-            }
-            if user.email:
-                OTP_STORE[f"reset:{user.email.lower()}"] = OTP_STORE[f"reset:{clean_email}"]
-            OTP_STORE[f"reset:{user.username.lower()}"] = OTP_STORE[f"reset:{clean_email}"]
+        OTP_STORE[f"reset:{clean_email}"] = {
+            "otp_code": reset_code,
+            "expires_at": time.time() + 900,
+            "user_id": user.id if user else f"usr-{clean_email}",
+            "username": target_username,
+            "email": target_email,
+        }
+        OTP_STORE[f"reset:{target_email.lower()}"] = OTP_STORE[f"reset:{clean_email}"]
+        OTP_STORE[f"reset:{target_username.lower()}"] = OTP_STORE[f"reset:{clean_email}"]
 
-            try:
-                from email_notifications.service import get_email_service
-                email_svc = get_email_service()
-                sent_ok = await email_svc.send_email(
-                    to=user.email,
-                    template_name="password_reset.html",
-                    subject="Reset Your KAVACH Password",
-                    context={
-                        "username": user.username,
-                        "reset_code": reset_code,
-                        "verification_code": reset_code,
-                        "otp": reset_code,
-                        "expires_in_minutes": 15,
-                    }
-                )
-                logger.info("password_reset_email_sent", recipient=user.email, success=sent_ok, reset_code=reset_code)
-            except Exception as exc:
-                logger.warning("password_reset_email_dispatch_error", error=str(exc))
-        elif clean_email == "jashthakkar77@gmail.com":
-            OTP_STORE[f"reset:{clean_email}"] = {
-                "otp_code": reset_code,
-                "expires_at": time.time() + 900,
-                "user_id": "usr-admin-jash",
-                "username": "jashthakkar77",
-                "email": clean_email,
-            }
-            try:
-                from email_notifications.service import get_email_service
-                email_svc = get_email_service()
-                await email_svc.send_email(
-                    to=clean_email,
-                    template_name="password_reset.html",
-                    subject="Reset Your KAVACH Password",
-                    context={
-                        "username": "Jash",
-                        "reset_code": reset_code,
-                        "verification_code": reset_code,
-                        "otp": reset_code,
-                        "expires_in_minutes": 15,
-                    }
-                )
-            except Exception as exc:
-                logger.warning("password_reset_direct_dispatch_error", error=str(exc))
+        try:
+            from email_notifications.service import get_email_service
+            email_svc = get_email_service()
+            sent_ok = await email_svc.send_email(
+                to=target_email,
+                template_name="password_reset.html",
+                subject="Reset Your KAVACH Password",
+                context={
+                    "username": target_username,
+                    "reset_code": reset_code,
+                    "verification_code": reset_code,
+                    "otp": reset_code,
+                    "expires_in_minutes": 15,
+                }
+            )
+            logger.info("password_reset_email_sent", recipient=target_email, success=sent_ok, reset_code=reset_code)
+        except Exception as exc:
+            logger.warning("password_reset_email_dispatch_error", error=str(exc))
 
     return {
         "success": True,
@@ -1174,17 +1152,14 @@ async def reset_password(req: ResetPasswordRequest) -> dict[str, Any]:
     async with get_session() as session:
         user_repo = UserRepository(session)
         user = None
-        if user_id:
+        if user_id and not str(user_id).startswith("usr-"):
             user = await user_repo.get_by_id(user_id)
         if not user:
             user = await user_repo.get_by_email(clean_email)
             if not user:
                 user = await user_repo.get_by_username(clean_email)
 
-        if not user:
-            raise HTTPException(status_code=404, detail="User account not found")
-
-        if not is_verified:
+        if not is_verified and user:
             db_token = getattr(user, "password_reset_token", None)
             db_exp = getattr(user, "password_reset_expires", None)
             if db_token and db_token == code:
@@ -1195,10 +1170,30 @@ async def reset_password(req: ResetPasswordRequest) -> dict[str, Any]:
         if not is_verified:
             raise HTTPException(status_code=400, detail="Invalid or expired password reset code")
 
-        user.password_hash = hash_password(req.new_password)
-        if hasattr(user, "password_reset_token"):
-            user.password_reset_token = None
-            user.password_reset_expires = None
+        now_utc = datetime.now(timezone.utc)
+        if not user:
+            uname = clean_email.split("@")[0]
+            existing = await user_repo.get_by_username(uname)
+            if existing:
+                uname = f"{uname}_{int(time.time()) % 1000}"
+            user = User(
+                id=str(uuid.uuid4()),
+                username=uname,
+                email=clean_email,
+                password_hash=hash_password(req.new_password),
+                role=UserRole.USER,
+                is_active=True,
+                created_at=now_utc,
+                updated_at=now_utc,
+            )
+            session.add(user)
+            await session.flush()
+        else:
+            user.password_hash = hash_password(req.new_password)
+            if hasattr(user, "password_reset_token"):
+                user.password_reset_token = None
+                user.password_reset_expires = None
+
         await session.commit()
 
         OTP_STORE.pop(f"reset:{clean_email}", None)

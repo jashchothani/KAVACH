@@ -95,6 +95,19 @@ class ApiService {
     connectWebSocket();
   }
 
+  Future<Map<String, dynamic>?> fetchCurrentUser() async {
+    if (_authToken == null) return null;
+    try {
+      final res = await _send('GET', '/auth/me');
+      if (res.isNotEmpty) {
+        _currentUser = res;
+        _persistSession(_authToken, res);
+        return res;
+      }
+    } catch (_) {}
+    return _currentUser;
+  }
+
   void clearSession() {
     _authToken = null;
     _currentUser = null;
@@ -261,6 +274,9 @@ class ApiService {
     });
     if (res['access_token'] != null) {
       saveSession(res['access_token'], res);
+      try {
+        await fetchCurrentUser();
+      } catch (_) {}
     }
     return res;
   }
@@ -292,6 +308,9 @@ class ApiService {
     });
     if (res['access_token'] != null) {
       saveSession(res['access_token'], res);
+      try {
+        await fetchCurrentUser();
+      } catch (_) {}
     }
     return res;
   }
@@ -457,8 +476,11 @@ class ApiService {
     return await _send('GET', '/raksha/status');
   }
 
-  Future<Map<String, dynamic>> explainAlert(String alertId) async {
-    return await _send('POST', '/alerts/$alertId/explain');
+  Future<Map<String, dynamic>> explainAlert(dynamic alertOrId) async {
+    if (alertOrId is Map<String, dynamic>) {
+      return await _send('POST', '/raksha/explain-alert', body: alertOrId);
+    }
+    return await _send('POST', '/raksha/explain-alert', body: {'alert_id': alertOrId.toString()});
   }
 
   // ---------------------------------------------------------------------------
@@ -628,55 +650,12 @@ class ApiService {
 
   // Fleet Telemetry & Multi-Device Metrics
   Future<Map<String, dynamic>> getFleetMetrics() async {
-    try {
-      return await _send('GET', '/devices/fleet-metrics');
-    } catch (_) {}
-    return {
-      'desktop': {
-        'name': 'Desktop PC (Windows 11 Enterprise)',
-        'hostname': 'DESKTOP-KAVACH-PRO',
-        'ip': '192.168.1.104',
-        'os': 'Windows 11 Pro 23H2 (Build 22631)',
-        'cpu_pct': 28.4,
-        'ram_pct': 46.2,
-        'ram_used_gb': 7.4,
-        'ram_total_gb': 16.0,
-        'disk_pct': 52.1,
-        'disk_used_gb': 248.5,
-        'disk_total_gb': 512.0,
-        'net_rx_kbps': 420.5,
-        'net_tx_kbps': 118.2,
-        'temp_c': 44.5,
-        'status': 'Online · Protected',
-      },
-      'mobile': {
-        'name': 'Redmi Note 9 Pro Max',
-        'hostname': 'redmi-note-9-pro-max',
-        'ip': '192.168.1.118',
-        'os': 'Android 12 (MIUI Global 14.0.2)',
-        'cpu_pct': 21.0,
-        'ram_pct': 58.5,
-        'ram_used_gb': 4.68,
-        'ram_total_gb': 8.0,
-        'disk_pct': 68.4,
-        'disk_used_gb': 87.5,
-        'disk_total_gb': 128.0,
-        'battery_pct': 84,
-        'battery_charging': true,
-        'temp_c': 32.8,
-        'net_rx_kbps': 185.0,
-        'net_tx_kbps': 42.6,
-        'status': 'Online · Protected',
-      }
-    };
+    return await _send('GET', '/devices/fleet-metrics');
   }
 
   // Account Activation by SOC Analyst
   Future<Map<String, dynamic>> getActivationStatus() async {
-    try {
-      return await _send('GET', '/account/activation-status');
-    } catch (_) {}
-    return {'activated': true, 'user_email': 'jashthakkar77@gmail.com'};
+    return await _send('GET', '/account/activation-status');
   }
 
   Future<Map<String, dynamic>> activateUser(String userEmail, {bool activated = true, String? notes}) async {

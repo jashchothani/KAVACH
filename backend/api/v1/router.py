@@ -427,27 +427,34 @@ async def forgot_password(req: ForgotPasswordRequest) -> dict[str, Any]:
     """Generate and send a password reset OTP code to user email address."""
     async with get_session() as session:
         user_repo = UserRepository(session)
-        user = await user_repo.get_by_email(req.email)
+        clean_email = req.email.strip().lower()
+        user = await user_repo.get_by_email(clean_email)
         if not user:
-            # Prevent user enumeration by returning success anyway
-            return {"message": "If the email exists, a password reset code has been sent."}
+            user = await user_repo.get_by_username(clean_email)
 
         # Generate 6-digit reset code (OTP)
         reset_code = f"{secrets.randbelow(1000000):06d}"
-        user.password_reset_token = reset_code
-        user.password_reset_expires = datetime.now(timezone.utc) + timedelta(minutes=15) # 15 minutes validity
+        if user:
+            user.password_reset_token = reset_code
+            user.password_reset_expires = datetime.now(timezone.utc) + timedelta(minutes=15) # 15 minutes validity
 
         from email_notifications.service import get_email_service
         email_svc = get_email_service()
 
+        target_email = user.email if (user and user.email) else clean_email
+        target_username = user.username if (user and user.username) else clean_email.split("@")[0]
+
         asyncio.create_task(
             email_svc.send_email(
-                to=user.email,
+                to=target_email,
                 template_name="password_reset.html",
                 subject="Reset Your KAVACH Password",
                 context={
-                    "username": user.username,
-                    "reset_code": reset_code
+                    "username": target_username,
+                    "reset_code": reset_code,
+                    "verification_code": reset_code,
+                    "otp": reset_code,
+                    "expires_in_minutes": 15,
                 }
             )
         )
