@@ -152,7 +152,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_list,
-        allow_origin_regex=r"(https?://(localhost|127\.0\.0\.1)(:\d+)?|null|file://.*)",
+        allow_origin_regex=r"(https?://(localhost|127\.0\.0\.1|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?|https?://.*\.?kavachcybertech\.in(:[0-9]+)?|null|file://.*)",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

@@ -2,19 +2,27 @@
 (function () {
   const isFile = location.protocol === 'file:';
   const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  
   // Resolves to local FastAPI on port 8000 for file/dev, and relative /api/v1 for all browser deployments (Nginx reverse proxy)
   let defaultBase = '/api/v1';
+  let directFallback = 'http://127.0.0.1:8000/api/v1';
+
   if (isFile) {
     defaultBase = 'http://127.0.0.1:8000/api/v1';
-  } else if (isLocal && (location.port === '5173' || location.port === '3000' || location.port === '8080')) {
+    directFallback = 'http://127.0.0.1:8000/api/v1';
+  } else if (isLocal && location.port !== '' && location.port !== '80' && location.port !== '443') {
+    // If browsing local static dev server (e.g. Live Server port 5500, Vite 5173, etc.), route directly to FastAPI backend on 8000
     defaultBase = 'http://127.0.0.1:8000/api/v1';
+    directFallback = 'http://127.0.0.1:8000/api/v1';
   } else {
+    // Production Nginx reverse proxy
     defaultBase = '/api/v1';
+    directFallback = `${location.protocol}//${location.hostname}:8000/api/v1`;
   }
 
   window.KAVACH_CONFIG = Object.assign({
     apiBase: defaultBase,
-    directBase: defaultBase,
+    directBase: directFallback,
     timeout: 30000
   }, window.KAVACH_CONFIG || {});
 })();
@@ -85,10 +93,10 @@
     try {
       return await rawFetch(primaryUrl, method, headers, body, C.timeout);
     } catch (err) {
-      // Automatic fallback to direct backend if proxy gave 502 or network error
-      if ((err.network || err.status === 502) && C.directBase && !primaryUrl.startsWith(C.directBase)) {
+      // Automatic fallback to direct backend if proxy gave 502, 404, or network error
+      const directUrl = C.directBase + path + q;
+      if ((err.network || err.status === 502 || err.status === 404 || err.status === 504) && C.directBase && primaryUrl !== directUrl) {
         try {
-          const directUrl = C.directBase + path + q;
           return await rawFetch(directUrl, method, headers, body, C.timeout);
         } catch (err2) {
           throw err2;
@@ -118,69 +126,51 @@
     threats: { list: (limit = 100) => get('/threats', { limit }) },
     url: { scan: u => post('/url/scan', { url: u }), history: (limit = 20) => get('/url/history', { limit }) },
     soar: { playbooks: () => get('/soar/playbooks'), execute: (id, params = {}, dry = false) => post('/soar/execute', { playbook_id: id, params, dry_run: dry }), stats: () => get('/soar/stats') },
-    sandbox: { detonations: () => get('/sandbox/detonations'), submit: b => post('/sandbox/submit', b) },
-    admin: { endpointsPosture: () => get('/admin/endpoints-posture'), accountsPosture: () => get('/admin/accounts-posture'), policies: () => get('/admin/policies'), updatePolicies: p => patch('/admin/policies', p) },
-    raksha: { chat: (m, ctx = '') => post('/raksha/chat', { message: m, context: ctx }) },
-    mitre: { heatmap: () => get('/mitre/heatmap') },
-    threatIntel: { list: () => get('/threat-intel/indicators'), lookup: v => post('/threat-intel/lookup', { value: v }) },
-    compliance: { status: () => get('/compliance/cert-in/status'), report: d => post('/compliance/cert-in/report', d) },
-    mayajaal: { decoys: () => get('/mayajaal/decoys'), deploy: type => post('/mayajaal/deploy', { type }) },
-    attackGraph: { data: id => get(`/attack-graph/incident/${id}`) },
-    audit: { logs: () => get('/audit/logs'), verify: () => post('/audit/verify-chain') },
-    enrollment: { devices: () => get('/enrollment/devices') },
-    monitoring: { activity: (limit = 50) => get('/monitoring/activity', { limit }) },
-    logs: { list: (stream, limit = 100) => get('/logs', { stream, limit }) },
-    ml: { status: () => get('/ml/status') },
-    account: {
-      request: data => post('/account/request', data),
-      status: id => get('/account/status/' + encodeURIComponent(id)),
-      adminQueue: () => get('/account/requests/admin-queue'),
-      adminReview: (id, action, notes, rejection_reason) => post(`/account/requests/${id}/admin-review`, { action, notes, rejection_reason }),
-      analystQueue: () => get('/account/requests/analyst-queue'),
-      analystReview: (id, action, notes, rejection_reason) => post(`/account/requests/${id}/analyst-review`, { action, notes, rejection_reason }),
-      workload: () => get('/account/analysts/workload'),
-      inviteAnalyst: data => post('/account/analysts/invite', data),
-      users: params => get('/account/users', params),
-      suspend: (id, reason) => post(`/account/users/${id}/suspend`, { reason }),
-      reactivate: id => post(`/account/users/${id}/reactivate`, {})
-    },
-    reports: {
-      list: () => get('/reports'),
-      generateWeekly: data => post('/reports/generate-weekly', data),
-      downloadUrl: filename => `${C.apiBase}/reports/download/${encodeURIComponent(filename)}`
+    compliance: { frameworks: () => get('/compliance/frameworks') },
+    reports: { executive: (p = '7d') => get('/reports/executive', { period: p }), generate: b => post('/reports/generate', b) },
+    network: { topology: () => get('/network/topology') },
+    threatIntel: { feeds: () => get('/threat-intel/feeds'), lookup: (v, t = 'ip') => get('/threat-intel/lookup', { value: v, type: t }) },
+    sandbox: { submit: (f, b) => {
+      const fd = new FormData();
+      fd.append('file', f);
+      if (b && b.analysis_type) fd.append('analysis_type', b.analysis_type);
+      const headers = { 'X-Request-ID': 'web-' + Math.random().toString(36).slice(2, 10) };
+      const t = session.token();
+      if (t) headers.Authorization = 'Bearer ' + t;
+      return fetch(C.apiBase + '/sandbox/submit', { method: 'POST', headers, body: fd }).then(async r => {
+        if (!r.ok) {
+          let d = {};
+          try { d = await r.json(); } catch {}
+          throw new Error((d.error && (d.error.message || d.error.detail)) || d.detail || ('HTTP ' + r.status));
+        }
+        return r.json();
+      });
+    }, results: id => get('/sandbox/results/' + id), list: (limit = 50) => get('/sandbox/samples', { limit }) },
+    ai: { query: (q, ctx) => post('/raksha/query', { question: q, context: ctx }), feedback: b => post('/raksha/feedback', b) },
+    ws: {
+      connect(onMsg, onErr) {
+        let wsUrl;
+        if (C.apiBase.startsWith('http://') || C.apiBase.startsWith('https://')) {
+          const u = new URL(C.apiBase);
+          wsUrl = (u.protocol === 'https:' ? 'wss://' : 'ws://') + u.host + '/ws/events';
+        } else {
+          const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+          wsUrl = `${proto}//${location.host}/ws/events`;
+        }
+        const t = session.token();
+        if (t) wsUrl += '?token=' + encodeURIComponent(t);
+        try {
+          const ws = new WebSocket(wsUrl);
+          ws.onmessage = e => { try { onMsg && onMsg(JSON.parse(e.data)); } catch {} };
+          ws.onerror = onErr || (() => {});
+          return ws;
+        } catch (e) {
+          onErr && onErr(e);
+          return null;
+        }
+      }
     }
   };
 
-  const typeWriter = (el, text, scrollEl, onDone) => {
-    if (!el) return;
-    el.innerHTML = '';
-    const cursor = document.createElement('span');
-    cursor.className = 'chatgpt-cursor';
-    cursor.textContent = '▋';
-    el.appendChild(cursor);
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i < text.length) {
-        const chunk = text.substr(i, 4);
-        i += 4;
-        const node = document.createTextNode(chunk);
-        el.insertBefore(node, cursor);
-        if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
-      } else {
-        clearInterval(timer);
-        if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
-        el.innerHTML = text.replace(/### (.*?)\n/g, '<h3 style="font-size:13.5px;color:#0284c7;margin:10px 0 4px;font-weight:800">$1</h3>')
-                           .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-                           .replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,0.06);padding:2px 5px;border-radius:4px;font-size:11px;font-family:monospace">$1</code>')
-                           .replace(/\n\n/g, '<br><br>')
-                           .replace(/\n/g, '<br>');
-        if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
-        if (onDone) onDone();
-      }
-    }, 12);
-  };
-
-  window.KAVACH = { api, session, isAnalystRole, isAdminRole, roleName, normalizeRole, isOffline: () => offline, typeWriter, typeWriterEffect: typeWriter,
-    esc: s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
-    ago: iso => { const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000)); return isNaN(m) ? '—' : m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; } };
+  window.KAVACH = { api, session, config: C, isOffline: () => offline };
 })();
