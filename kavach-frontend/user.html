@@ -844,6 +844,13 @@
           titleEl.textContent = titleMap[hash];
         }
 
+        if (hash === 'raksha-ai') {
+          setTimeout(function() {
+            var inp = document.getElementById('cm');
+            if (inp) inp.focus();
+          }, 150);
+        }
+
         // 5. Scroll main container to top
         var mainWrap = document.querySelector('.main-content-wrap');
         if (mainWrap) mainWrap.scrollTop = 0;

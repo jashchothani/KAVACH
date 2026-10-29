@@ -1737,11 +1737,29 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               ],
             ),
           ),
-          Switch.adaptive(
-            value: value,
-            activeTrackColor: color.withValues(alpha: 0.4),
-            activeThumbColor: color,
-            onChanged: onChanged,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: color.withValues(alpha: 0.35)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.shield_rounded, size: 13, color: color),
+                const SizedBox(width: 5),
+                Text(
+                  value ? 'ENFORCED' : 'PROTECTED',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

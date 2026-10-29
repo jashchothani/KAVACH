@@ -226,7 +226,11 @@ KAVACH active telemetry sensors intercepted this abnormal system action before u
 3. **Run Full Endpoint Scan**: Launch a KAVACH on-demand scan to verify system integrity."""
 
         # ── 0.5 Contact, Support & Official SOC Details ───────────────────────
-        if any(w in lower_prompt for w in ("contact", "email", "support", "helpdesk", "phone", "helpline", "reach out", "call", "address", "office", "headquarters", "soc contact", "customer care", "suport")):
+        is_contact = (
+            any(w in user_q_lower for w in ("contact", "support", "helpdesk", "helpline", "reach out", "address", "headquarters", "soc contact", "customer care", "suport", "phone number", "emergency hotline"))
+            or (any(w in user_q_lower for w in ("email", "phone", "call")) and any(w in user_q_lower for w in ("kavach", "support", "reach", "contact", "official", "help", "desk", "team")))
+        ) and not any(w in user_q_lower for w in ("port", "587", "25", "smtp", "phishing", "spf", "dkim"))
+        if is_contact:
             return """### 🛡️ KAVACH Official Security Operations & Support Desk
 
 For active security incidents, enterprise technical assistance, or general inquiries, reach the **KAVACH Security Operations Center (SOC)**:
@@ -266,7 +270,7 @@ Mumbai, Maharashtra 400051, India
 
 What security question or concern can I help you resolve today?"""
 
-        if any(p in lower_prompt for p in ("who are you", "what are you", "what can you do", "introduce yourself")):
+        if any(p in user_q_lower for p in ("who are you", "what are you", "what can you do", "introduce yourself")):
             return """### 🤖 About Raksha AI
 I am **Raksha AI**, an autonomous sovereign cybersecurity copilot engineered specifically for the **KAVACH Enterprise SOAR & Endpoint Protection Platform**.
 
@@ -279,7 +283,7 @@ I am **Raksha AI**, an autonomous sovereign cybersecurity copilot engineered spe
 Feel free to ask any question regarding your current device posture, a suspicious message, or defensive best practices!"""
 
         # ── 2. Ransomware & File Encryption (Prioritized) ─────────────────────
-        if any(w in lower_prompt for w in ("ransomware", "encrypt", "crypto locker", "lockbit", "blackcat", "decrypt", "pay ransom")):
+        if any(w in user_q_lower for w in ("ransomware", "encrypt", "crypto locker", "lockbit", "blackcat", "decrypt", "pay ransom")):
             return """### 🔒 Ransomware Threat Mechanics & Mitigation
 
 Ransomware is malicious software engineered to encrypt enterprise and personal data using asymmetric ciphers (AES-256 + RSA-4096), demanding cryptocurrency for decryption keys.
@@ -299,7 +303,7 @@ Ransomware is malicious software engineered to encrypt enterprise and personal d
 3. **Never Pay the Ransom**: CERT-In and international law enforcement discourage ransom payments, as paying funds future criminal operations and provides zero guarantee of decryption."""
 
         # ── 3. Digital Arrest & Law Enforcement Impersonation Scams ───────────
-        if any(w in lower_prompt for w in ("digital arrest", "police", "customs", "cbi", "narcotics", "ed arrest", "skype call", "supreme court")):
+        if any(w in user_q_lower for w in ("digital arrest", "police", "customs", "cbi", "narcotics", "ed arrest", "skype call", "supreme court")):
             return """### 🚨 Critical Scam Advisory: "Digital Arrest" Fraud
 
 > **IMPORTANT:** Under Indian criminal jurisprudence, **there is NO lawful concept of "Digital Arrest"**. Police, CBI, ED, NIA, or Customs NEVER conduct arrests, interrogations, or trials via video calls.
@@ -323,7 +327,7 @@ Ransomware is malicious software engineered to encrypt enterprise and personal d
    - Lodge an official complaint at [cybercrime.gov.in](https://cybercrime.gov.in)."""
 
         # ── 4. Telecom, Caller ID & Spam Calls ────────────────────────────────
-        if any(w in lower_prompt for w in ("caller id", "spam call", "unknown number", "+92", "+234", "+855", "+44", "telecom", "phone number", "who called", "incoming call")):
+        if any(w in user_q_lower for w in ("caller id", "spam call", "unknown number", "+92", "+234", "+855", "+44", "telecom", "phone number", "who called", "incoming call")):
             return """### 📞 Telecom & International Caller ID Assessment
 
 KAVACH Telecom Sentinel analyzed the communication telemetry against national cyber threat syndicate registries.
@@ -346,7 +350,7 @@ KAVACH Telecom Sentinel analyzed the communication telemetry against national cy
 4. **Block & Feed Telemetry**: Tap **Block & Report** to propagate this number into KAVACH's distributed blacklist."""
 
         # ── 5. SMS, Smishing & Telegram Task Scams ────────────────────────────
-        if any(w in lower_prompt for w in ("sms", "smishing", "telegram", "whatsapp scam", "task scam", "youtube like", "part time job", "lottery")):
+        if any(w in user_q_lower for w in ("sms", "smishing", "telegram", "whatsapp scam", "task scam", "youtube like", "part time job", "lottery")):
             return """### 💬 SMS & Instant Messaging (Smishing) Evaluation
 
 Unsolicited messages offering high investment yields or claiming urgent account blocks are primary vectors for social engineering.
@@ -370,7 +374,7 @@ Unsolicited messages offering high investment yields or claiming urgent account 
 - **Verify with KAVACH Link Shield**: Paste any suspicious URL into KAVACH's Web Shield for instant SSL, reputation, and redirect inspection."""
 
         # ── 6. What is KAVACH / Platform Architecture ─────────────────────────
-        if any(p in lower_prompt for p in ("what is kavach", "about kavach", "kavach features", "how kavach works", "who made kavach")):
+        if any(p in user_q_lower for p in ("what is kavach", "about kavach", "kavach features", "how kavach works", "who made kavach")):
             return """### 🛡️ KAVACH Sovereign Cybersecurity Platform
 
 **KAVACH** is an enterprise-grade sovereign Endpoint Detection & Response (EDR) and Security Orchestration, Automation, and Response (SOAR) ecosystem.
@@ -392,7 +396,7 @@ Unsolicited messages offering high investment yields or claiming urgent account 
 - Fully compliant with **CERT-In directions**, maintaining strict internal log retention and rapid 6-hour incident reporting workflows without leaking telemetry outside your infrastructure."""
 
         # ── 7. Wi-Fi & Network Security ───────────────────────────────────────
-        if any(w in lower_prompt for w in ("wifi", "wi-fi", "hotspot", "public network", "evil twin", "arp spoofing", "dns spoof")):
+        if any(w in user_q_lower for w in ("wifi", "wi-fi", "hotspot", "public network", "evil twin", "arp spoofing", "dns spoof")):
             return """### 📡 Wireless Network & Transport Security Assessment
 
 Connecting to public, untrusted, or unverified Wi-Fi hotspots introduces risks of Man-in-the-Middle (MITM) interception and session hijacking.
@@ -413,7 +417,7 @@ Connecting to public, untrusted, or unverified Wi-Fi hotspots introduces risks o
 4. **Keep KAVACH Firewall Active**: KAVACH drops all incoming unsolicited probes on public network profiles."""
 
         # ── 8. Antivirus, Endpoint Sensors & Defender ────────────────────────
-        if any(w in lower_prompt for w in ("antivirus", "defender", "virus", "malware", "trojan", "sensor")):
+        if any(w in user_q_lower for w in ("antivirus", "defender", "virus", "malware", "trojan", "sensor")):
             return """### 🛡️ Endpoint Sensor & Antivirus Architecture
 
 KAVACH operates an integrated, high-speed telemetry engine that complements existing operating system defenses like Microsoft Defender and Android Play Protect.
@@ -435,7 +439,7 @@ KAVACH operates an integrated, high-speed telemetry engine that complements exis
 - Conduct a full KAVACH Deep Scan once a week or immediately after installing third-party utilities."""
 
         # ── 9. Security Score & Posture Hardening ─────────────────────────────
-        if any(w in lower_prompt for w in ("score", "posture", "health", "how to improve", "percentage", "rating")):
+        if any(w in user_q_lower for w in ("score", "posture", "health", "how to improve", "percentage", "rating")):
             return """### 1. Security Assessment: KAVACH Posture Score Breakdown
 Your KAVACH Security Score represents an algorithmic calculation of endpoint resilience across active protection modules.
 
@@ -461,7 +465,7 @@ Maintaining a posture score above 90 minimizes exposure to automated vulnerabili
 4. Run a fresh **System Telemetry Scan** to clear pending informational alerts."""
 
         # ── 10. Phishing Links, URLs & Web Safety ──────────────────────────────
-        if any(w in lower_prompt for w in ("url", "phishing", "link", "domain", "fake website", "shortener")):
+        if any(w in user_q_lower for w in ("url", "phishing", "link", "domain", "fake website", "shortener")):
             return """### 🌐 Phishing & Web Shield Threat Advisory
 
 Phishing remains the #1 initial access vector used by adversaries to extract corporate credentials, session cookies, and financial tokens.
@@ -481,7 +485,7 @@ Phishing remains the #1 initial access vector used by adversaries to extract cor
 3. **Use KAVACH URL Scanner**: Submit the full link in the KAVACH Web Scanner before logging in or entering payment details."""
 
         # ── 11. Emergency: "I got hacked / Money lost" ─────────────────────────
-        if any(w in lower_prompt for w in ("hacked", "money stolen", "unauthorized transaction", "lost money", "compromised", "clicked link")):
+        if any(w in user_q_lower for w in ("hacked", "money stolen", "unauthorized transaction", "lost money", "compromised", "clicked link")):
             return """### 🚨 Emergency Incident Response: Immediate Containment Protocol
 
 If you suspect your credentials, device, or bank account have been compromised, act immediately within the **Golden Hour**:
@@ -508,7 +512,7 @@ If you suspect your credentials, device, or bank account have been compromised, 
 3. **Lodge Formal Complaint**: File an official report with screenshots and transaction receipts at [cybercrime.gov.in](https://cybercrime.gov.in)."""
 
         # ── 12. Password Hygiene & Multi-Factor Authentication (MFA) ──────────
-        if any(w in lower_prompt for w in ("password", "2fa", "mfa", "authenticator", "passkey", "biometric")):
+        if any(w in user_q_lower for w in ("password", "2fa", "mfa", "authenticator", "passkey", "biometric")):
             return """### 🔑 Identity & Access Hardening: Password & MFA Best Practices
 
 Compromised credentials account for the vast majority of account takeovers. Transitioning to modern identity hygiene eliminates 99% of automated attacks.

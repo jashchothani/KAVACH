@@ -41,7 +41,7 @@ class _SocDashboardScreenState extends State<SocDashboardScreen>
   bool _isGeneratingReport = false;
   List<dynamic> _weeklyReports = [];
   List<dynamic> _pendingAccountRequests = [];
-  String _selectedActivationEmail = 'jashthakkar77@gmail.com';
+  String _selectedActivationEmail = 'support@kavachcybertech.in';
   String? _selectedRequestId;
 
   // Filter state
@@ -256,7 +256,7 @@ class _SocDashboardScreenState extends State<SocDashboardScreen>
           _pendingAccountRequests = results[10] as List<dynamic>;
           if (_pendingAccountRequests.isNotEmpty) {
             final first = _pendingAccountRequests.first as Map<String, dynamic>;
-            _selectedActivationEmail = first['email']?.toString() ?? 'jashthakkar77@gmail.com';
+            _selectedActivationEmail = first['email']?.toString() ?? 'support@kavachcybertech.in';
             _selectedRequestId = first['id']?.toString();
           }
         }
@@ -1464,7 +1464,7 @@ class _SocDashboardScreenState extends State<SocDashboardScreen>
                       children: [
                         const Text('Target User:', style: TextStyle(color: Colors.white54, fontSize: 12)),
                         Text(
-                          _selectedActivationEmail.contains('jashthakkar77') ? 'Jash Thakkar' : _selectedActivationEmail.split('@').first,
+                          _selectedActivationEmail.split('@').first.toUpperCase(),
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       ],
@@ -1583,10 +1583,12 @@ class _SocDashboardScreenState extends State<SocDashboardScreen>
                       : () async {
                           setState(() => _isGeneratingReport = true);
                           try {
+                            final targetEmail = _selectedActivationEmail.isNotEmpty ? _selectedActivationEmail : (_api.currentUser?['email'] ?? 'support@kavachcybertech.in');
+                            final targetName = targetEmail.split('@').first.toUpperCase();
                             await _api.generateWeeklyReport(
-                              userName: 'Jash Thakkar',
-                              userEmail: 'jashthakkar77@gmail.com',
-                              analystName: 'SOC Lead Analyst',
+                              userName: targetName,
+                              userEmail: targetEmail,
+                              analystName: _api.currentUser?['username'] ?? 'SOC Lead Analyst',
                             );
                             final updated = await _api.getWeeklyReports();
                             if (!mounted) return;
@@ -1595,9 +1597,9 @@ class _SocDashboardScreenState extends State<SocDashboardScreen>
                               _isGeneratingReport = false;
                             });
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                backgroundColor: Color(0xFF10B981),
-                                content: Text('Weekly PDF Report generated & emailed to jashthakkar77@gmail.com with PDF attached! ✓'),
+                              SnackBar(
+                                backgroundColor: const Color(0xFF10B981),
+                                content: Text('Weekly PDF Report generated & emailed to $targetEmail with PDF attached! ✓'),
                               ),
                             );
                           } catch (e) {

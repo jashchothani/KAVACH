@@ -662,36 +662,41 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
       builder: (context, constraints) {
         final totalGaps = (4 * 8.0) + 18.0;
         final boxWidth =
-            ((constraints.maxWidth - totalGaps) / 6).clamp(38.0, 50.0);
+            ((constraints.maxWidth - totalGaps) / 6).clamp(24.0, 48.0);
 
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // First 3 Digits
-            _buildDigitBox(0, boxWidth),
-            const SizedBox(width: 8),
-            _buildDigitBox(1, boxWidth),
-            const SizedBox(width: 8),
-            _buildDigitBox(2, boxWidth),
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // First 3 Digits
+              _buildDigitBox(0, boxWidth),
+              const SizedBox(width: 8),
+              _buildDigitBox(1, boxWidth),
+              const SizedBox(width: 8),
+              _buildDigitBox(2, boxWidth),
 
-            // Center Dash Divider
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 6),
-              width: 10,
-              height: 3,
-              decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
-                borderRadius: BorderRadius.circular(2),
+              // Center Dash Divider
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                width: 10,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
 
-            // Last 3 Digits
-            _buildDigitBox(3, boxWidth),
-            const SizedBox(width: 8),
-            _buildDigitBox(4, boxWidth),
-            const SizedBox(width: 8),
-            _buildDigitBox(5, boxWidth),
-          ],
+              // Last 3 Digits
+              _buildDigitBox(3, boxWidth),
+              const SizedBox(width: 8),
+              _buildDigitBox(4, boxWidth),
+              const SizedBox(width: 8),
+              _buildDigitBox(5, boxWidth),
+            ],
+          ),
         );
       },
     );

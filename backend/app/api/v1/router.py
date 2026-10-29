@@ -713,10 +713,13 @@ async def get_me(current_user: TokenPayload = Depends(get_current_user)) -> dict
         repo = UserRepository(session)
         user = await repo.get_by_id(current_user.sub)
         email = user.email if user else None
+        username = user.username if user else current_user.username
+        full_name = getattr(user, "full_name", None) or (username[0].upper() + username[1:] if username else "Protected User")
 
     return {
         "user_id": current_user.sub,
-        "username": current_user.username,
+        "username": username,
+        "full_name": full_name,
         "email": email,
         "role": role_val,
         "permissions": perm_strings,
@@ -2363,8 +2366,8 @@ async def generate_weekly_report(
             get_email_service = None
 
     req = req or {}
-    target_username = req.get("username") or req.get("user_name") or (user.username if user else "Jash Thakkar")
-    target_email = req.get("email") or req.get("user_email") or (user.email if user and user.email else "jashthakkar77@gmail.com")
+    target_username = req.get("username") or req.get("user_name") or (user.username if user else "Security Analyst")
+    target_email = req.get("email") or req.get("user_email") or (user.email if user and user.email else "support@kavachcybertech.in")
     analyst_name = req.get("analyst_name") or (getattr(user, "username", "SOC Operations Lead") if user else "SOC Operations Lead")
 
     settings = get_settings()
@@ -2492,12 +2495,15 @@ async def list_reports(
         sz_kb = round(f.stat().st_size / 1024, 1)
         mtime = datetime.fromtimestamp(f.stat().st_mtime, timezone.utc).isoformat()
         rpt_id = f"RPT-{abs(hash(f.name)) % 1000000:06d}"
+        clean_name = f.stem.replace("KAVACH_Weekly_Report_", "").replace("_", " ")
+        user_display = (clean_name.split()[0].capitalize() + " " + clean_name.split()[1].capitalize()) if len(clean_name.split()) >= 2 else (user.username if user else "Authorized User")
+        user_mail = user.email if user and user.email else "support@kavachcybertech.in"
         items.append({
             "id": rpt_id,
             "filename": f.name,
             "title": f.name.replace(".pdf", "").replace("_", " "),
-            "user_name": "Jash Thakkar",
-            "user_email": "jashthakkar77@gmail.com",
+            "user_name": user_display,
+            "user_email": user_mail,
             "analyst_name": "SOC Lead Analyst",
             "period": "Past 7 Days",
             "status": "CERTIFIED & EMAILED ✓",
@@ -2517,20 +2523,23 @@ async def list_reports(
             except Exception:
                 generate_user_weekly_pdf_report = None
 
-        init_file = f"KAVACH_Weekly_Report_Jash_Thakkar_{int(time.time())}.pdf"
-        generate_user_weekly_pdf_report(
-            user_name="Jash Thakkar",
-            user_email="jashthakkar77@gmail.com",
-            filename=init_file,
-        )
+        def_u = user.username if user else "Enterprise User"
+        def_e = user.email if user and user.email else "support@kavachcybertech.in"
+        init_file = f"KAVACH_Weekly_Report_{def_u.replace(' ', '_')}_{int(time.time())}.pdf"
+        if generate_user_weekly_pdf_report:
+            generate_user_weekly_pdf_report(
+                user_name=def_u,
+                user_email=def_e,
+                filename=init_file,
+            )
         p = reports_dir / init_file
         if p.exists():
             items.append({
                 "id": "RPT-001024",
                 "filename": init_file,
                 "title": init_file.replace(".pdf", "").replace("_", " "),
-                "user_name": "Jash Thakkar",
-                "user_email": "jashthakkar77@gmail.com",
+                "user_name": def_u,
+                "user_email": def_e,
                 "analyst_name": "SOC Lead Analyst",
                 "period": "Past 7 Days",
                 "status": "CERTIFIED & EMAILED ✓",

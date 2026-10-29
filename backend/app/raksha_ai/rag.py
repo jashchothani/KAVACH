@@ -145,6 +145,19 @@ RAG_KNOWLEDGE_BASE: list[dict[str, Any]] = [
             "- Playbook 4 (USB Lockdown): Suspends USB storage driver services to halt physical lateral data exfiltration."
         ),
     },
+    {
+        "id": "kb_aws_ec2_smtp_ports",
+        "category": "Cloud Infrastructure & SMTP Security",
+        "keywords": ["587", "25", "smtp", "port", "email", "aws", "ec2", "ses", "mail", "send", "submission"],
+        "title": "AWS EC2 Email Port Architecture: Port 587 (STARTTLS) vs Port 25 Restriction",
+        "content": (
+            "Recommended Port on AWS EC2: Always use Port 587 with STARTTLS encryption.\n"
+            "- AWS EC2 Policy: By default, AWS strictly throttles or blocks outbound traffic on TCP Port 25 for all EC2 instances to prevent spam abuse and IP blacklisting.\n"
+            "- Port 587 (RFC 6409): The modern IETF standard for client-to-server email submission. It enforces explicit STARTTLS cryptographic negotiation and SASL authentication.\n"
+            "- Port 465 (SMTPS): Alternative standard enforcing implicit TLS from initial connection handshake.\n"
+            "- Best Practice: Configure your mail transport agent (MTA) or SMTP client to connect via Port 587 with TLS and authenticate via Amazon SES, SendGrid, or your corporate SMTP gateway."
+        ),
+    },
 ]
 
 

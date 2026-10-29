@@ -416,7 +416,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  user_email: 'jashthakkar77@gmail.com',
+                  user_email: ($('#soc-act-email')?.textContent || user.email || 'support@kavachcybertech.in').trim(),
                   activated: true,
                   notes: 'SOC Analyst Verified and Granted Shield'
                 })
@@ -813,8 +813,8 @@
               <tr style="animation-delay:${i * 0.04}s">
                 <td class="mono"><b>${esc(r.id || 'RPT-' + String(i + 1).padStart(4, '0'))}</b></td>
                 <td><b>${esc(r.title || r.filename)}</b></td>
-                <td>${esc(r.user_name || 'Jash Thakkar')}</td>
-                <td class="mono" style="font-size:0.8rem">${esc(r.user_email || 'jashthakkar77@gmail.com')}</td>
+                <td>${esc(r.user_name || user.username || 'Authorized User')}</td>
+                <td class="mono" style="font-size:0.8rem">${esc(r.user_email || user.email || 'support@kavachcybertech.in')}</td>
                 <td class="mono" style="font-size:0.8rem">${new Date(r.created_at || Date.now()).toLocaleString()}</td>
                 <td><span class="pill safe mono" style="font-size:0.72rem">${esc(r.status || 'DELIVERED & EMAILED ✓')}</span></td>
                 <td style="text-align:right">
@@ -839,11 +839,14 @@
           btnGen.disabled = true;
           btnGen.innerHTML = '<span class="dots"><i></i><i></i><i></i></span> Generating Charts & Compiling PDF…';
           try {
+            const targetSelect = $('#report-target-user');
+            const targetEmail = (targetSelect ? targetSelect.value : '') || user.email || 'support@kavachcybertech.in';
+            const targetName = targetEmail.split('@')[0].toUpperCase();
             const payload = {
-              username: 'Jash Thakkar',
-              user_name: 'Jash Thakkar',
-              email: 'jashthakkar77@gmail.com',
-              user_email: 'jashthakkar77@gmail.com',
+              username: targetName,
+              user_name: targetName,
+              email: targetEmail,
+              user_email: targetEmail,
               analyst_name: user.username || 'SOC Lead Analyst'
             };
             let data;
@@ -857,7 +860,7 @@
               });
               data = await res.json();
             }
-            toast('Weekly PDF report generated & dispatched to jashthakkar77@gmail.com with PDF attached! ✓');
+            toast(`Weekly PDF report generated & dispatched to ${targetEmail} with PDF attached! ✓`);
             await renderReportsVault();
           } catch (e) {
             toast('Failed to generate report: ' + (e.message || 'Unknown error'));

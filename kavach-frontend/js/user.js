@@ -1220,6 +1220,12 @@
     const q = questionText.trim();
     if (!q) return;
 
+    if (window.switchPage) {
+      window.switchPage('raksha-ai');
+    } else if (window.KAVACH_NAV && window.KAVACH_NAV.goTo) {
+      window.KAVACH_NAV.goTo('raksha-ai');
+    }
+
     appendChatMessage('user', q);
     if (chatInput) chatInput.value = '';
 
@@ -1315,12 +1321,25 @@ Mumbai, Maharashtra 400051, India
     };
   }
 
-  // Quick prompt chips
-  $$('#ai-prompts .chatgpt-chip, #ai-prompts .prompt-chip').forEach(btn => {
-    btn.onclick = () => {
-      const prompt = btn.dataset.prompt;
+  // Expose globally for instant cross-tab access
+  window.handleUserQuestion = handleUserQuestion;
+
+  // Quick prompt chips with both direct and delegated listeners
+  $$('#ai-prompts .chatgpt-chip, #ai-prompts .prompt-chip, .chatgpt-chip, .prompt-chip').forEach(btn => {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      const prompt = btn.getAttribute('data-prompt') || btn.dataset.prompt;
       if (prompt) handleUserQuestion(prompt);
     };
+  });
+
+  document.addEventListener('click', e => {
+    const chip = e.target.closest('#ai-prompts .chatgpt-chip, #ai-prompts .prompt-chip, .chatgpt-chip, .prompt-chip');
+    if (chip) {
+      e.preventDefault();
+      const prompt = chip.getAttribute('data-prompt') || chip.dataset.prompt;
+      if (prompt) handleUserQuestion(prompt);
+    }
   });
 
   // Weekly Security Reports Loader
