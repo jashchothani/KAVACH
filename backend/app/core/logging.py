@@ -11,6 +11,7 @@ JSON-structured logging via structlog with:
 from __future__ import annotations
 
 import logging
+import os
 import logging.handlers
 import sys
 import uuid

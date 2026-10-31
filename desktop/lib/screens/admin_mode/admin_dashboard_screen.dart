@@ -621,7 +621,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     final score = (_summary['security_score'] ?? _summary['score'] ?? 78) as num;
     final totalEvents = (_summary['total_events'] ?? _events.length) as num;
     final activeCollectors =
-        _collectors.where((c) => c['status'] == 'active').length;
+        _collectors.where((c) { final s = c['status']?.toString().toLowerCase() ?? ''; return s == 'active' || s == 'running' || s == 'operational'; }).length;
     final openIncidents =
         _incidents.where((i) => i['status'] != 'resolved').length;
 

@@ -17,13 +17,13 @@
   } else {
     // Production Nginx reverse proxy
     defaultBase = '/api/v1';
-    directFallback = `${location.protocol}//${location.hostname}:8000/api/v1`;
+    directFallback = '';
   }
 
   window.KAVACH_CONFIG = Object.assign({
     apiBase: defaultBase,
     directBase: directFallback,
-    timeout: 30000
+    timeout: 8000
   }, window.KAVACH_CONFIG || {});
 })();
 (function () {

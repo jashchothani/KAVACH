@@ -14,8 +14,9 @@ class ApiService {
   }
   static final ApiService instance = ApiService._internal();
 
-  String baseUrl = 'http://127.0.0.1:8000/api/v1';
-  static const String fallbackRemoteUrl = 'https://api.kavachcybertech.in/api/v1';
+  String baseUrl = 'https://api.kavachcybertech.in/api/v1';
+  static const String fallbackRemoteUrl = 'http://api.kavachcybertech.in/api/v1';
+  static const String fallbackLocalUrl = 'http://127.0.0.1:8000/api/v1';
   String? _authToken;
   Map<String, dynamic>? _currentUser;
   final HttpClient _client = HttpClient()
@@ -179,8 +180,11 @@ class ApiService {
       }
       throw ApiException(errMsg, statusCode: resp.statusCode);
     } on SocketException {
-      if (baseUrl != fallbackRemoteUrl) {
+      if (baseUrl == 'https://api.kavachcybertech.in/api/v1') {
         baseUrl = fallbackRemoteUrl;
+        return await _send(method, path, body: body, queryParams: queryParams);
+      } else if (baseUrl == fallbackRemoteUrl) {
+        baseUrl = fallbackLocalUrl;
         return await _send(method, path, body: body, queryParams: queryParams);
       }
       throw ApiException(
@@ -205,7 +209,7 @@ class ApiService {
         .replaceFirst('https://', 'wss://');
     final wsUri = '$wsBase/dashboard/live';
 
-    WebSocket.connect(wsUri).then((socket) {
+    WebSocket.connect(wsUri, customClient: _client).then((socket) {
       _ws = socket;
       _isConnectingWs = false;
       _wsReconnectTimer?.cancel();

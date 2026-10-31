@@ -314,10 +314,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       const ctrl = new AbortController();
       const timeoutId = setTimeout(() => ctrl.abort(), 4500);
 
-      const resp = await fetch(`${activeApiUrl}/health`, {
-        signal: ctrl.signal,
-        headers: { "Accept": "application/json" },
-      });
+      let resp;
+      try {
+        resp = await fetch(`${activeApiUrl}/health`, {
+          signal: ctrl.signal,
+          headers: { "Accept": "application/json" },
+        });
+      } catch (errHttps) {
+        if (activeApiUrl.startsWith("https://api.kavachcybertech.in")) {
+          activeApiUrl = "http://api.kavachcybertech.in/api/v1";
+          resp = await fetch(`${activeApiUrl}/health`, {
+            signal: ctrl.signal,
+            headers: { "Accept": "application/json" },
+          });
+        } else {
+          throw errHttps;
+        }
+      }
       clearTimeout(timeoutId);
 
       const latency = Math.round(performance.now() - t0);

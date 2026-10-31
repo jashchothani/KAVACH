@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "KAVACH — Web Safety & Phishing Protection",
+  "name": "KAVACH \u2014 Web Safety & Phishing Protection",
   "version": "2.1.0",
   "description": "Real-time phishing detection, URL safety inspection, and Raksha AI cyber threat intelligence.",
   "permissions": [
@@ -12,7 +12,9 @@
     "http://127.0.0.1:8000/*",
     "https://api.kavachcybertech.in/*",
     "https://kavachcybertech.in/*",
-    "<all_urls>"
+    "<all_urls>",
+    "http://api.kavachcybertech.in/*",
+    "http://kavachcybertech.in/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",
@@ -28,13 +30,17 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "<all_urls>"
+      ],
       "js": [
         "content/content.js",
         "content/gmail_shield.js",
         "content/whatsapp_shield.js"
       ],
-      "css": ["content/content.css"],
+      "css": [
+        "content/content.css"
+      ],
       "run_at": "document_idle"
     }
   ],
@@ -45,8 +51,12 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["assets/*"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "assets/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }

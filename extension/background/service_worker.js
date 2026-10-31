@@ -5,6 +5,17 @@
 
 const DEFAULT_API_URL = "https://api.kavachcybertech.in/api/v1";
 let activeBackendApi = DEFAULT_API_URL;
+async function apiFetch(endpoint, options = {}) {
+  try {
+    return await fetch(`${activeBackendApi}${endpoint}`, options);
+  } catch (e) {
+    if (activeBackendApi.startsWith("https://api.kavachcybertech.in")) {
+      const httpBase = "http://api.kavachcybertech.in/api/v1";
+      return await fetch(`${httpBase}${endpoint}`, options);
+    }
+    throw e;
+  }
+}
 
 const BADGE_COLORS = {
   SAFE: "#10b981",
@@ -51,7 +62,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 4000);
 
-    fetch(`${activeBackendApi}/url/scan`, {
+    apiFetch(`/url/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: targetUrl }),
@@ -81,7 +92,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 4000);
 
-    fetch(`${activeBackendApi}/ml/scan-email`, {
+    apiFetch(`/ml/scan-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -113,7 +124,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 4000);
 
-    fetch(`${activeBackendApi}/ml/scan-comms`, {
+    apiFetch(`/ml/scan-comms`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -202,7 +213,7 @@ async function updateBadgeForTab(tabId, url) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 3500);
 
-    const resp = await fetch(`${activeBackendApi}/url/scan`, {
+    const resp = await apiFetch(`/url/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
