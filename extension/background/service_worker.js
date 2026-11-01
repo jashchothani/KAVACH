@@ -3,15 +3,16 @@
 // Real-Time URL Heuristics, Threat Intel Scanning & Neural Shield Dispatch
 // ==========================================================================
 
-const DEFAULT_API_URL = "https://api.kavachcybertech.in/api/v1";
+const DEFAULT_API_URL = "http://api.kavachcybertech.in/api/v1";
 let activeBackendApi = DEFAULT_API_URL;
 async function apiFetch(endpoint, options = {}) {
   try {
     return await fetch(`${activeBackendApi}${endpoint}`, options);
   } catch (e) {
-    if (activeBackendApi.startsWith("https://api.kavachcybertech.in")) {
-      const httpBase = "http://api.kavachcybertech.in/api/v1";
-      return await fetch(`${httpBase}${endpoint}`, options);
+    if (!activeBackendApi.startsWith("http://api.kavachcybertech.in")) {
+      activeBackendApi = "http://api.kavachcybertech.in/api/v1";
+      chrome.storage.local.set({ kavach_api_url: activeBackendApi });
+      return await fetch(`${activeBackendApi}${endpoint}`, options);
     }
     throw e;
   }
@@ -29,7 +30,7 @@ const urlSafetyCache = new Map();
 
 // Initialize backend API URL from local storage
 chrome.storage.local.get(["kavach_api_url"], (res) => {
-  if (res.kavach_api_url) {
+  if (res.kavach_api_url && res.kavach_api_url !== "https://api.kavachcybertech.in/api/v1") {
     activeBackendApi = res.kavach_api_url;
   } else {
     activeBackendApi = DEFAULT_API_URL;

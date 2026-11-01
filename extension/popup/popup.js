@@ -3,7 +3,7 @@
 // Sovereign Threat Detection, Raksha AI Intelligence & Live API Integration
 // ==========================================================================
 
-const CLOUD_API_URL = "https://api.kavachcybertech.in/api/v1";
+const CLOUD_API_URL = "http://api.kavachcybertech.in/api/v1";
 const LOCAL_API_URL = "http://localhost:8000/api/v1";
 let activeApiUrl = CLOUD_API_URL;
 
@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return new Promise((resolve) => {
       if (chrome.storage && chrome.storage.local) {
         chrome.storage.local.get(["kavach_api_url"], (res) => {
-          if (res.kavach_api_url) {
+          if (res.kavach_api_url && res.kavach_api_url !== "https://api.kavachcybertech.in/api/v1") {
             activeApiUrl = res.kavach_api_url;
           } else {
             activeApiUrl = CLOUD_API_URL;
@@ -320,15 +320,16 @@ document.addEventListener("DOMContentLoaded", async () => {
           signal: ctrl.signal,
           headers: { "Accept": "application/json" },
         });
-      } catch (errHttps) {
-        if (activeApiUrl.startsWith("https://api.kavachcybertech.in")) {
+      } catch (errFirst) {
+        if (!activeApiUrl.startsWith("http://api.kavachcybertech.in")) {
           activeApiUrl = "http://api.kavachcybertech.in/api/v1";
+          chrome.storage.local.set({ kavach_api_url: activeApiUrl });
           resp = await fetch(`${activeApiUrl}/health`, {
             signal: ctrl.signal,
             headers: { "Accept": "application/json" },
           });
         } else {
-          throw errHttps;
+          throw errFirst;
         }
       }
       clearTimeout(timeoutId);
@@ -431,12 +432,28 @@ document.addEventListener("DOMContentLoaded", async () => {
       const ctrl = new AbortController();
       const timeoutId = setTimeout(() => ctrl.abort(), 4000);
 
-      const resp = await fetch(`${activeApiUrl}/url/scan`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: currentUrl }),
-        signal: ctrl.signal,
-      });
+      let resp;
+      try {
+        resp = await fetch(`${activeApiUrl}/url/scan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: currentUrl }),
+          signal: ctrl.signal,
+        });
+      } catch (scanErr) {
+        if (!activeApiUrl.startsWith("http://api.kavachcybertech.in")) {
+          activeApiUrl = "http://api.kavachcybertech.in/api/v1";
+          chrome.storage.local.set({ kavach_api_url: activeApiUrl });
+          resp = await fetch(`${activeApiUrl}/url/scan`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: currentUrl }),
+            signal: ctrl.signal,
+          });
+        } else {
+          throw scanErr;
+        }
+      }
       clearTimeout(timeoutId);
 
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
