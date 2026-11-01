@@ -338,7 +338,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (resp.ok) {
         const isCloud = activeApiUrl.includes("kavachcybertech.in");
-        const serverLabel = isCloud ? "Cloud" : "Local";
+        const serverLabel = isCloud ? "Cloud AWS" : "Local";
 
         if (backendStatusEl) {
           backendStatusEl.className = "backend-status";
